@@ -257,7 +257,8 @@ td.drawer{padding:0;background:#F7F9FC}
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const db=window.supabase.createClient(SB_URL,SB_KEY,{auth:{
-  flowType:'pkce', persistSession:true, autoRefreshToken:true,
+  flowType:'implicit',   // static site, no server: tokens come back in the hash
+  persistSession:true, autoRefreshToken:true,
   detectSessionInUrl:false,          // handled below so failures are visible
   storageKey:'tb-auth'}});
 
@@ -317,6 +318,14 @@ function tidyUrl(){ try{history.replaceState({},'',HOME);}catch(e){} }
           ||hash.get('error_description')||hash.get('error');
   if(err){ tidyUrl(); showGate(); gmsg(decodeURIComponent(err).replace(/\+/g,' ')); return; }
 
+  if(hash.get('access_token')){
+    $('boot').textContent='Finishing sign-in…';
+    const {error}=await db.auth.setSession({access_token:hash.get('access_token'),
+      refresh_token:hash.get('refresh_token')||''});
+    tidyUrl();
+    if(error){ showGate(); gmsg(error.message); return; }
+  }
+
   const code=u.searchParams.get('code');
   if(code){
     $('boot').textContent='Finishing sign-in…';
@@ -326,11 +335,6 @@ function tidyUrl(){ try{history.replaceState({},'',HOME);}catch(e){} }
       gmsg('Google came back but the sign-in could not be completed: '+error.message
         +'  Try the email and password form below.');
       return; }
-  } else if(hash.get('access_token')){
-    const {error}=await db.auth.setSession({access_token:hash.get('access_token'),
-      refresh_token:hash.get('refresh_token')});
-    tidyUrl();
-    if(error){ showGate(); gmsg(error.message); return; }
   }
 
   const {data,error}=await db.auth.getSession();
