@@ -1,7 +1,8 @@
 // Turner Budget service worker.
-// The shell is cached so the app opens instantly and shows the sign-in
-// screen even on a dead signal. Supabase calls always go to the network.
-const V = 'tb-v2';
+// Shell is cached so the app opens instantly even on a dead signal.
+// Anything with a query string (OAuth returns ?code=...) and anything
+// off-origin (Supabase, fonts, CDN) always goes straight to the network.
+const V = 'tb-v3';
 const SHELL = ['/', '/index.html',
                '/images/manifest.webmanifest',
                '/images/icon-192.png', '/images/icon-512.png',
@@ -19,7 +20,8 @@ self.addEventListener('fetch', e => {
   const r = e.request;
   if (r.method !== 'GET') return;
   const url = new URL(r.url);
-  if (url.origin !== location.origin) return;      // Supabase, fonts, CDN: straight to network
+  if (url.origin !== location.origin) return;   // Supabase, fonts, CDN
+  if (url.search) return;                        // never touch an OAuth return
   e.respondWith(
     fetch(r)
       .then(res => { const copy = res.clone();

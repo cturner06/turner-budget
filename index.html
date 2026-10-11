@@ -256,7 +256,10 @@ td.drawer{padding:0;background:#F7F9FC}
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const db=window.supabase.createClient(SB_URL,SB_KEY);
+const db=window.supabase.createClient(SB_URL,SB_KEY,{auth:{
+  flowType:'pkce', persistSession:true, autoRefreshToken:true,
+  detectSessionInUrl:false,          // handled below so failures are visible
+  storageKey:'tb-auth'}});
 
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const TODAY=new Date();TODAY.setHours(0,0,0,0);
@@ -279,9 +282,11 @@ function oops(e){console.error(e);toast(e.message||String(e),true);}
 
 /* ================= AUTH ================= */
 function gmsg(h,cls){$('gmsg').innerHTML=h?`<div class="${cls||'err'}">${esc(h)}</div>`:'';}
+const HOME=location.origin+location.pathname;   // no query, no hash
 $('google').onclick=async()=>{
+  gmsg('');
   const {error}=await db.auth.signInWithOAuth({provider:'google',
-    options:{redirectTo:location.href.split('#')[0]}});
+    options:{redirectTo:HOME}});
   if(error) gmsg(error.message);
 };
 $('signin').onclick=async()=>{
@@ -299,14 +304,39 @@ $('signup').onclick=async()=>{
 };
 $('out').onclick=async()=>{await db.auth.signOut();location.reload();};
 
-db.auth.onAuthStateChange((_e,session)=>{
+db.auth.onAuthStateChange((e,session)=>{
   if(session&&!user){user=session.user;start();}
-  else if(!session&&user){location.reload();}
+  else if(!session&&user&&e==='SIGNED_OUT'){location.reload();}
 });
+function showGate(){$('boot').hidden=true;$('gate').hidden=false;}
+function tidyUrl(){ try{history.replaceState({},'',HOME);}catch(e){} }
 (async()=>{
-  const {data}=await db.auth.getSession();
-  if(data.session){user=data.session.user;start();}
-  else {$('boot').hidden=true;$('gate').hidden=false;}
+  const u=new URL(location.href);
+  const hash=new URLSearchParams(u.hash.replace(/^#/,''));
+  const err=u.searchParams.get('error_description')||u.searchParams.get('error')
+          ||hash.get('error_description')||hash.get('error');
+  if(err){ tidyUrl(); showGate(); gmsg(decodeURIComponent(err).replace(/\+/g,' ')); return; }
+
+  const code=u.searchParams.get('code');
+  if(code){
+    $('boot').textContent='Finishing sign-in…';
+    const {error}=await db.auth.exchangeCodeForSession(code);
+    tidyUrl();
+    if(error){ showGate();
+      gmsg('Google came back but the sign-in could not be completed: '+error.message
+        +'  Try the email and password form below.');
+      return; }
+  } else if(hash.get('access_token')){
+    const {error}=await db.auth.setSession({access_token:hash.get('access_token'),
+      refresh_token:hash.get('refresh_token')});
+    tidyUrl();
+    if(error){ showGate(); gmsg(error.message); return; }
+  }
+
+  const {data,error}=await db.auth.getSession();
+  if(error){ showGate(); gmsg(error.message); return; }
+  if(data.session){ user=data.session.user; start(); }
+  else showGate();
 })();
 
 /* ================= LOAD ================= */
