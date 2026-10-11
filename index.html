@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Turner Budget</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#12263F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Budget">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#12263F;--ink2:#3C5069;--mute:#7A8899;--paper:#FBFAF7;--card:#FFFFFF;
+ --rule:#DCE1E8;--rule2:#EEF1F5;--lock:#F4F6F9;
+ --gold:#C9A227;--goldw:#FBF3DA;--red:#B3261E;--redw:#FBEBEA;--green:#1E7A5A;--greenw:#E6F3ED;
+ --p:#2E5E8C;--f:#7A5AA8;--b:#0F7A6C;--v:#A8663A;}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font:400 15px/1.55 'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;background:none;border:1px solid var(--rule);color:var(--ink);border-radius:4px;padding:6px 12px}
+button:hover{border-color:var(--ink2);background:#fff}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+input,select{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:4px;padding:6px 9px}
+h1{font:600 19px/1.2 'IBM Plex Sans';margin:0;letter-spacing:-.01em}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+.spacer{flex:1}.hint{color:var(--mute);font-size:12px}
+.row-flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ---- sign in ---- */
+#gate{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+#gate .box{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:30px 32px;width:100%;max-width:380px}
+#gate h2{font:600 21px/1.2 'IBM Plex Sans';margin:0 0 4px}
+#gate .s{color:var(--mute);font-size:13px;margin-bottom:22px}
+#gate .gbtn{width:100%;padding:11px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:500}
+#gate .or{display:flex;align-items:center;gap:11px;color:var(--mute);font-size:11px;margin:18px 0;text-transform:uppercase;letter-spacing:.06em}
+#gate .or:before,#gate .or:after{content:'';flex:1;height:1px;background:var(--rule)}
+#gate label{font-size:11px;color:var(--mute);display:block;margin:0 0 4px}
+#gate input{width:100%;margin-bottom:12px;padding:9px 11px}
+#gate .prim{width:100%;padding:10px;background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
+#gate .prim:hover{background:#0B1B2E}
+#gate .alt{width:100%;margin-top:9px;font-size:13px;border:0;color:var(--ink2)}
+#gate .err{background:var(--redw);border:1px solid #F0C4C1;color:var(--red);border-radius:4px;padding:9px 12px;font-size:13px;margin-bottom:14px}
+#gate .ok{background:var(--greenw);border:1px solid #BFE0D2;color:var(--green);border-radius:4px;padding:9px 12px;font-size:13px;margin-bottom:14px}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper);z-index:90;color:var(--mute);font-size:14px}
+
+header{background:var(--paper);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:30}
+.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 0 0}
+.sub{color:var(--mute);font-size:13px}
+.who{font-size:12px;color:var(--mute);display:flex;align-items:center;gap:8px}
+.tabs{display:flex;gap:3px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:1px solid var(--rule);border-bottom:none;background:#fff;color:var(--ink2);
+ padding:8px 16px;border-radius:5px 5px 0 0;font-size:13.5px;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab .d{width:8px;height:8px;border-radius:50%}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
+.tab .n{font-family:'IBM Plex Mono';font-size:11px;opacity:.75}
+.prow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:10px 0 0;font-size:13px}
+.prow .pl{font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.055em}
+.prow select{font-size:13px;padding:5px 8px;min-width:150px}
+.cfgbox{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:11px 14px;margin-top:10px;
+ display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px}
+.cfgbox label{display:flex;gap:7px;align-items:center;cursor:pointer}
+
+main{padding:22px 0 70px}
+.tiles,.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:780px){.tiles,.sgrid{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:13px 16px}
+.tile .l{font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.055em}
+.tile .v{font:500 23px/1.2 'IBM Plex Mono';margin-top:5px}
+.tile .c{font-size:11.5px;color:var(--mute);margin-top:3px}
+.prog{height:5px;background:var(--rule2);border-radius:3px;overflow:hidden;margin-top:9px}
+.prog i{display:block;height:100%;background:var(--green);border-radius:3px}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.ptop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--rule2)}
+.ptop h2{font:600 14px/1 'IBM Plex Sans';margin:0}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:500;color:var(--mute);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+ padding:9px 10px;border-bottom:1px solid var(--rule);background:#fff}
+th.mo small{display:block;font-size:9.5px;letter-spacing:.02em;text-transform:none;color:#A2AEBC;font-weight:400}
+td{padding:0 10px;border-bottom:1px solid var(--rule2);height:40px}
+tbody tr:hover td{background:#FAFBFD}
+.r{text-align:right}.c{text-align:center}
+.bn{font-weight:500}.cat{font-size:11px;color:var(--mute)}
+td.lock{background:var(--lock);color:var(--mute);font-family:'IBM Plex Mono'}
+td.lock .ld{font-size:9.5px;color:#A2AEBC}
+td.cell{padding:0}
+td.cell input{width:100%;height:39px;border:0;border-radius:0;background:none;text-align:right;
+ font-family:'IBM Plex Mono';font-size:13.5px;padding:0 10px}
+td.cell input:hover{background:#F4F7FB}
+td.cell input:focus{background:var(--goldw);outline:2px solid var(--gold);outline-offset:-2px}
+td.cell.next input{color:var(--ink2)}
+td.cell.next input::placeholder{color:#C3CBD6}
+tr.paid .bn{color:var(--green)}
+tr.late td{background:var(--redw)}tr.late:hover td{background:#F7E2E0}
+.tag{display:inline-block;font:500 10px/1 'IBM Plex Mono';padding:4px 7px;border-radius:3px}
+.tag.paid{background:var(--greenw);color:var(--green)}
+.tag.late{background:var(--red);color:#fff}
+.tag.due{background:var(--goldw);color:#7A5F12}
+.tag.sched{background:var(--rule2);color:var(--mute)}
+.tag.ahead{background:#E8EEF6;color:var(--p)}
+.tag.part{background:var(--goldw);color:#7A5F12}
+.tag.arr{background:#EDE7F6;color:#5B3FA8}
+.tag.split{background:#E8EEF6;color:var(--p)}
+.tag.zero{background:var(--rule2);color:var(--ink2)}
+.tag.shared{background:var(--greenw);color:var(--green)}
+.tag.annual{background:var(--goldw);color:#7A5F12}
+tfoot td{height:44px;background:var(--ink);color:#fff;font-weight:500;border:0;font-family:'IBM Plex Mono'}
+tfoot td.lbl{font-family:'IBM Plex Sans'}
+.var{font-size:10px;color:var(--mute);font-family:'IBM Plex Mono'}
+.var.up{color:var(--red)}.var.dn{color:var(--green)}
+.note{background:var(--goldw);border:1px solid #E8D48A;border-radius:5px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.mini{font-size:12px;padding:4px 9px}
+.menu{border:0;background:none;color:var(--mute);font-size:17px;line-height:1;padding:4px 7px;border-radius:4px}
+.menu:hover{background:var(--rule2);color:var(--ink)}
+tr.open td{background:#F7F9FC}
+td.drawer{padding:0;background:#F7F9FC}
+.dr{padding:13px 14px;border-bottom:1px solid var(--rule)}
+.dr h4{font:600 12px/1 'IBM Plex Sans';margin:0 0 9px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
+.acts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
+.acts button{font-size:12px;padding:5px 11px}
+.acts button.danger{color:var(--red);border-color:#E9C4C1}
+.acts button.danger:hover{background:var(--redw)}
+.form{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+.form label{font-size:11px;color:var(--mute);display:block;margin-bottom:3px}
+.form input,.form select{font-size:13px;padding:5px 8px}
+.parts{margin-top:10px;border-top:1px solid var(--rule2);padding-top:9px}
+.part{display:flex;gap:9px;align-items:center;font-size:13px;padding:4px 0}
+.part .pn{width:78px;color:var(--mute);font-size:12px}
+.part input[type=number]{width:104px;text-align:right;font-family:'IBM Plex Mono'}
+.part label{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);cursor:pointer}
+.strip{display:grid;grid-template-columns:118px repeat(12,1fr);gap:3px;align-items:center;font-size:11px}
+.strip .lb{font-size:12px;color:var(--ink2)}
+.strip .hd2{font-family:'IBM Plex Mono';font-size:10px;color:var(--mute);text-align:center}
+.cellm{height:30px;border-radius:3px;display:flex;align-items:center;justify-content:center;
+ font-family:'IBM Plex Mono';font-size:10px;color:#fff;cursor:pointer}
+.cellm.nowm{outline:2px solid var(--gold);outline-offset:-1px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;
+ padding:10px 18px;border-radius:5px;font-size:13px;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+#toast.bad{background:var(--red)}
+@media print{.noprint{display:none!important}header{position:static}body{background:#fff}
+ @page{size:landscape;margin:10mm}}
+/* ---------- phone ---------- */
+@media(max-width:760px){
+ :root{padding-top:env(safe-area-inset-top,0px)}
+ .wrap{padding:0 11px}
+ body{font-size:15px}
+ h1{font-size:17px}
+ .hidesm{display:none}
+ header{padding-top:env(safe-area-inset-top,0px)}
+ .hrow{gap:9px;padding:10px 0 0}
+ .hrow .sub{order:3;width:100%;margin-top:-4px}
+ .who{display:none}
+ .prow{gap:6px}
+ .prow .pl{display:none}
+ .prow select{min-width:0;flex:1}
+ .tiles,.sgrid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+ .tile{padding:10px 12px}.tile .v{font-size:19px}
+ .ptop{padding:10px 12px}
+ .panel{border-radius:8px}
+
+ /* table becomes a stack of cards */
+ #tbl,#tbl tbody,#tbl tr,#tbl td{display:block;width:100%}
+ #tbl thead,#tbl tfoot th,#tbl td.lock:empty{display:none}
+ #tbl tbody tr{border:1px solid var(--rule);border-radius:8px;margin:0 0 9px;padding:11px 12px;
+   background:#fff;position:relative}
+ #tbl tbody tr:hover td{background:none}
+ #tbl tbody tr.late{background:var(--redw);border-color:#F0C4C1}
+ #tbl tbody tr.open{background:#F7F9FC}
+ #tbl td{border:0;height:auto;padding:0;text-align:left!important}
+ #tbl td[data-l]{display:flex;justify-content:space-between;align-items:center;
+   padding:6px 0;border-top:1px solid var(--rule2);gap:12px}
+ #tbl td[data-l]:before{content:attr(data-l);font-size:10.5px;color:var(--mute);
+   text-transform:uppercase;letter-spacing:.05em;flex:0 0 auto}
+ #tbl td.name{padding:0 34px 7px 0;border:0}
+ #tbl td.name .bn{font-size:15px}
+ #tbl td.lock{background:none;padding:6px 0}
+ #tbl td.cell{padding:0;border-top:1px solid var(--rule2)}
+ #tbl td.cell input{height:42px;font-size:16px;text-align:right;
+   border:1px solid var(--rule);border-radius:6px;background:#fff;padding:0 11px;margin:5px 0}
+ #tbl td.cell.next input{border-style:dashed}
+ #tbl td.cell:before{content:attr(data-l);font-size:10.5px;color:var(--mute);
+   text-transform:uppercase;letter-spacing:.05em;display:block;padding-top:7px}
+ #tbl td.cell{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:10px}
+ #tbl .menu{position:absolute!important;right:6px;top:7px;font-size:21px;padding:4px 9px}
+ #tbl tr.drawerrow,#tbl td.drawer{border:0;padding:0;background:none;margin-bottom:9px}
+ .dr{border:1px solid var(--rule);border-radius:8px;background:#F7F9FC;padding:12px}
+ .form input,.form select{font-size:16px}
+ .form>div{flex:1 1 130px}
+ .acts button{flex:1 1 auto}
+ .strip{grid-template-columns:70px repeat(12,minmax(26px,1fr));gap:2px}
+ .strip .lb{font-size:10px}.cellm{font-size:8px;height:26px}
+ #sumview table{font-size:12.5px}
+ #toast{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+ main{padding-bottom:calc(50px + env(safe-area-inset-bottom,0px))}
+ #gate .box{padding:24px 20px}
+ #gate input{font-size:16px}
+}
+</style></head><body>
+<div id="boot">Loading…</div>
+<div id="gate" hidden><div class="box">
+  <h2>Turner Budget</h2><div class="s">Sign in to pick up where you left off.</div>
+  <div id="gmsg"></div>
+  <button class="gbtn" id="google">
+    <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.8-1.5 4.6-4.4 6.4l6.7 5.2C42.2 35.1 45 30 45 24z"/><path fill="#34A853" d="M24 46c5.9 0 10.8-1.9 14.4-5.2l-6.7-5.2c-1.8 1.3-4.2 2.1-7.7 2.1-5.9 0-10.9-3.9-12.7-9.2l-7 5.4C7.9 41 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.3 28.5c-.5-1.4-.7-2.9-.7-4.5s.3-3.1.7-4.5l-7-5.4C2.8 17 2 20.4 2 24s.8 7 2.3 9.9l7-5.4z"/><path fill="#EA4335" d="M24 10.6c4.2 0 7 1.8 8.6 3.3l6.3-6.1C35 4.3 30 2 24 2 15.4 2 7.9 7 4.3 14.1l7 5.4c1.8-5.3 6.8-8.9 12.7-8.9z"/></svg>
+    Continue with Google</button>
+  <div class="or">or</div>
+  <label for="em">Email</label><input id="em" type="email" autocomplete="email" placeholder="you@example.com">
+  <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+  <button class="prim" id="signin">Sign in</button>
+  <button class="alt" id="signup">No account yet? Create one</button>
+</div></div>
+<div id="app" hidden>
+<header><div class="wrap">
+ <div class="hrow"><h1>Turner Budget</h1><span class="sub" id="hsub"></span><span class="spacer"></span>
+  <span class="who noprint" id="who"></span>
+  <div class="noprint row-flex">
+   <button id="prev" aria-label="Previous month">&larr;</button>
+   <select id="pm" aria-label="Month" style="font-size:13px;padding:6px 4px"></select>
+   <select id="py" aria-label="Year" style="font-size:13px;padding:6px 4px"></select>
+   <button id="next" aria-label="Next month">&rarr;</button>
+   <button id="now" class="mini">Today</button>
+   <button id="prt" class="mini">Print</button>
+   <button id="out" class="mini">Sign out</button></div></div>
+ <div class="prow noprint">
+  <span class="pl">Profile</span><select id="prof" aria-label="Profile"></select>
+  <button id="pnew" class="mini">New</button><button id="pren" class="mini">Rename</button>
+  <button id="pdup" class="mini">Duplicate</button><button id="pshare" class="mini">Invite</button>
+  <button id="pdel" class="mini">Delete</button>
+  <span class="spacer"></span>
+  <button id="tabnew" class="mini">+ New tab</button>
+  <button id="tabcfg" class="mini">Show / hide tabs</button></div>
+ <div id="tabcfgbox" class="cfgbox noprint" hidden></div>
+ <div class="tabs" id="tabs"></div>
+</div></header>
+<main class="wrap">
+ <div id="msg"></div><div class="tiles" id="tiles"></div>
+ <div class="panel"><div class="ptop"><h2 id="ptitle">Bills</h2><span class="spacer"></span>
+   <button id="addb" class="mini noprint">+ Add bill</button>
+   <input id="q" class="noprint" placeholder="Filter" style="width:150px;font-size:13px" aria-label="Filter">
+   <select id="sf" class="noprint" style="font-size:13px" aria-label="Status filter">
+    <option value="">All</option><option value="late">Not paid</option><option value="due">Due now</option>
+    <option value="sched">Scheduled</option><option value="paid">Paid</option>
+    <option value="part">Part paid</option><option value="ahead">Paid ahead</option></select></div>
+  <div style="overflow-x:auto"><table id="tbl"></table></div></div>
+ <div id="sumview" hidden></div>
+ <p class="hint" style="margin-top:12px" id="foothint"><b>Last</b> is locked — what cleared, for reference.
+  <b>Current</b> is the month you are working. <b>Next</b> is for anything you pay early.</p>
+</main></div>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
+const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
+const db=window.supabase.createClient(SB_URL,SB_KEY);
+
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+const mk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+const lbl=d=>MN[d.getMonth()]+' '+String(d.getFullYear()).slice(2);
+const money=n=>(n<0?'-':'')+'$'+Math.abs(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const money0=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(+n)).toLocaleString('en-US');
+const lastDay=m=>new Date(m.getFullYear(),m.getMonth()+1,0).getDate();
+const shift=(m,n)=>new Date(m.getFullYear(),m.getMonth()+n,1);
+const esc=s=>String(s??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+
+let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
+let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
+let acct=null,q='',sf='',drawer=null,adding=false,editing=null,cfg=false,busy=false;
+
+function toast(m,bad){const t=$('toast');t.textContent=m;t.className='on'+(bad?' bad':'');
+  clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',2600);}
+function oops(e){console.error(e);toast(e.message||String(e),true);}
+
+/* ================= AUTH ================= */
+function gmsg(h,cls){$('gmsg').innerHTML=h?`<div class="${cls||'err'}">${esc(h)}</div>`:'';}
+$('google').onclick=async()=>{
+  const {error}=await db.auth.signInWithOAuth({provider:'google',
+    options:{redirectTo:location.href.split('#')[0]}});
+  if(error) gmsg(error.message);
+};
+$('signin').onclick=async()=>{
+  gmsg('');const email=$('em').value.trim(),password=$('pw').value;
+  if(!email||!password)return gmsg('Email and password, both.');
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error) gmsg(error.message);
+};
+$('signup').onclick=async()=>{
+  gmsg('');const email=$('em').value.trim(),password=$('pw').value;
+  if(!email||password.length<6)return gmsg('Email, and a password of at least 6 characters.');
+  const {data,error}=await db.auth.signUp({email,password});
+  if(error) return gmsg(error.message);
+  if(!data.session) gmsg('Check '+email+' for a confirmation link, then sign in.','ok');
+};
+$('out').onclick=async()=>{await db.auth.signOut();location.reload();};
+
+db.auth.onAuthStateChange((_e,session)=>{
+  if(session&&!user){user=session.user;start();}
+  else if(!session&&user){location.reload();}
+});
+(async()=>{
+  const {data}=await db.auth.getSession();
+  if(data.session){user=data.session.user;start();}
+  else {$('boot').hidden=true;$('gate').hidden=false;}
+})();
+
+/* ================= LOAD ================= */
+async function start(){
+  $('gate').hidden=true;$('boot').hidden=false;$('boot').textContent='Loading your budget…';
+  try{
+    await loadProfiles();
+    if(!S.profiles.length){
+      const {data,error}=await db.rpc('create_profile',{p_name:'Household',p_seed:true});
+      if(error) throw error; await loadProfiles(); S.pid=data;
+    }
+    S.pid=S.pid||localStorage.getItem('tb-pid')||S.profiles[0].id;
+    if(!S.profiles.some(p=>p.id===S.pid)) S.pid=S.profiles[0].id;
+    await loadProfile();
+    $('boot').hidden=true;$('app').hidden=false;
+    $('who').textContent=user.email;
+    render();
+  }catch(e){$('boot').textContent='Could not load: '+(e.message||e);oops(e);}
+}
+async function loadProfiles(){
+  const {data,error}=await db.from('profiles').select('*').order('created_at');
+  if(error) throw error; S.profiles=data||[];
+}
+async function loadProfile(){
+  localStorage.setItem('tb-pid',S.pid);
+  S.prof=S.profiles.find(p=>p.id===S.pid);
+  const [t,b,p,sp,ar]=await Promise.all([
+    db.from('tabs').select('*').eq('profile_id',S.pid).order('sort'),
+    db.from('bills').select('*').eq('profile_id',S.pid).eq('archived',false),
+    db.from('payments').select('*').eq('profile_id',S.pid),
+    db.from('splits').select('*').eq('profile_id',S.pid).order('seq'),
+    db.from('arrangements').select('*').eq('profile_id',S.pid)]);
+  for(const r of [t,b,p,sp,ar]) if(r.error) throw r.error;
+  S.tabs=t.data; S.bills=b.data;
+  S.pay={}; p.data.forEach(r=>S.pay[r.bill_id+'|'+r.period]=r);
+  S.splits={}; sp.data.forEach(r=>(S.splits[r.bill_id+'|'+r.period]=S.splits[r.bill_id+'|'+r.period]||[]).push(r));
+  S.arr={}; ar.data.forEach(r=>S.arr[r.bill_id]=r);
+  if(!acct||!S.tabs.some(x=>x.code===acct)) acct=(S.tabs[0]||{}).code||'sum';
+}
+
+/* ================= MODEL ================= */
+const acctOf=c=>S.tabs.find(a=>a.code===c)||{code:c,name:c,institution:'',color:'#5B6B7F'};
+const COL=c=>acctOf(c).color||'#5B6B7F';
+const hidden=k=>(S.prof.hidden_tabs||[]).includes(k);
+const TABS=()=>S.tabs.map(a=>({k:a.code,n:a.name,c:a.color}))
+  .concat([{k:'ann',n:'Annual'},{k:'sum',n:'Summary'}]);
+const dueDate=(b,m)=>new Date(m.getFullYear(),m.getMonth(),b.due_day?Math.min(b.due_day,lastDay(m)):lastDay(m));
+const per=m=>mk(m);
+const getPay=(b,p)=>S.pay[b.id+'|'+p]||null;
+const getSplits=(b,p)=>S.splits[b.id+'|'+p]||null;
+function arrFor(b,m){const a=S.arr[b.id];if(!a)return null;
+  const s=a.start_month.split('-').map(Number),st=new Date(s[0],s[1]-1,1);
+  const off=(m.getFullYear()-st.getFullYear())*12+(m.getMonth()-st.getMonth());
+  return(off>=0&&off<a.months)?{...a,left:a.months-off}:null;}
+const budgetOf=(b,m)=>{const a=arrFor(b,m);return a?+a.amount:+b.amount;};
+function paidOf(b,p){const sp=getSplits(b,p);
+  if(sp)return sp.some(x=>x.paid)?sp.filter(x=>x.paid).reduce((s,x)=>s+ +x.amount,0):null;
+  const r=getPay(b,p);return r?+r.amount:null;}
+const allPaid=(b,p)=>{const sp=getSplits(b,p);return sp?sp.every(x=>x.paid):paidOf(b,p)!==null;};
+const monthly=code=>S.bills.filter(b=>!b.is_annual&&b.tab_code===code);
+const annuals=()=>S.bills.filter(b=>b.is_annual).sort((a,b)=>(a.due_month-b.due_month)||a.name.localeCompare(b.name));
+function billsFor(m,code){return monthly(code).map(b=>({b,when:dueDate(b,m)})).sort((x,y)=>x.when-y.when);}
+function status(x,m){const p=per(m),sp=getSplits(x.b,p);
+  if(sp){if(sp.every(z=>z.paid))return'paid';if(sp.some(z=>z.paid))return'part';}
+  else if(paidOf(x.b,p)!==null)return'paid';
+  if(paidOf(x.b,per(shift(m,1)))!==null)return'ahead';
+  if(x.when<TODAY)return'late';
+  if((x.when-TODAY)/864e5<=7)return'due';
+  return'sched';}
+const LBL={paid:'Paid',part:'Part paid',ahead:'Paid ahead',late:'Not paid',due:'Due now',sched:'Scheduled'};
+function figures(m,code){
+  const bs=billsFor(m,code),p=per(m);let budget=0,cleared=0,owed=0,late=0,arrN=0;
+  bs.forEach(x=>{const bg=budgetOf(x.b,m);budget+=bg;if(arrFor(x.b,m))arrN++;
+    const v=paidOf(x.b,p);
+    if(v!==null&&allPaid(x.b,p))cleared+=v;
+    else{owed+=bg-(v||0);if(x.when<TODAY&&m<=new Date(TODAY.getFullYear(),TODAY.getMonth(),1))late++;}});
+  return{n:bs.length,budget,cleared,owed,late,arrN};}
+
+/* ================= WRITES ================= */
+async function go(fn){ if(busy)return; busy=true;
+  try{ await fn(); await loadProfile(); render(); }catch(e){ oops(e); } finally{ busy=false; } }
+async function setPay(b,p,amount){
+  if(amount===null||amount===''){ const r=getPay(b,p);
+    if(r){const {error}=await db.from('payments').delete().eq('id',r.id);if(error)throw error;} return; }
+  const r=getPay(b,p);
+  if(r){const {error}=await db.from('payments').update({amount}).eq('id',r.id);if(error)throw error;}
+  else{const {error}=await db.from('payments').insert({profile_id:S.pid,bill_id:b.id,period:p,
+    amount,paid_on:new Date().toISOString().slice(0,10)});if(error)throw error;}
+}
+async function clearSplits(b,p){const sp=getSplits(b,p);
+  if(sp&&sp.length){const {error}=await db.from('splits').delete().eq('bill_id',b.id).eq('period',p);if(error)throw error;}}
+
+/* ================= ACCOUNT VIEW ================= */
+function drawerHTML(x,m){
+  const b=x.b,p=per(m),sp=getSplits(b,p),a=S.arr[b.id],act=arrFor(b,m);
+  const others=S.profiles.filter(z=>z.id!==S.pid);
+  const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
+  const ef=editing===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
+     <div><label>Name</label><input id="ed-n" value="${esc(b.name)}" style="width:200px"></div>
+     <div><label>Category</label><input id="ed-c" value="${esc(b.category)}" style="width:130px"></div>
+     <div><label>Due day</label><input id="ed-d" type="number" min="1" max="31" value="${b.due_day||''}" style="width:78px"></div>
+     <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${b.amount}" style="width:110px"></div>
+     <div><label>Tab</label><select id="ed-ac">${S.tabs.map(z=>`<option value="${z.code}" ${z.code===b.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
+     <button data-a="saveedit">Save changes</button><button data-a="canceledit">Cancel</button></div>
+     <p class="hint" style="margin:7px 0 0">Applies to every month. Amounts already recorded stay as recorded.</p></div>`:'';
+  const parts=sp?`<div class="parts"><h4>Split — ${sp.length} parts</h4>
+    ${sp.map((z,i)=>`<div class="part"><span class="pn">Part ${i+1}</span>
+      <input type="number" step="0.01" data-sp="${z.id}" value="${z.amount}" aria-label="Part ${i+1} amount">
+      <label><input type="checkbox" data-spp="${z.id}" ${z.paid?'checked':''}> paid</label></div>`).join('')}
+    <div class="acts" style="margin-top:8px"><button data-a="unsplit">Remove split</button>
+      <button data-a="addpart">Add a part</button>
+      <span class="hint" style="align-self:center">Total ${money(sp.reduce((s,z)=>s+ +z.amount,0))} of ${money(budgetOf(b,m))}</span></div></div>`:'';
+  const arrBox=`<div class="parts"><h4>Payment arrangement</h4><div class="form">
+     <div><label>Per month</label><input type="number" step="0.01" id="ar-amt" value="${a?a.amount:budgetOf(b,m).toFixed(2)}"></div>
+     <div><label>Starting</label><input type="month" id="ar-start" value="${a?a.start_month:per(m)}"></div>
+     <div><label>For (months)</label><input type="number" min="1" max="120" id="ar-mo" value="${a?a.months:6}" style="width:80px"></div>
+     <div style="flex:1;min-width:150px"><label>Note</label><input id="ar-note" value="${esc(a?a.note:'')}" placeholder="Who you spoke to, terms" style="width:100%"></div>
+     <button data-a="savearr">${a?'Update':'Set'} arrangement</button>
+     ${a?'<button data-a="delarr" class="danger">End it</button>':''}</div>
+    ${act?`<p class="hint" style="margin:7px 0 0">Active — ${money(a.amount)} a month, ${act.left} left.</p>`:''}</div>`;
+  return `<div class="dr"><div class="acts">
+     <button data-a="edit">Edit bill</button><button data-a="split">Split into parts</button>
+     <button data-a="zero">Mark paid at $0</button><button data-a="full">Mark paid in full</button>
+     <button data-a="clear">Clear this month</button>${share}
+     <button data-a="remove" class="danger">Remove bill</button>
+     <button data-a="close" style="margin-left:auto">Close</button></div>${ef}${parts}${arrBox}</div>`;
+}
+function renderAccount(){
+  $('sumview').hidden=true;$('tiles').hidden=false;document.querySelector('.panel').hidden=false;$('foothint').hidden=false;
+  const prev=shift(cur,-1),nxt=shift(cur,1),A=acctOf(acct),all=billsFor(cur,acct),p=per(cur);
+  const budget=all.reduce((s,x)=>s+budgetOf(x.b,cur),0);
+  const done=all.filter(x=>allPaid(x.b,p));
+  const cleared=all.reduce((s,x)=>s+(paidOf(x.b,p)||0),0);
+  const owed=all.reduce((s,x)=>s+Math.max(0,budgetOf(x.b,cur)-(paidOf(x.b,p)||0)),0);
+  const lateN=all.filter(x=>status(x,cur)==='late').length, aheadN=all.filter(x=>status(x,cur)==='ahead').length;
+  const pct=all.length?Math.round(done.length/all.length*100):0;
+  $('tiles').innerHTML=`
+   <div class="tile"><div class="l">Monthly obligations</div><div class="v">${money0(budget)}</div>
+     <div class="c">${all.length} recurring items</div></div>
+   <div class="tile"><div class="l">Cleared</div><div class="v" style="color:var(--green)">${money0(cleared)}</div>
+     <div class="c">${done.length} of ${all.length}</div><div class="prog"><i style="width:${pct}%"></i></div></div>
+   <div class="tile"><div class="l">Still owed</div><div class="v">${money0(owed)}</div>
+     <div class="c">${lateN?lateN+' past the due day':'nothing overdue'}</div></div>
+   <div class="tile"><div class="l">Paid ahead</div><div class="v" style="color:${aheadN?'var(--p)':'var(--mute)'}">${aheadN}</div>
+     <div class="c">recorded in ${lbl(nxt)}</div></div>`;
+  $('ptitle').innerHTML=esc(A.name)+(A.institution?` <span class="hint" style="font-weight:400">${esc(A.institution)}</span>`:'')
+    +(A.kind==='project'?' <button class="mini noprint" id="tabren" style="margin-left:8px">Rename</button>'
+      +'<button class="mini noprint danger" id="tabdel" style="margin-left:5px">Delete tab</button>':'');
+  const rows=all.filter(x=>{
+    if(q&&!(x.b.name+' '+x.b.category).toLowerCase().includes(q))return false;
+    if(sf&&status(x,cur)!==sf)return false;return true;});
+  let tl=0,tc=0,tn=0,tb=0;
+  const addRow=adding?`<tr><td colspan="7" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
+    <div class="form"><div><label>Name</label><input id="nb-n" placeholder="Bill name" style="width:200px"></div>
+     <div><label>Category</label><input id="nb-c" placeholder="Card, Utilities…" style="width:130px"></div>
+     <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31" value="1" style="width:78px"></div>
+     <div><label>Amount</label><input id="nb-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
+     <button data-a="savenew">Add it</button><button data-a="cancelnew">Cancel</button></div></div></td></tr>`:'';
+  const body=rows.map(x=>{
+    const s=status(x,cur),bg=budgetOf(x.b,cur),act=arrFor(x.b,cur),sp=getSplits(x.b,p);
+    const L=paidOf(x.b,per(prev)),C=paidOf(x.b,p),N=paidOf(x.b,per(nxt));
+    tb+=bg;tl+=L||0;tc+=C||0;tn+=N||0;
+    const v=(C!==null&&!sp&&Math.abs(C-bg)>=0.01)
+      ?`<span class="var ${C>bg?'up':'dn'}">${C>bg?'+':'\u2212'}${money0(Math.abs(C-bg))}</span>`:'';
+    const tags=(act?' <span class="tag arr">arrangement</span>':'')
+      +(sp?` <span class="tag split">${sp.filter(z=>z.paid).length}/${sp.length} parts</span>`:'')
+      +(C===0&&!sp?' <span class="tag zero">$0</span>':'')
+      +(x.b.shared_from?` <span class="tag shared">from ${esc(x.b.shared_by||'another profile')}</span>`:'');
+    const open=drawer===x.b.id;
+    return `<tr class="${s}${open?' open':''}">
+      <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${esc(x.b.category)}</div></td>
+      <td class="c hidesm">${x.b.due_day||'last'}</td>
+      <td data-l="Status"><span class="tag ${s}">${LBL[s]}</span></td>
+      <td class="r num" data-l="Budget · day ${x.b.due_day||'last'}">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
+      <td class="r lock" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
+      <td class="cell" data-l="${lbl(cur)}">${sp?`<div style="padding:0 10px;text-align:right" class="num">${money(C||0)}</div>`
+        :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="number" step="0.01" inputmode="decimal"
+        value="${C!==null?C:''}" placeholder="${bg.toFixed(2)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
+      <td class="cell next" data-l="${lbl(nxt)} · early" style="position:relative"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
+        type="number" step="0.01" inputmode="decimal" value="${N!==null?N:''}" placeholder="\u2014"
+        aria-label="${esc(x.b.name)} next month">
+        <button class="menu noprint" data-m="${x.b.id}" aria-label="Actions for ${esc(x.b.name)}"
+         style="position:absolute;right:-30px;top:7px">&#8943;</button></td></tr>`
+     +(open?`<tr class="drawerrow"><td colspan="7" class="drawer">${drawerHTML(x,cur)}</td></tr>`:'');
+  }).join('');
+  $('tbl').innerHTML=`
+   <thead><tr><th>Bill</th><th class="c hidesm">Due</th><th>Status</th><th class="r">Budget</th>
+    <th class="r mo">Last<small>${lbl(prev)} \u00b7 locked</small></th>
+    <th class="r mo">Current<small>${lbl(cur)}</small></th>
+    <th class="r mo">Next<small>${lbl(nxt)} \u00b7 early</small></th></tr></thead>
+   <tbody>${addRow}${body||'<tr><td colspan="7" class="hint" style="padding:18px">Nothing matches.</td></tr>'}</tbody>
+   <tfoot><tr><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
+    <td class="r">${money(tb)}</td><td class="r" style="opacity:.6">${money(tl)}</td>
+    <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td></tr></tfoot>`;
+  wire();
+  const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this tab',A.name);if(!n)return;
+    go(async()=>{const {error}=await db.from('tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
+  const td=$('tabdel'); if(td) td.onclick=()=>{
+    const n=monthly(acct).length;
+    if(!confirm('Delete "'+A.name+'"'+(n?' and its '+n+' bills':'')+'?'))return;
+    go(async()=>{
+      await db.from('bills').delete().eq('profile_id',S.pid).eq('tab_code',acct);
+      const {error}=await db.from('tabs').delete().eq('id',A.id);if(error)throw error;
+      acct=null;});};
+  $('msg').innerHTML=lateN?`<div class="note" style="background:var(--redw);border-color:#F0C4C1">
+    <b style="color:var(--red)">${lateN} not paid</b> on ${esc(A.name)} \u2014 past the due day with nothing recorded.</div>`:'';
+}
+
+/* ================= ANNUAL ================= */
+function renderAnnual(){
+  $('sumview').hidden=true;$('tiles').hidden=false;document.querySelector('.panel').hidden=false;$('foothint').hidden=true;
+  const Y=String(cur.getFullYear()), list=annuals();
+  const tot=list.reduce((s,a)=>s+ +a.amount,0);
+  const paid=list.filter(a=>getPay(a,Y));
+  const paidAmt=list.reduce((s,a)=>s+(getPay(a,Y)?+getPay(a,Y).amount:0),0);
+  const pct=list.length?Math.round(paid.length/list.length*100):0;
+  const by={};list.forEach(a=>by[a.due_month]=(by[a.due_month]||0)+ +a.amount);
+  const hv=Object.keys(by).sort((x,y)=>by[y]-by[x])[0];
+  $('tiles').innerHTML=`
+   <div class="tile"><div class="l">Annual total</div><div class="v">${money0(tot)}</div>
+     <div class="c">${list.length} charges in ${Y}</div></div>
+   <div class="tile"><div class="l">Set aside monthly</div><div class="v" style="color:var(--gold)">${money0(tot/12)}</div>
+     <div class="c">and none of these hurt</div></div>
+   <div class="tile"><div class="l">Paid this year</div><div class="v" style="color:var(--green)">${money0(paidAmt)}</div>
+     <div class="c">${paid.length} of ${list.length}</div><div class="prog"><i style="width:${pct}%"></i></div></div>
+   <div class="tile"><div class="l">Heaviest month</div><div class="v">${hv?MN[hv-1]:'\u2014'}</div>
+     <div class="c">plan around it</div></div>`;
+  $('ptitle').textContent='Annual charges — '+Y;
+  const others=S.profiles.filter(z=>z.id!==S.pid);
+  const addRow=adding?`<tr><td colspan="7" class="drawer"><div class="dr"><h4>Add an annual charge</h4>
+    <div class="form"><div><label>Name</label><input id="na-n" placeholder="Licence renewal" style="width:190px"></div>
+     <div><label>Tab</label><select id="na-ac">${S.tabs.map(z=>`<option value="${z.code}">${esc(z.name)}</option>`).join('')}</select></div>
+     <div><label>Month</label><select id="na-m">${MN.map((z,i)=>`<option value="${i+1}">${z}</option>`).join('')}</select></div>
+     <div><label>Day</label><input id="na-d" type="number" min="1" max="31" value="15" style="width:70px"></div>
+     <div><label>Amount</label><input id="na-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
+     <button data-a="savenewann">Add it</button><button data-a="cancelnew">Cancel</button></div></div></td></tr>`:'';
+  let tb=0,tp=0;
+  const body=list.filter(a=>!q||(a.name+' '+acctOf(a.tab_code).name).toLowerCase().includes(q)).map(a=>{
+    const rec=getPay(a,Y), due=new Date(+Y,a.due_month-1,Math.min(a.due_day||15,lastDay(new Date(+Y,a.due_month-1,1))));
+    const s=rec?'paid':due<TODAY?'late':(due-TODAY)/864e5<=30?'due':'sched';
+    tb+=+a.amount;tp+=rec?+rec.amount:0;
+    const open=drawer===a.id;
+    const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
+    const ef=editing===a.id?`<div class="parts"><h4>Edit charge</h4><div class="form">
+       <div><label>Name</label><input id="ed-n" value="${esc(a.name)}" style="width:190px"></div>
+       <div><label>Tab</label><select id="ed-ac">${S.tabs.map(z=>`<option value="${z.code}" ${z.code===a.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
+       <div><label>Month</label><select id="ed-m">${MN.map((z,i)=>`<option value="${i+1}" ${i+1===a.due_month?'selected':''}>${z}</option>`).join('')}</select></div>
+       <div><label>Day</label><input id="ed-d" type="number" min="1" max="31" value="${a.due_day||15}" style="width:70px"></div>
+       <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${a.amount}" style="width:110px"></div>
+       <button data-a="saveannedit">Save changes</button><button data-a="canceledit">Cancel</button></div></div>`:'';
+    return `<tr class="${s}${open?' open':''}">
+      <td class="name"><span class="bn">${esc(a.name)}</span> <span class="tag annual">annual</span>
+        ${a.shared_from?` <span class="tag shared">from ${esc(a.shared_by)}</span>`:''}
+        <div class="cat">${esc(a.category)}</div></td>
+      <td data-l="Tab"><span class="bn" style="color:${COL(a.tab_code)}">${esc(acctOf(a.tab_code).name)}</span></td>
+      <td class="c" data-l="Due">${MN[a.due_month-1]} ${a.due_day||15}</td>
+      <td class="r num" data-l="Amount">${money(a.amount)}</td>
+      <td class="r num" data-l="Set aside /mo" style="color:var(--mute)">${money(+a.amount/12)}</td>
+      <td data-l="Status"><span class="tag ${s}">${s==='paid'?'Paid':s==='late'?'Not paid':s==='due'?'Coming up':'Scheduled'}</span></td>
+      <td class="cell" data-l="Paid ${Y}" style="position:relative"><input class="in" data-b="${a.id}" data-p="${Y}" type="number" step="0.01"
+        value="${rec?rec.amount:''}" placeholder="${(+a.amount).toFixed(2)}" aria-label="${esc(a.name)} paid">
+        <button class="menu noprint" data-m="${a.id}" aria-label="Actions for ${esc(a.name)}"
+         style="position:absolute;right:-30px;top:7px">&#8943;</button></td></tr>`
+     +(open?`<tr class="drawerrow"><td colspan="7" class="drawer"><div class="dr"><div class="acts">
+        <button data-a="edit">Edit charge</button><button data-a="annfull">Mark paid in full</button>
+        <button data-a="annzero">Mark paid at $0</button><button data-a="annclear">Clear</button>${share}
+        <button data-a="remove" class="danger">Remove</button>
+        <button data-a="close" style="margin-left:auto">Close</button></div>${ef}</div></td></tr>`:'');
+  }).join('');
+  $('tbl').innerHTML=`
+   <thead><tr><th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
+    <th class="r">Set aside /mo</th><th>Status</th><th class="r mo">Paid<small>${Y}</small></th></tr></thead>
+   <tbody>${addRow}${body||'<tr><td colspan="7" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
+   <tfoot><tr><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
+    <td class="r">${money(tb/12)}</td><td></td><td class="r">${money(tp)}</td></tr></tfoot>`;
+  wire(); $('msg').innerHTML='';
+}
+
+/* ================= SUMMARY ================= */
+function renderSummary(){
+  $('tiles').hidden=true;document.querySelector('.panel').hidden=true;$('foothint').hidden=true;$('sumview').hidden=false;
+  const vis=S.tabs.filter(a=>!hidden(a.code));
+  const F=vis.map(a=>({a,f:figures(cur,a.code)}));
+  const T=F.reduce((s,x)=>({n:s.n+x.f.n,budget:s.budget+x.f.budget,cleared:s.cleared+x.f.cleared,
+    owed:s.owed+x.f.owed,late:s.late+x.f.late,arrN:s.arrN+x.f.arrN}),{n:0,budget:0,cleared:0,owed:0,late:0,arrN:0});
+  const Y=String(cur.getFullYear()), ann=annuals(), annTot=ann.reduce((s,a)=>s+ +a.amount,0);
+  const annPaid=ann.reduce((s,a)=>s+(getPay(a,Y)?+getPay(a,Y).amount:0),0);
+  const pct=T.budget?Math.round(T.cleared/T.budget*100):0;
+  const months=Array.from({length:12},(_,i)=>new Date(+Y,i,1));
+  const strip=vis.map(a=>{
+    const vals=months.map(m=>figures(m,a.code).budget),hi=Math.max(...vals,1);
+    return `<div class="lb">${esc(a.name)}</div>`+months.map((m,i)=>{
+      const t=Math.max(.18,vals[i]/hi);
+      return `<div class="cellm ${mk(m)===mk(cur)?'nowm':''}" data-m="${mk(m)}"
+        style="background:${a.color}${Math.round(t*255).toString(16).padStart(2,'0')}"
+        title="${esc(a.name)} — ${MN[m.getMonth()]}: ${money(vals[i])}">${money0(vals[i]).replace('$','')}</div>`;}).join('');
+  }).join('')+'<div class="lb">Annual</div>'+months.map(m=>{
+    const v=ann.filter(a=>a.due_month===m.getMonth()+1).reduce((s,a)=>s+ +a.amount,0);
+    const mx=Math.max(...months.map(x=>ann.filter(a=>a.due_month===x.getMonth()+1).reduce((s,a)=>s+ +a.amount,0)),1);
+    const t=v?Math.max(.3,v/mx):0;
+    return `<div class="cellm ${mk(m)===mk(cur)?'nowm':''}" data-m="${mk(m)}"
+      style="background:${v?'rgba(201,162,39,'+t+')':'var(--rule2)'};color:${v?'#3B2F06':'var(--mute)'}"
+      title="${MN[m.getMonth()]} annual: ${money(v)}">${v?money0(v).replace('$',''):''}</div>`;}).join('');
+  const arrs=Object.values(S.arr).map(a=>{const b=S.bills.find(z=>z.id===a.bill_id);if(!b)return'';
+    const act=arrFor(b,cur);
+    return `<tr><td><span class="bn">${esc(b.name)}</span><div class="cat">${esc(acctOf(b.tab_code).name)}</div></td>
+      <td class="r num">${money(a.amount)}</td><td class="c">${a.months} mo from ${a.start_month}</td>
+      <td>${act?`<span class="tag arr">active · ${act.left} left</span>`:'<span class="tag sched">not this month</span>'}</td>
+      <td class="hint">${esc(a.note)}</td></tr>`;}).join('');
+  const shared=(S.prof.shared_with||[]).length;
+  $('sumview').innerHTML=`
+   <div class="sgrid">
+    <div class="tile"><div class="l">Monthly obligations</div><div class="v">${money0(T.budget)}</div>
+      <div class="c">${T.n} items · ${lbl(cur)}</div></div>
+    <div class="tile"><div class="l">Cleared</div><div class="v" style="color:var(--green)">${money0(T.cleared)}</div>
+      <div class="c">${pct}% of the month</div><div class="prog"><i style="width:${pct}%"></i></div></div>
+    <div class="tile"><div class="l">Still owed</div><div class="v">${money0(T.owed)}</div>
+      <div class="c">${T.late?T.late+' past the due day':'nothing overdue'}</div></div>
+    <div class="tile"><div class="l">Annual, set aside</div><div class="v" style="color:var(--gold)">${money0(annTot/12)}</div>
+      <div class="c">${money0(annTot)} across ${ann.length} charges</div></div></div>
+   <div class="panel" style="margin-bottom:16px"><div class="ptop"><h2>By tab — ${lbl(cur)}</h2>
+     <span class="hint">${esc(S.prof.name)}${shared?' · shared with '+shared+' other'+(shared>1?'s':''):''}</span></div>
+    <table><thead><tr><th>Tab</th><th class="c">Bills</th><th class="r">Budget</th>
+      <th class="r">Cleared</th><th class="r">Still owed</th><th class="c">Not paid</th></tr></thead>
+     <tbody>${F.map(x=>`<tr><td><span class="bn" style="color:${x.a.color}">${esc(x.a.name)}</span>
+       <div class="cat">${esc(x.a.institution)}</div></td><td class="c num">${x.f.n}</td>
+       <td class="r num">${money(x.f.budget)}</td>
+       <td class="r num" style="color:var(--green)">${money(x.f.cleared)}</td>
+       <td class="r num">${money(x.f.owed)}</td>
+       <td class="c">${x.f.late?`<span class="tag late">${x.f.late}</span>`:'<span class="hint">—</span>'}</td></tr>`).join('')}
+      <tr><td><span class="bn" style="color:var(--gold)">Annual charges</span><div class="cat">all tabs · ${Y}</div></td>
+       <td class="c num">${ann.length}</td><td class="r num">${money(annTot)}</td>
+       <td class="r num" style="color:var(--green)">${money(annPaid)}</td>
+       <td class="r num">${money(ann.reduce((s,a)=>s+(getPay(a,Y)?0:+a.amount),0))}</td>
+       <td class="c hint">—</td></tr></tbody>
+     <tfoot><tr><td class="lbl">Everything</td><td class="c">${T.n+ann.length}</td>
+      <td class="r">${money(T.budget+annTot)}</td><td class="r">${money(T.cleared+annPaid)}</td>
+      <td class="r">${money(T.owed+ann.reduce((s,a)=>s+(getPay(a,Y)?0:+a.amount),0))}</td>
+      <td class="c">${T.late||'—'}</td></tr></tfoot></table></div>
+   <div class="panel" style="margin-bottom:16px"><div class="ptop"><h2>${Y} by month</h2>
+     <span class="hint">Click a month to jump to it</span></div>
+    <div style="padding:14px 16px"><div class="strip">
+     <div></div>${months.map(m=>`<div class="hd2">${MN[m.getMonth()]}</div>`).join('')}${strip}</div></div></div>
+   ${arrs?`<div class="panel"><div class="ptop"><h2>Payment arrangements</h2></div>
+     <table><thead><tr><th>Bill</th><th class="r">Per month</th><th class="c">Term</th><th>State</th><th>Note</th></tr></thead>
+     <tbody>${arrs}</tbody></table></div>`:''}`;
+  document.querySelectorAll('.cellm').forEach(c=>c.onclick=()=>{
+    const z=c.dataset.m.split('-').map(Number);cur=new Date(z[0],z[1]-1,1);render();});
+  $('msg').innerHTML='';
+}
+
+/* ================= WIRE ================= */
+function wire(){
+  document.querySelectorAll('.in').forEach(i=>{
+    i.onchange=()=>{const b=S.bills.find(z=>z.id===i.dataset.b),p=i.dataset.p;
+      go(async()=>{await clearSplits(b,p);await setPay(b,p,i.value===''?null:+i.value);});};
+    i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();i.blur();}};});
+  document.querySelectorAll('.menu[data-m]').forEach(m=>m.onclick=()=>{
+    drawer=drawer===m.dataset.m?null:m.dataset.m;editing=null;render();});
+  document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>act(b.dataset.a,drawer,b.dataset.to));
+  document.querySelectorAll('.dr [data-sp]').forEach(i=>i.onchange=()=>go(async()=>{
+    const {error}=await db.from('splits').update({amount:+i.value}).eq('id',i.dataset.sp);if(error)throw error;}));
+  document.querySelectorAll('.dr [data-spp]').forEach(i=>i.onchange=()=>go(async()=>{
+    const {error}=await db.from('splits').update({paid:i.checked}).eq('id',i.dataset.spp);if(error)throw error;}));
+}
+function act(a,id,to){
+  if(a==='cancelnew'){adding=false;return render();}
+  if(a==='canceledit'){editing=null;return render();}
+  if(a==='savenew') return go(async()=>{
+    const n=$('nb-n').value.trim(),amt=+$('nb-a').value;
+    if(!n||!amt) throw new Error('Give it a name and an amount.');
+    const {error}=await db.from('bills').insert({profile_id:S.pid,tab_code:acct,name:n,
+      category:$('nb-c').value.trim()||'Other',amount:amt,
+      due_day:Math.min(31,Math.max(1,+$('nb-d').value||1))});
+    if(error)throw error; adding=false;});
+  if(a==='savenewann') return go(async()=>{
+    const n=$('na-n').value.trim(),amt=+$('na-a').value;
+    if(!n||!amt) throw new Error('Give it a name and an amount.');
+    const {error}=await db.from('bills').insert({profile_id:S.pid,tab_code:$('na-ac').value,name:n,
+      category:'Annual',amount:amt,is_annual:true,due_month:+$('na-m').value,
+      due_day:Math.min(31,Math.max(1,+$('na-d').value||15))});
+    if(error)throw error; adding=false;});
+  const b=S.bills.find(z=>z.id===id); if(!b) return;
+  const p=b.is_annual?String(cur.getFullYear()):per(cur), bg=budgetOf(b,cur);
+  if(a==='close'){drawer=null;editing=null;return render();}
+  if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
+  if(a==='saveedit') return go(async()=>{
+    const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
+    const {error}=await db.from('bills').update({name:n,category:$('ed-c').value.trim()||'Other',
+      due_day:Math.min(31,Math.max(1,+$('ed-d').value||1)),amount:+$('ed-a').value||0,
+      tab_code:$('ed-ac').value}).eq('id',b.id);
+    if(error)throw error; editing=null;});
+  if(a==='saveannedit') return go(async()=>{
+    const n=$('ed-n').value.trim(); if(!n) throw new Error('It needs a name.');
+    const {error}=await db.from('bills').update({name:n,tab_code:$('ed-ac').value,
+      due_month:+$('ed-m').value,due_day:Math.min(31,Math.max(1,+$('ed-d').value||15)),
+      amount:+$('ed-a').value||0}).eq('id',b.id);
+    if(error)throw error; editing=null;});
+  if(a==='share') return go(async()=>{
+    const {error}=await db.rpc('share_bill',{p_bill:b.id,p_to:to}); if(error)throw error;
+    toast('"'+b.name+'" copied into '+S.profiles.find(z=>z.id===to).name);});
+  if(a==='split') return go(async()=>{ await setPay(b,p,null); await clearSplits(b,p);
+    const h=+(bg/2).toFixed(2);
+    const {error}=await db.from('splits').insert([
+      {profile_id:S.pid,bill_id:b.id,period:p,seq:1,amount:h,paid:false},
+      {profile_id:S.pid,bill_id:b.id,period:p,seq:2,amount:+(bg-h).toFixed(2),paid:false}]);
+    if(error)throw error;});
+  if(a==='addpart') return go(async()=>{const sp=getSplits(b,p)||[];
+    const {error}=await db.from('splits').insert({profile_id:S.pid,bill_id:b.id,period:p,
+      seq:(sp.length?Math.max(...sp.map(z=>z.seq)):0)+1,amount:0,paid:false});if(error)throw error;});
+  if(a==='unsplit') return go(()=>clearSplits(b,p));
+  if(a==='zero')  return go(async()=>{await clearSplits(b,p);await setPay(b,p,0);});
+  if(a==='full')  return go(async()=>{await clearSplits(b,p);await setPay(b,p,bg);});
+  if(a==='clear') return go(async()=>{await clearSplits(b,p);await setPay(b,p,null);});
+  if(a==='remove'){ if(!confirm('Remove "'+b.name+'" from every month?'))return;
+    return go(async()=>{const {error}=await db.from('bills').update({archived:true}).eq('id',b.id);
+      if(error)throw error; drawer=null;});}
+  if(a==='savearr') return go(async()=>{
+    const row={profile_id:S.pid,bill_id:b.id,amount:+$('ar-amt').value||0,
+      start_month:$('ar-start').value||per(cur),months:Math.max(1,+$('ar-mo').value||1),
+      note:$('ar-note').value.trim()};
+    const {error}=await db.from('arrangements').upsert(row,{onConflict:'bill_id'});if(error)throw error;});
+  if(a==='delarr') return go(async()=>{
+    const {error}=await db.from('arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
+}
+
+/* ================= CHROME ================= */
+function render(){
+  const vis=TABS().filter(t=>!hidden(t.k));
+  if(!vis.some(t=>t.k===acct)) acct=(vis[0]||{k:'sum'}).k;
+  $('hsub').textContent=MN[cur.getMonth()]+' '+cur.getFullYear();
+  $('pm').value=cur.getMonth(); $('py').value=cur.getFullYear();
+  $('prof').innerHTML=S.profiles.map(p=>
+    `<option value="${p.id}" ${p.id===S.pid?'selected':''}>${esc(p.name)}${p.owner_id!==user.id?' (shared)':''}</option>`).join('');
+  $('tabs').innerHTML=vis.map(t=>{
+    let n='';
+    if(t.k!=='ann'&&t.k!=='sum') n=money0(figures(cur,t.k).owed);
+    else if(t.k==='ann'){const Y=String(cur.getFullYear());
+      n=money0(annuals().filter(a=>!getPay(a,Y)).reduce((s,a)=>s+ +a.amount,0));}
+    return `<button class="tab ${t.k===acct?'on':''}" data-a="${t.k}">
+      ${t.c?`<span class="d" style="background:${t.c}"></span>`:''}${esc(t.n)}
+      ${n?`<span class="n">${n}</span>`:''}</button>`;}).join('');
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+    acct=t.dataset.a;drawer=null;adding=false;editing=null;render();});
+  $('addb').textContent=acct==='ann'?'+ Add annual charge':'+ Add bill';
+  $('addb').hidden=acct==='sum';
+  const box=$('tabcfgbox'); box.hidden=!cfg;
+  if(cfg){ box.innerHTML='<span class="pl">Tabs shown</span>'+TABS().map(t=>
+      `<label><input type="checkbox" data-h="${t.k}" ${hidden(t.k)?'':'checked'}> ${esc(t.n)}</label>`).join('')
+      +'<span class="spacer"></span><button class="mini" id="cfgdone">Done</button>';
+    box.querySelectorAll('[data-h]').forEach(c=>c.onchange=()=>go(async()=>{
+      const k=c.dataset.h; let h=(S.prof.hidden_tabs||[]).slice();
+      h = c.checked ? h.filter(z=>z!==k) : (h.includes(k)?h:h.concat(k));
+      const {error}=await db.from('profiles').update({hidden_tabs:h}).eq('id',S.pid);
+      if(error)throw error; await loadProfiles(); }));
+    $('cfgdone').onclick=()=>{cfg=false;render();};}
+  if(acct==='sum') renderSummary(); else if(acct==='ann') renderAnnual(); else renderAccount();
+}
+$('pm').innerHTML=MN.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+const y0=TODAY.getFullYear()-2;
+$('py').innerHTML=Array.from({length:7},(_,i)=>`<option value="${y0+i}">${y0+i}</option>`).join('');
+$('pm').onchange=$('py').onchange=()=>{cur=new Date(+$('py').value,+$('pm').value,1);render();};
+$('prev').onclick=()=>{cur=shift(cur,-1);render();};
+$('next').onclick=()=>{cur=shift(cur,1);render();};
+$('now').onclick=()=>{cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);render();};
+$('prt').onclick=()=>window.print();
+$('q').oninput=e=>{q=e.target.value.toLowerCase();render();};
+$('sf').onchange=e=>{sf=e.target.value;render();};
+$('addb').onclick=()=>{adding=!adding;drawer=null;render();};
+$('tabcfg').onclick=()=>{cfg=!cfg;render();};
+$('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side business, anything');
+  if(!n||!n.trim())return;
+  const cols=['#5B6B7F','#8C5E3C','#3F7A8C','#7A3C5E','#4F7A3C','#6B4FA8'];
+  go(async()=>{const code='t'+Date.now();
+    const {error}=await db.from('tabs').insert({profile_id:S.pid,code,name:n.trim(),
+      institution:'Project',color:cols[S.tabs.length%cols.length],kind:'project',sort:S.tabs.length});
+    if(error)throw error; acct=code;});};
+$('prof').onchange=e=>{S.pid=e.target.value;drawer=null;
+  go(async()=>{});};
+$('pnew').onclick=()=>{const n=prompt('Name this profile');if(!n||!n.trim())return;
+  go(async()=>{const {data,error}=await db.rpc('create_profile',{p_name:n.trim(),p_seed:true});
+    if(error)throw error; await loadProfiles(); S.pid=data; acct=null;});};
+$('pren').onclick=()=>{const n=prompt('Rename profile',S.prof.name);if(!n||!n.trim())return;
+  go(async()=>{const {error}=await db.from('profiles').update({name:n.trim()}).eq('id',S.pid);
+    if(error)throw error; await loadProfiles();});};
+$('pdup').onclick=()=>{const n=prompt('Name the copy',S.prof.name+' copy');if(!n||!n.trim())return;
+  go(async()=>{const {data,error}=await db.rpc('duplicate_profile',{p_id:S.pid,p_name:n.trim()});
+    if(error)throw error; await loadProfiles(); S.pid=data;});};
+$('pshare').onclick=()=>{
+  const em=prompt('Email address of the family member to invite.\nThey need an account here already.');
+  if(!em||!em.trim())return;
+  go(async()=>{const {error}=await db.rpc('share_profile',{p_id:S.pid,p_email:em.trim()});
+    if(error)throw error; await loadProfiles(); toast(em.trim()+' can now open "'+S.prof.name+'"');});};
+$('pdel').onclick=()=>{
+  if(S.profiles.length<2) return toast('Keep at least one profile.',true);
+  if(S.prof.owner_id!==user.id) return toast('Only the owner can delete that profile.',true);
+  if(!confirm('Delete "'+S.prof.name+'" and everything recorded in it?'))return;
+  go(async()=>{const {error}=await db.from('profiles').delete().eq('id',S.pid);
+    if(error)throw error; await loadProfiles(); S.pid=S.profiles[0].id; acct=null;});};
+
+/* ================= INSTALL ================= */
+if('serviceWorker' in navigator)
+  addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+let deferred=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;showInstall();});
+function showInstall(){
+  if(document.getElementById('inst'))return;
+  const b=document.createElement('button');
+  b.id='inst';b.className='mini';b.textContent='Install app';
+  b.onclick=async()=>{ if(!deferred)return; deferred.prompt();
+    const {outcome}=await deferred.userChoice; deferred=null; b.remove();
+    if(outcome==='accepted') toast('Installed. Look for Budget on your home screen.'); };
+  const bar=document.querySelector('.hrow .row-flex'); if(bar) bar.appendChild(b);
+}
+addEventListener('appinstalled',()=>{const b=document.getElementById('inst');if(b)b.remove();});
+</script></body></html>
