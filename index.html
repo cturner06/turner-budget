@@ -17,6 +17,9 @@
  --gold:#C9A227;--goldw:#FBF3DA;--red:#B3261E;--redw:#FBEBEA;--green:#1E7A5A;--greenw:#E6F3ED;
  --p:#2E5E8C;--f:#7A5AA8;--b:#0F7A6C;--v:#A8663A;}
 *{box-sizing:border-box}html,body{margin:0;padding:0}
+/* An id selector outranks the browser's built-in [hidden] rule, so #gate and
+   #boot stayed painted over the app even after the code hid them. */
+[hidden]{display:none!important}
 body{background:var(--paper);color:var(--ink);font:400 15px/1.55 'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 button{font:inherit;cursor:pointer;background:none;border:1px solid var(--rule);color:var(--ink);border-radius:4px;padding:6px 12px}
@@ -280,7 +283,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v8 \u00b7 plain return';
+const BUILD='v9 \u00b7 gate fix';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -433,6 +436,8 @@ async function start(){
       const {data,error}=await db.rpc('create_profile',{p_name:'Household',p_seed:true});
       if(error) throw error; await loadProfiles(); S.pid=data;
     }
+    if(!S.profiles.length) throw new Error('Signed in, but no profile came back. '
+      +'That is a permissions problem on the server, not your account.');
     S.pid=S.pid||localStorage.getItem('tb-pid')||S.profiles[0].id;
     if(!S.profiles.some(p=>p.id===S.pid)) S.pid=S.profiles[0].id;
     await loadProfile();
