@@ -537,7 +537,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v28 \u00b7 row heights';
+const BUILD='v30 \u00b7 paste plans';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1000,7 +1000,7 @@ function drawerHTML(x,m){
        still counted against that tab. Anything already recorded month by month stays on the old rows.</p></div>`:'';
   const ef=editing===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
      <div><label>Name</label><input id="ed-n" value="${esc(b.name)}" style="width:200px"></div>
-     <div><label>Category</label><input id="ed-c" value="${esc(b.category)}" style="width:130px"></div>
+     <div><label>Category</label>${catSelect('ed-c',b.category)}</div>
      <div><label>Due day</label><input id="ed-d" type="number" min="1" max="31" value="${b.due_day||''}"
        placeholder="Varies" title="Leave empty if it moves around" style="width:78px"></div>
      <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${b.amount}" style="width:110px"></div>
@@ -1036,7 +1036,9 @@ function drawerHTML(x,m){
       <div><label>Per month</label><input id="pl-a" type="number" step="0.01" placeholder="0.00" style="width:100px"></div>
       <div><label>Day</label><input id="pl-d" type="number" min="1" max="31" placeholder="--" style="width:66px"></div>
       <div><label>Payments left</label><input id="pl-l" type="number" min="0" placeholder="--" style="width:96px"></div>
-      <button data-a="planadd">Add plan</button></div>
+      <button data-a="planadd">Add plan</button>
+      <button data-a="pasteopen">${pasteFor===b.id?'Hide the paste box':'Paste a schedule'}</button></div>
+     ${pasteFor===b.id?pastePanel(b):''}
      ${pl&&pl.length?`<p class="hint" style="margin:9px 0 0">Budget for this row is the ${pl.length} plans added up \u2014 ${money(pl.reduce((s2,z)=>s2+ +z.amount,0))}. Each keeps its own date; the row shows Varies.</p>`:''}
     </div>`:'';
   const cred=S.creds.find(c=>c.bill_id===b.id);
@@ -1142,7 +1144,7 @@ function renderAccount(){
   };
   const addRow=adding?`<tr><td colspan="8" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
     <div class="form"><div><label>Name</label><input id="nb-n" placeholder="Bill name" style="width:200px"></div>
-     <div><label>Category</label><input id="nb-c" placeholder="Card, Utilities…" style="width:130px"></div>
+     <div><label>Category</label>${catSelect('nb-c','Other')}</div>
      <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31"
        placeholder="Varies" title="Leave empty if it moves around" style="width:78px"></div>
      <div><label>Amount</label><input id="nb-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
@@ -1384,6 +1386,7 @@ function renderSummary(){
 
 /* ================= WIRE ================= */
 function wire(){
+  wireCat('ed-c'); wireCat('nb-c');
   document.querySelectorAll('tr.grp').forEach(r=>r.onclick=()=>{
     const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
   document.querySelectorAll('.in').forEach(i=>{
@@ -1398,6 +1401,12 @@ function wire(){
     drawer=drawer===m.dataset.m?null:m.dataset.m;editing=null;render();});
   document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>
     act(b.dataset.a,drawer,b.dataset.to||b.dataset.id));
+  document.querySelectorAll('[data-ps]').forEach(i=>i.onchange=()=>{
+    const r=pasted[+i.dataset.ps]; if(!r) return;
+    const f=i.dataset.f;
+    r[f] = f==='name' ? i.value : (i.value===''?null:+String(i.value).replace(/[^0-9.]/g,''));
+    render();});
+  const img=$('ps-img'); if(img) img.onchange=e=>readShot(e.target.files[0]);
   document.querySelectorAll('.dr [data-sp]').forEach(i=>i.onchange=()=>go(async()=>{
     const {error}=await db.from('splits').update({amount:+i.value}).eq('id',i.dataset.sp);if(error)throw error;}));
   document.querySelectorAll('.dr [data-spp]').forEach(i=>i.onchange=()=>go(async()=>{
@@ -1410,7 +1419,7 @@ function act(a,id,to){
     const n=$('nb-n').value.trim(),amt=+$('nb-a').value;
     if(!n||!amt) throw new Error('Give it a name and an amount.');
     const {error}=await db.from('bills').insert({profile_id:S.pid,tab_code:acct,name:n,
-      category:$('nb-c').value.trim()||'Other',amount:amt,
+      category:catValue('nb-c'),amount:amt,
       due_day:$('nb-d').value===''?null:Math.min(31,Math.max(1,+$('nb-d').value))});
     if(error)throw error; adding=false;});
   if(a==='savenewann') return go(async()=>{
@@ -1426,7 +1435,7 @@ function act(a,id,to){
   if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
-    const {error}=await db.from('bills').update({name:n,category:$('ed-c').value.trim()||'Other',
+    const {error}=await db.from('bills').update({name:n,category:catValue('ed-c'),
       due_day:$('ed-d').value===''?null:Math.min(31,Math.max(1,+$('ed-d').value)),
       amount:+$('ed-a').value||0,
       tab_code:$('ed-ac').value}).eq('id',b.id);
@@ -1517,6 +1526,20 @@ function act(a,id,to){
     const {error}= c ? await db.from('credentials').update(row).eq('id',c.id)
                      : await db.from('credentials').insert(row);
     if(error) throw error; credOpen=null; toast('Saved.');});
+  if(a==='pasteopen'){ pasteFor=pasteFor===b.id?null:b.id; pasted=[]; return render(); }
+  if(a==='psclear'){ pasted=[]; return render(); }
+  if(a==='psread'){
+    const t=$('ps-t').value;
+    pasted=parseSchedule(t);
+    if(!pasted.length) toast('Nothing in that looked like a payment line.',true);
+    return render(); }
+  if(a==='pssave') return go(async()=>{
+    if(!pasted.length) throw new Error('Nothing to add.');
+    const rows=pasted.map(r=>({profile_id:S.pid,bill_id:b.id,
+      name:(r.name+(r.desc?' \u2014 '+r.desc:'')).slice(0,80),
+      amount:+r.amount||0, due_day:r.day?Math.min(31,Math.max(1,+r.day)):null}));
+    const {error}=await db.from('plans').insert(rows); if(error) throw error;
+    pasted=[]; pasteFor=null; toast(rows.length+' plans added.');});
   if(a==='planadd') return go(async()=>{
     const n=$('pl-n').value.trim(), amt=+$('pl-a').value;
     if(!n||!amt) throw new Error('A plan needs a name and a monthly amount.');
@@ -1587,7 +1610,86 @@ async function disablePush(){
     await sub.unsubscribe(); }
 }
 
-let credOpen=null, credShow={}, moving=null;
+let credOpen=null, credShow={}, moving=null, pasteFor=null, pasted=[];
+
+/* ---- read a BNPL schedule out of pasted text or a screenshot ---- */
+const MONTHS3={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function parseSchedule(text){
+  const lines=text.split(/\r?\n/).map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const MONEY=/\$\s?([\d,]+\.\d{2})/;
+  const WHEN=/\b([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})\b/;
+  const out=[];
+  lines.forEach((l,i)=>{
+    const m=l.match(MONEY); if(!m) return;
+    if(!/overdue|due|past due|payment|installment/i.test(l)) return;
+    const amount=+m[1].replace(/,/g,'');
+    const w=l.match(WHEN);
+    const day=w?+w[2]:null;
+    const mon=w?MONTHS3[w[1].toLowerCase()]||null:null;
+    // the merchant is the nearest line above that is not money and not a status
+    let name='', desc='';
+    for(let j=i-1;j>=Math.max(0,i-3);j--){
+      const prev=lines[j];
+      if(MONEY.test(prev)) break;
+      if(!desc) desc=prev; else { name=prev; break; }
+    }
+    if(!name && desc){ name=desc; desc=''; }
+    out.push({name:name||'Plan', desc, amount, day, month:mon,
+      overdue:/overdue|past due/i.test(l)});
+  });
+  return out;
+}
+function pastePanel(b){
+  const rows=pasted;
+  return `<div class="parts"><h4>Load a schedule</h4>
+    <p class="hint" style="margin:0 0 9px">Copy the payment list from ${esc(b.name.replace(/ \(.*/,''))}
+      and paste it, or drop a screenshot.</p>
+    <textarea id="ps-t" rows="4" placeholder="Paste the list here"
+      style="width:100%;font-size:13px"></textarea>
+    <div class="row-flex" style="margin-top:8px">
+      <button data-a="psread">Read what I pasted</button>
+      <label class="mini" style="cursor:pointer;border:1px solid var(--edge-soft);border-radius:7px;padding:6px 11px">
+        Use a screenshot<input type="file" id="ps-img" accept="image/*" hidden></label>
+      <span class="hint" id="ps-stat"></span></div>
+    ${rows.length?`<table style="margin-top:12px;font-size:12.5px"><thead><tr>
+        <th>What</th><th class="r">Amount</th><th class="c">Day</th><th></th></tr></thead><tbody>
+      ${rows.map((r,i)=>`<tr>
+        <td><input value="${esc(r.name)}" data-ps="${i}" data-f="name" style="width:100%;font-size:12.5px"></td>
+        <td class="r"><input value="${r.amount}" data-ps="${i}" data-f="amount" style="width:88px;text-align:right;font-size:12.5px"></td>
+        <td class="c"><input value="${r.day||''}" data-ps="${i}" data-f="day" style="width:54px;text-align:center;font-size:12.5px"></td>
+        <td>${r.overdue?'<span class="tag late">overdue</span>':''}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="row-flex" style="margin-top:10px">
+        <button data-a="pssave">Add ${rows.length} ${rows.length===1?'plan':'plans'}</button>
+        <button data-a="psclear">Start over</button>
+        <span class="hint">Totalling ${money(rows.reduce((s2,r)=>s2+ +r.amount,0))}</span></div>`:''}
+    </div>`;
+}
+
+// the categories already in use, plus the ones worth having from the start
+const BASE_CATS=['Housing','Utilities','Telecom','Insurance','Auto','Fuel','Vehicle',
+  'Card','Loan','LOC','BNPL','Subscription','Payroll','Dues','Family','Giving',
+  'Transfer','Groceries','Medical','Childcare','Annual','Other'];
+function catList(){
+  const used=S.bills.filter(b=>!b.archived).map(b=>b.category).filter(Boolean);
+  return [...new Set([...used,...BASE_CATS])].sort((a,b)=>a.localeCompare(b));
+}
+function catSelect(id,current){
+  const list=catList();
+  const known=list.includes(current);
+  return `<select id="${id}">
+    ${list.map(c=>`<option value="${esc(c)}" ${c===current?'selected':''}>${esc(c)}</option>`).join('')}
+    ${!known&&current?`<option value="${esc(current)}" selected>${esc(current)}</option>`:''}
+    <option value="__new">Add a new one\u2026</option></select>
+   <input id="${id}-new" placeholder="New category" hidden style="width:130px;margin-top:6px">`;
+}
+function wireCat(id){
+  const sel=$(id), box=$(id+'-new'); if(!sel||!box) return;
+  sel.onchange=()=>{ const isNew=sel.value==='__new';
+    box.hidden=!isNew; if(isNew) box.focus(); };
+}
+const catValue=id=>{ const sel=$(id);
+  return sel.value==='__new' ? ($(id+'-new').value.trim()||'Other') : sel.value; };
 async function renderVault(){
   const box=$('vaultbox');
   const {data:mykey}=await db.from('user_keys').select('user_id').eq('user_id',user.id).maybeSingle();
@@ -1750,6 +1852,27 @@ async function runImport(){
   }
   const w=$('impwrap'); if(w) w.remove(); IMP=null;
   toast(`${updated} updated, ${made} added. You can delete the spreadsheet.`);
+}
+
+async function readShot(file){
+  if(!file) return;
+  const stat=$('ps-stat');
+  const say=t=>{ if($('ps-stat')) $('ps-stat').textContent=t; };
+  try{
+    say('Loading the reader\u2026');
+    if(!window.Tesseract){
+      await new Promise((ok,bad)=>{const sc=document.createElement('script');
+        sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+        sc.onload=ok; sc.onerror=()=>bad(new Error('Could not load the reader.'));
+        document.head.appendChild(sc);});
+    }
+    say('Reading the picture\u2026');
+    const {data}=await Tesseract.recognize(file,'eng',{logger:m=>{
+      if(m.status==='recognizing text') say('Reading\u2026 '+Math.round(m.progress*100)+'%');}});
+    pasted=parseSchedule(data.text);
+    say(pasted.length?'Check these before you add them.':'Nothing readable found \u2014 try pasting the text.');
+    render();
+  }catch(e){ say(e.message||'That did not work.'); }
 }
 
 function renderNotify(){
