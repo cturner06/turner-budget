@@ -135,9 +135,19 @@ select option{background:var(--coal);color:var(--ink)}
 #dclose{border:0;background:none;color:var(--mute);font-size:24px;line-height:1;padding:2px 9px}
 #dclose:hover{color:var(--gold);background:none}
 .dbody{overflow-y:auto;padding:6px 20px calc(26px + env(safe-area-inset-bottom,0px))}
-.dsec{padding:16px 0;border-bottom:1px solid var(--rule2)}
-.dsec:last-child{border:0}
-.dlab{font-size:12.5px;color:var(--mute);margin-bottom:10px}
+.dsec{padding:14px 0}
+.dsec.pinned{padding:14px 0 10px;border-bottom:1px solid var(--rule)}
+.dhead{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:13px 2px;border:0;border-bottom:1px solid var(--rule2);border-radius:0;
+  background:none;font-size:14px;color:var(--ink2)}
+.dhead:hover{background:none;color:var(--gold)}
+.dhead:after{content:'\203A';margin-left:auto;color:var(--gold-deep);font-size:17px;
+  transition:transform .16s;transform:rotate(90deg)}
+.dhead.shut:after{transform:rotate(0deg)}
+.dhead .dval{margin-left:auto;font-size:12.5px;color:var(--mute);font-weight:400}
+.dhead:after{margin-left:11px}
+.dpanel{padding:4px 2px 18px;border-bottom:1px solid var(--rule2)}
+.dpanel[hidden]{display:none!important}
 .dtab{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
   padding:11px 13px;margin-bottom:5px;border-radius:9px;font-size:14.5px;
   background:var(--glass);border:1px solid transparent;color:var(--ink2)}
@@ -422,33 +432,40 @@ window.addEventListener('unhandledrejection',function(e){
  <div class="dtop"><span class="dtitle">Menu</span><span class="spacer"></span>
    <button id="dclose" aria-label="Close menu">&times;</button></div>
  <div class="dbody">
-  <div class="dsec"><div class="dlab">Tabs</div><div id="dtabs"></div></div>
-  <div class="dsec"><div class="dlab">Month</div>
+  <div class="dsec pinned"><div id="dtabs"></div></div>
+
+  <button class="dhead" data-sec="month">Month<span class="dval" id="vmonth"></span></button>
+  <div class="dpanel" data-p="month">
    <div class="row-flex">
     <button id="prev" aria-label="Previous month">&larr;</button>
     <select id="pm" aria-label="Month"></select>
     <select id="py" aria-label="Year"></select>
     <button id="next" aria-label="Next month">&rarr;</button>
     <button id="now" class="mini">Today</button></div></div>
-  <div class="dsec"><div class="dlab">Profile</div>
+
+  <button class="dhead" data-sec="profile">Profile<span class="dval" id="vprof"></span></button>
+  <div class="dpanel" data-p="profile">
    <select id="prof" aria-label="Profile" style="width:100%;margin-bottom:9px"></select>
    <div class="row-flex">
     <button id="pnew" class="mini">New</button><button id="pren" class="mini">Rename</button>
     <button id="pdup" class="mini">Duplicate</button><button id="pshare" class="mini">Invite</button>
     <button id="pdel" class="mini">Delete</button></div></div>
-  <div class="dsec"><div class="dlab">Phone notifications</div>
-   <div id="notify"></div></div>
-  <div class="dsec"><div class="dlab">Payday email</div>
-   <div id="digest"></div></div>
-  <div class="dsec"><div class="dlab">Set up</div>
+
+  <button class="dhead" data-sec="notify">Phone notifications<span class="dval" id="vnotify"></span></button>
+  <div class="dpanel" data-p="notify"><div id="notify"></div></div>
+
+  <button class="dhead" data-sec="email">Payday email<span class="dval" id="vemail"></span></button>
+  <div class="dpanel" data-p="email"><div id="digest"></div></div>
+
+  <button class="dhead" data-sec="setup">Set up</button>
+  <div class="dpanel" data-p="setup">
    <div class="row-flex">
     <button id="tabnew" class="mini">New tab</button>
-    <button id="tabcfg" class="mini">Show / hide tabs</button></div>
-   <div id="tabcfgbox" class="cfgbox" hidden></div></div>
-  <div class="dsec"><div class="row-flex">
+    <button id="tabcfg" class="mini">Show / hide tabs</button>
     <button id="prt" class="mini">Print</button>
     <button id="out" class="mini">Sign out</button></div>
-   <div class="who" id="who" style="margin-top:9px"></div></div>
+   <div id="tabcfgbox" class="cfgbox" hidden></div>
+   <div class="who" id="who" style="margin-top:11px"></div></div>
  </div>
 </aside>
 <main class="wrap">
@@ -472,7 +489,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v16 \u00b7 notifications';
+const BUILD='v17 \u00b7 tidy menu';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1310,12 +1327,36 @@ function render(){
     $('cfgdone').onclick=()=>{cfg=false;render();};}
   renderNotify();
   renderDigest();
+  sectionSummaries();
+  paintSections();
   if(acct==='sum') renderSummary(); else if(acct==='ann') renderAnnual(); else renderAccount();
 }
+let openSec=null;
+function paintSections(){
+  document.querySelectorAll('.dhead').forEach(hd=>{
+    const k=hd.dataset.sec, on=openSec===k;
+    hd.classList.toggle('shut',!on);
+    const panel=document.querySelector(`.dpanel[data-p="${k}"]`);
+    if(panel) panel.hidden=!on;
+  });
+}
+function sectionSummaries(){
+  $('vmonth').textContent=MN[cur.getMonth()]+' '+cur.getFullYear();
+  $('vprof').textContent=S.prof?S.prof.name:'';
+  $('vnotify').textContent = S.device==='unsupported' ? 'not available'
+    : (S.device && S.notify) ? 'on' : 'off';
+  $('vemail').textContent = S.digest
+    ? (S.digest.enabled?S.digest.recipient.split('@')[0]:'off') : 'off';
+}
+document.querySelectorAll('.dhead').forEach(hd=>hd.onclick=()=>{
+  openSec = openSec===hd.dataset.sec ? null : hd.dataset.sec;
+  paintSections();});
+paintSections();
+
 function openMenu(){ $('drawer').hidden=false; $('scrim').hidden=false;
   $('burger').setAttribute('aria-expanded','true'); $('dclose').focus(); }
 function closeMenu(){ $('drawer').hidden=true; $('scrim').hidden=true;
-  $('burger').setAttribute('aria-expanded','false'); }
+  $('burger').setAttribute('aria-expanded','false'); openSec=null; paintSections(); }
 $('burger').onclick=()=>$('drawer').hidden?openMenu():closeMenu();
 $('dclose').onclick=closeMenu;
 $('scrim').onclick=closeMenu;
