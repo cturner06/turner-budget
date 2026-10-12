@@ -2,8 +2,8 @@
 // Shell is cached so the app opens instantly even on a dead signal.
 // Anything with a query string (OAuth returns ?code=...) and anything
 // off-origin (Supabase, fonts, CDN) always goes straight to the network.
-const V = 'tb-v4';
-const SHELL = ['/', '/index.html',
+const V = 'tb-v5';
+const SHELL = ['/index.html',
                '/images/manifest.webmanifest',
                '/images/icon-192.png', '/images/icon-512.png',
                '/images/apple-touch-icon.png'];
@@ -21,7 +21,7 @@ self.addEventListener('fetch', e => {
   if (r.method !== 'GET') return;
   const url = new URL(r.url);
   if (url.origin !== location.origin) return;   // Supabase, fonts, CDN
-  if (url.search) return;                        // never touch an OAuth return
+  if (url.search) return;                       // OAuth return / cache-buster: network only
   e.respondWith(
     fetch(r)
       .then(res => { const copy = res.clone();

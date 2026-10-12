@@ -263,7 +263,7 @@ td.drawer{padding:0;background:#F7F9FC}
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v4 \u00b7 implicit';
+const BUILD='v5 \u00b7 implicit';
 const db=window.supabase.createClient(SB_URL,SB_KEY,{auth:{
   flowType:'implicit',   // static site, no server: tokens come back in the hash
   persistSession:true, autoRefreshToken:true,
@@ -305,8 +305,10 @@ function gmsg(h,cls){$('gmsg').innerHTML=h?`<div class="${cls||'err'}">${esc(h)}
 const HOME=location.origin+location.pathname;   // no query, no hash
 $('google').onclick=async()=>{
   gmsg('');
+  // unique return address: a hash alone can't bust the GitHub Pages CDN cache,
+  // so an old index.html gets served on the way back and the tokens are lost
   const {error}=await db.auth.signInWithOAuth({provider:'google',
-    options:{redirectTo:HOME}});
+    options:{redirectTo:HOME+'?r='+Date.now()}});
   if(error) gmsg(error.message);
 };
 $('signin').onclick=async()=>{
@@ -362,11 +364,16 @@ function tidyUrl(){ try{history.replaceState({},'',HOME);}catch(e){} }
 
   showGate();
   // came back from Google with nothing usable — say exactly what landed
-  if(document.referrer.indexOf('supabase')>-1 || u.searchParams.has('fresh')===false
-     && (u.search||u.hash)){
-    gmsg('Came back without a session. Details below — send me this.');
+  if(u.searchParams.has('r')){
+    gmsg('Google sent you back but no session came with it. Details below — send me this.');
+    diag('url      '+location.href+'\n'
+       + 'search   '+(u.search||'(none)')+'\n'
+       + 'hash     '+(u.hash||'(none)')+'\n'
+       + 'referrer '+(document.referrer||'(none)')+'\n'
+       + 'build    '+BUILD);
+    return;
   }
-  if(u.search||u.hash){
+  if(u.hash||(u.search&&!u.searchParams.has('r')&&!u.searchParams.has('fresh')&&!u.searchParams.has('v'))){
     diag('url     '+location.href+'\n'
        + 'search  '+(u.search||'(none)')+'\n'
        + 'hash    '+(u.hash||'(none)')+'\n'
