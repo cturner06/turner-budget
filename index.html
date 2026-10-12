@@ -530,7 +530,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v26 \u00b7 dollars';
+const BUILD='v27 \u00b7 move to annual';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -983,6 +983,14 @@ function drawerHTML(x,m){
   const b=x.b,p=per(m),sp=getSplits(b,p),a=S.arr[b.id],act=arrFor(b,m);
   const others=S.profiles.filter(z=>z.id!==S.pid);
   const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
+  const mv=moving===b.id?`<div class="parts"><h4>Move to the Annual tab</h4>
+     <div class="form">
+      <div><label>Which month</label><select id="mv-m">${MN.map((z,i)=>
+        `<option value="${i+1}" ${i+1===m.getMonth()+1?'selected':''}>${z}</option>`).join('')}</select></div>
+      <div><label>Day</label><input id="mv-d" type="number" min="1" max="31" value="${b.due_day||15}" style="width:76px"></div>
+      <button data-a="movesave">Move it</button><button data-a="movecancel">Cancel</button></div>
+     <p class="hint" style="margin:8px 0 0">It leaves ${esc(acctOf(b.tab_code).name)} and lands on Annual,
+       still counted against that tab. Anything already recorded month by month stays on the old rows.</p></div>`:'';
   const ef=editing===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
      <div><label>Name</label><input id="ed-n" value="${esc(b.name)}" style="width:200px"></div>
      <div><label>Category</label><input id="ed-c" value="${esc(b.category)}" style="width:130px"></div>
@@ -1066,9 +1074,10 @@ function drawerHTML(x,m){
   return `<div class="dr"><div class="acts">
      <button data-a="edit">Edit bill</button><button data-a="split">Split into parts</button>
      <button data-a="zero">Mark paid at $0</button><button data-a="full">Mark paid in full</button>
-     <button data-a="clear">Clear this month</button>${share}
+     <button data-a="clear">Clear this month</button>
+     <button data-a="move">Move to Annual</button>${share}
      <button data-a="remove" class="danger">Remove bill</button>
-     <button data-a="close" style="margin-left:auto">Close</button></div>${ef}${credBox}${planBox}${parts}${arrBox}</div>`;
+     <button data-a="close" style="margin-left:auto">Close</button></div>${mv}${ef}${credBox}${planBox}${parts}${arrBox}</div>`;
 }
 function renderAccount(){
   $('sumview').hidden=true;$('tiles').hidden=false;document.querySelector('.panel').hidden=false;$('foothint').hidden=false;
@@ -1406,7 +1415,7 @@ function act(a,id,to){
     if(error)throw error; adding=false;});
   const b=S.bills.find(z=>z.id===id); if(!b) return;
   const p=b.is_annual?String(cur.getFullYear()):per(cur), bg=budgetOf(b,cur);
-  if(a==='close'){drawer=null;editing=null;return render();}
+  if(a==='close'){drawer=null;editing=null;moving=null;return render();}
   if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
@@ -1440,6 +1449,18 @@ function act(a,id,to){
   if(a==='remove'){ if(!confirm('Remove "'+b.name+'" from every month?'))return;
     return go(async()=>{const {error}=await db.from('bills').update({archived:true}).eq('id',b.id);
       if(error)throw error; drawer=null;});}
+  if(a==='move'){ moving=moving===b.id?null:b.id; editing=null; return render(); }
+  if(a==='movecancel'){ moving=null; return render(); }
+  if(a==='movesave') return go(async()=>{
+    const {error}=await db.from('bills').update({is_annual:true,
+      due_month:+$('mv-m').value,
+      due_day:Math.min(31,Math.max(1,+$('mv-d').value||15))}).eq('id',b.id);
+    if(error) throw error; moving=null; drawer=null;
+    toast(b.name+' is on the Annual tab now.');});
+  if(a==='tomonthly') return go(async()=>{
+    const {error}=await db.from('bills').update({is_annual:false,due_month:null}).eq('id',b.id);
+    if(error) throw error; drawer=null;
+    toast(b.name+' is back on '+acctOf(b.tab_code).name+'.');});
   if(a==='credit'){ credOpen=b.id; return render(); }
   if(a==='credcancel'){ credOpen=null; return render(); }
   if(a==='paythis'){
@@ -1559,7 +1580,7 @@ async function disablePush(){
     await sub.unsubscribe(); }
 }
 
-let credOpen=null, credShow={};
+let credOpen=null, credShow={}, moving=null;
 async function renderVault(){
   const box=$('vaultbox');
   const {data:mykey}=await db.from('user_keys').select('user_id').eq('user_id',user.id).maybeSingle();
@@ -1818,7 +1839,7 @@ function render(){
       ${t.c?`<span class="d" style="background:${t.c}"></span>`:''}${esc(t.n)}
       ${n?`<span class="n">${n}</span>`:''}</button>`;}).join('');
   document.querySelectorAll('.dtab').forEach(t=>t.onclick=()=>{
-    acct=t.dataset.a;drawer=null;adding=false;editing=null;shareOpen=false;closeMenu();render();});
+    acct=t.dataset.a;drawer=null;adding=false;editing=null;moving=null;shareOpen=false;closeMenu();render();});
   const ct=vis.find(t=>t.k===acct);
   $('curtab').innerHTML = ct
     ? (ct.c?`<span class="d" style="background:${ct.c}"></span>`:'')+esc(ct.n)
