@@ -202,6 +202,24 @@ td.drawer{padding:0;background:#F7F9FC}
 }
 </style></head><body>
 <div id="boot">Loading…</div>
+<script>
+window.__ERRS=[];
+function __paint(){
+  var b=document.getElementById('boot'), g=document.getElementById('gate'),
+      m=document.getElementById('gmsg');
+  if(!window.__ERRS.length) return;
+  var t=window.__ERRS.join('\n\n');
+  if(g&&m){ b.hidden=true; g.hidden=false;
+    m.innerHTML='<div class="err" style="white-space:pre-wrap;word-break:break-word">'
+      +t.replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]})+'</div>'; }
+  else if(b){ b.style.whiteSpace='pre-wrap'; b.style.padding='24px'; b.textContent=t; }
+}
+window.addEventListener('error',function(e){
+  window.__ERRS.push('Script error: '+(e.message||e)+'\n'+(e.filename||'')+':'+(e.lineno||''));
+  __paint();});
+window.addEventListener('unhandledrejection',function(e){
+  window.__ERRS.push('Unhandled: '+((e.reason&&e.reason.message)||e.reason));__paint();});
+</script>
 <div id="gate" hidden><div class="box">
   <h2>Turner Budget</h2><div class="s">Sign in to pick up where you left off.</div>
   <div id="gmsg"></div>
@@ -263,7 +281,18 @@ td.drawer{padding:0;background:#F7F9FC}
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v5 \u00b7 implicit';
+const BUILD='v6 \u00b7 no-cache';
+(async()=>{ try{
+  if('serviceWorker' in navigator){
+    const rs=await navigator.serviceWorker.getRegistrations();
+    await Promise.all(rs.map(r=>r.unregister()));
+  }
+  if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+}catch(e){} })();
+if(!window.supabase||!window.supabase.createClient){
+  window.__ERRS.push('The Supabase library did not load. Check the network — the app needs '
+    +'cdn.jsdelivr.net to be reachable.'); __paint();
+}
 const db=window.supabase.createClient(SB_URL,SB_KEY,{auth:{
   flowType:'implicit',   // static site, no server: tokens come back in the hash
   persistSession:true, autoRefreshToken:true,
@@ -314,8 +343,15 @@ $('google').onclick=async()=>{
 $('signin').onclick=async()=>{
   gmsg('');const email=$('em').value.trim(),password=$('pw').value;
   if(!email||!password)return gmsg('Email and password, both.');
-  const {error}=await db.auth.signInWithPassword({email,password});
-  if(error) gmsg(error.message);
+  const btn=$('signin'); const was=btn.textContent;
+  btn.disabled=true; btn.textContent='Signing in…';
+  try{
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error){ gmsg(error.message); return; }
+    if(!data||!data.session){ gmsg('No session came back. Try again.'); return; }
+    if(!user){ user=data.session.user; start(); }
+  }catch(e){ gmsg('Request failed: '+(e.message||e));
+  }finally{ btn.disabled=false; btn.textContent=was; }
 };
 $('signup').onclick=async()=>{
   gmsg('');const email=$('em').value.trim(),password=$('pw').value;
