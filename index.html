@@ -530,7 +530,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v25 \u00b7 import logins';
+const BUILD='v26 \u00b7 dollars';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -559,6 +559,7 @@ const TODAY=new Date();TODAY.setHours(0,0,0,0);
 const mk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 const lbl=d=>MN[d.getMonth()]+' '+String(d.getFullYear()).slice(2);
 const money=n=>(n<0?'-':'')+'$'+Math.abs(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const unmoney=v=>{const t=String(v).replace(/[^0-9.\-]/g,'');return t===''||t==='-'?null:+t;};
 const money0=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(+n)).toLocaleString('en-US');
 const lastDay=m=>new Date(m.getFullYear(),m.getMonth()+1,0).getDate();
 const shift=(m,n)=>new Date(m.getFullYear(),m.getMonth()+n,1);
@@ -1114,10 +1115,10 @@ function renderAccount(){
       <td class="r num" data-l="Budget · day ${x.b.due_day||'last'}">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
       <td class="r lock" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
       <td class="cell" data-l="${lbl(cur)}">${sp?`<div style="padding:0 12px;text-align:right;line-height:41px" class="num">${money(C||0)}</div>`
-        :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="number" step="0.01" inputmode="decimal"
-        value="${C!==null?C:''}" placeholder="${bg.toFixed(2)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
+        :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="text" inputmode="decimal"
+        value="${C!==null?money(C):''}" placeholder="${money(bg)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
       <td class="cell next" data-l="${lbl(nxt)} \u00b7 early"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
-        type="number" step="0.01" inputmode="decimal" value="${N!==null?N:''}" placeholder="\u2014"
+        type="text" inputmode="decimal" value="${N!==null?money(N):''}" placeholder="\u2014"
         aria-label="${esc(x.b.name)} next month"></td>
       <td class="act noprint"><button class="menu" data-m="${x.b.id}"
         aria-label="Actions for ${esc(x.b.name)}" title="Edit, split, arrangement">&#8943;</button></td></tr>`
@@ -1370,8 +1371,12 @@ function wire(){
   document.querySelectorAll('tr.grp').forEach(r=>r.onclick=()=>{
     const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
   document.querySelectorAll('.in').forEach(i=>{
+    // dollars while you read it, a bare number while you type
+    i.onfocus=()=>{const n=unmoney(i.value); i.value=n===null?'':String(n); i.select();};
+    i.onblur=()=>{const n=unmoney(i.value); i.value=n===null?'':money(n);};
     i.onchange=()=>{const b=S.bills.find(z=>z.id===i.dataset.b),p=i.dataset.p;
-      go(async()=>{await clearSplits(b,p);await setPay(b,p,i.value===''?null:+i.value);});};
+      const n=unmoney(i.value);
+      go(async()=>{await clearSplits(b,p);await setPay(b,p,n);});};
     i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();i.blur();}};});
   document.querySelectorAll('.menu[data-m]').forEach(m=>m.onclick=()=>{
     drawer=drawer===m.dataset.m?null:m.dataset.m;editing=null;render();});
