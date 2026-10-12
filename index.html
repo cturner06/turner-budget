@@ -124,11 +124,11 @@ select option{background:var(--coal);color:var(--ink)}
 .curtab .d{width:7px;height:7px;border-radius:50%}
 #scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:58;
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-#drawer{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:88vw;z-index:60;
-  background:linear-gradient(200deg,rgba(24,24,26,.97),rgba(10,10,11,.99));
-  border-left:1px solid var(--edge);
+#drawer{position:fixed;top:0;left:0;bottom:0;width:340px;max-width:88vw;z-index:60;
+  background:linear-gradient(160deg,rgba(24,24,26,.97),rgba(10,10,11,.99));
+  border-right:1px solid var(--edge);
   backdrop-filter:blur(22px) saturate(135%);-webkit-backdrop-filter:blur(22px) saturate(135%);
-  box-shadow:-24px 0 60px rgba(0,0,0,.6);display:flex;flex-direction:column;
+  box-shadow:24px 0 60px rgba(0,0,0,.6);display:flex;flex-direction:column;
   padding-top:env(safe-area-inset-top,0px)}
 .dtop{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--rule2)}
 .dtitle{font:500 15px/1 Archivo,sans-serif;color:var(--gold)}
@@ -145,6 +145,12 @@ select option{background:var(--coal);color:var(--ink)}
 .dtab.on{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;font-weight:600}
 .dtab .d{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .dtab .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;opacity:.75}
+.dfield{margin-bottom:10px}
+.dfield label{display:block;font-size:12.5px;color:var(--mute);margin-bottom:4px}
+.dfield input{width:100%}
+.dtog{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink2);
+  padding:7px 0;cursor:pointer}
+.dnext{font-size:12.5px;color:var(--gold);margin:4px 0 10px}
 .dsec .cfgbox{margin-top:11px;flex-direction:column;align-items:flex-start;gap:9px}
 header{
   position:sticky;top:0;z-index:30;
@@ -423,6 +429,8 @@ window.addEventListener('unhandledrejection',function(e){
     <button id="pnew" class="mini">New</button><button id="pren" class="mini">Rename</button>
     <button id="pdup" class="mini">Duplicate</button><button id="pshare" class="mini">Invite</button>
     <button id="pdel" class="mini">Delete</button></div></div>
+  <div class="dsec"><div class="dlab">Payday email</div>
+   <div id="digest"></div></div>
   <div class="dsec"><div class="dlab">Set up</div>
    <div class="row-flex">
     <button id="tabnew" class="mini">New tab</button>
@@ -454,7 +462,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v13 \u00b7 menu';
+const BUILD='v15 \u00b7 menu left';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -667,13 +675,15 @@ async function loadProfiles(){
 async function loadProfile(){
   localStorage.setItem('tb-pid',S.pid);
   S.prof=S.profiles.find(p=>p.id===S.pid);
-  const [t,b,p,sp,ar]=await Promise.all([
+  const [t,b,p,sp,ar,dg]=await Promise.all([
     db.from('tabs').select('*').eq('profile_id',S.pid).order('sort'),
     db.from('bills').select('*').eq('profile_id',S.pid).eq('archived',false),
     db.from('payments').select('*').eq('profile_id',S.pid),
     db.from('splits').select('*').eq('profile_id',S.pid).order('seq'),
-    db.from('arrangements').select('*').eq('profile_id',S.pid)]);
+    db.from('arrangements').select('*').eq('profile_id',S.pid),
+    db.from('digest_settings').select('*').eq('profile_id',S.pid)]);
   for(const r of [t,b,p,sp,ar]) if(r.error) throw r.error;
+  S.digest=(dg.data&&dg.data[0])||null;
   S.tabs=t.data; S.bills=b.data;
   S.pay={}; p.data.forEach(r=>S.pay[r.bill_id+'|'+r.period]=r);
   S.splits={}; sp.data.forEach(r=>(S.splits[r.bill_id+'|'+r.period]=S.splits[r.bill_id+'|'+r.period]||[]).push(r));
@@ -1114,6 +1124,50 @@ function act(a,id,to){
 }
 
 /* ================= CHROME ================= */
+function nextSends(d){
+  if(!d) return [];
+  const out=[], start=new Date(TODAY);
+  for(let i=0;i<70&&out.length<3;i++){
+    const day=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const eom=new Date(day.getFullYear(),day.getMonth()+1,0);
+    const anchor=new Date(d.biweekly_anchor+'T00:00:00');
+    const diff=Math.round((day-anchor)/864e5);
+    if(d.monthly_on && day.getDate()===eom.getDate()-d.monthly_lead) out.push([day,'Auburn']);
+    else if(d.biweekly_on && diff>=0 && diff%14===0) out.push([day,'Greater Peace']);
+  }
+  return out;
+}
+function renderDigest(){
+  const d=S.digest, box=$('digest');
+  if(!d){ box.innerHTML='<button class="mini" id="dgon">Turn on payday emails</button>';
+    $('dgon').onclick=()=>go(async()=>{
+      const {error}=await db.from('digest_settings').insert({profile_id:S.pid,
+        recipient:user.email, biweekly_anchor:'2026-10-16', monthly_lead:2});
+      if(error) throw error;});
+    return; }
+  const nx=nextSends(d).map(([day,who])=>
+    `${MN[day.getMonth()]} ${day.getDate()} \u00b7 ${who}`).join(' \u2014 ');
+  box.innerHTML=`
+    <div class="dfield"><label for="dg-to">Send to</label>
+      <input id="dg-to" type="email" value="${esc(d.recipient)}" placeholder="name@example.com"></div>
+    <label class="dtog"><input type="checkbox" id="dg-bw" ${d.biweekly_on?'checked':''}>
+      Every two weeks \u2014 Greater Peace</label>
+    <label class="dtog"><input type="checkbox" id="dg-mo" ${d.monthly_on?'checked':''}>
+      ${d.monthly_lead} days before month end \u2014 Auburn</label>
+    <label class="dtog"><input type="checkbox" id="dg-on" ${d.enabled?'checked':''}>
+      Emails switched on</label>
+    <div class="dnext">${nx?'Next: '+nx:'Nothing scheduled'}</div>
+    <button class="mini" id="dg-save">Save email settings</button>`;
+  $('dg-save').onclick=()=>go(async()=>{
+    const to=$('dg-to').value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) throw new Error('That does not look like an email address.');
+    const {error}=await db.from('digest_settings').update({
+      recipient:to, biweekly_on:$('dg-bw').checked,
+      monthly_on:$('dg-mo').checked, enabled:$('dg-on').checked,
+      updated_at:new Date().toISOString()}).eq('profile_id',S.pid);
+    if(error) throw error; toast('Payday emails go to '+to);});
+}
+
 function render(){
   const vis=TABS().filter(t=>!hidden(t.k));
   if(!vis.some(t=>t.k===acct)) acct=(vis[0]||{k:'sum'}).k;
@@ -1153,6 +1207,7 @@ function render(){
       const {error}=await db.from('profiles').update({hidden_tabs:h}).eq('id',S.pid);
       if(error)throw error; await loadProfiles(); }));
     $('cfgdone').onclick=()=>{cfg=false;render();};}
+  renderDigest();
   if(acct==='sum') renderSummary(); else if(acct==='ann') renderAnnual(); else renderAccount();
 }
 function openMenu(){ $('drawer').hidden=false; $('scrim').hidden=false;
