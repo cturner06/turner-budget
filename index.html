@@ -145,6 +145,13 @@ select option{background:var(--coal);color:var(--ink)}
 .dtab.on{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;font-weight:600}
 .dtab .d{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .dtab .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;opacity:.75}
+.nstate{font-size:12.5px;margin-bottom:11px;padding:9px 12px;border-radius:8px;
+  background:var(--glass);border:1px solid var(--edge-soft);color:var(--ink2)}
+.nstate.on{border-color:rgba(79,168,131,.4);color:#7FD4AE}
+.nstate.off{border-color:rgba(224,102,92,.35);color:#F0978F}
+.nrow{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink2);padding:7px 0;cursor:pointer}
+.nrow .sub2{display:block;font-size:12px;color:var(--ash);margin-top:1px}
+.nrow input[type=number]{width:56px;padding:4px 6px;font-size:13px;text-align:right}
 .dfield{margin-bottom:10px}
 .dfield label{display:block;font-size:12.5px;color:var(--mute);margin-bottom:4px}
 .dfield input{width:100%}
@@ -429,6 +436,8 @@ window.addEventListener('unhandledrejection',function(e){
     <button id="pnew" class="mini">New</button><button id="pren" class="mini">Rename</button>
     <button id="pdup" class="mini">Duplicate</button><button id="pshare" class="mini">Invite</button>
     <button id="pdel" class="mini">Delete</button></div></div>
+  <div class="dsec"><div class="dlab">Phone notifications</div>
+   <div id="notify"></div></div>
   <div class="dsec"><div class="dlab">Payday email</div>
    <div id="digest"></div></div>
   <div class="dsec"><div class="dlab">Set up</div>
@@ -462,7 +471,8 @@ window.addEventListener('unhandledrejection',function(e){
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v15 \u00b7 menu left';
+const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
+const BUILD='v16 \u00b7 notifications';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -682,6 +692,15 @@ async function loadProfile(){
     db.from('splits').select('*').eq('profile_id',S.pid).order('seq'),
     db.from('arrangements').select('*').eq('profile_id',S.pid),
     db.from('digest_settings').select('*').eq('profile_id',S.pid)]);
+  const np=await db.from('notify_prefs').select('*').eq('profile_id',S.pid);
+  S.notify=(np.data&&np.data[0])||null;
+  try{
+    if('serviceWorker' in navigator && window.PushManager){
+      const reg=await navigator.serviceWorker.getRegistration();
+      const sub=reg&&await reg.pushManager.getSubscription();
+      S.device=sub?sub.endpoint:null;
+    } else S.device='unsupported';
+  }catch(e){ S.device=null; }
   for(const r of [t,b,p,sp,ar]) if(r.error) throw r.error;
   S.digest=(dg.data&&dg.data[0])||null;
   S.tabs=t.data; S.bills=b.data;
@@ -1137,6 +1156,88 @@ function nextSends(d){
   }
   return out;
 }
+const urlB64=s=>{const pad='='.repeat((4-s.length%4)%4);
+  const raw=atob((s+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from(raw,c=>c.charCodeAt(0));};
+
+async function enablePush(){
+  if(!('serviceWorker' in navigator)||!window.PushManager)
+    throw new Error('This browser cannot do notifications.');
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted') throw new Error(perm==='denied'
+    ? 'Notifications are blocked for this site. Turn them back on in the browser\u2019s site settings.'
+    : 'Notifications were not allowed.');
+  const reg=await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,
+    applicationServerKey:urlB64(VAPID)});
+  const j=sub.toJSON();
+  const {error}=await db.from('push_devices').upsert({
+    user_id:user.id, profile_id:S.pid, endpoint:sub.endpoint,
+    p256dh:j.keys.p256dh, auth:j.keys.auth,
+    label:(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'device'
+  },{onConflict:'endpoint'});
+  if(error) throw error;
+  if(!S.notify){
+    const r=await db.from('notify_prefs').insert({profile_id:S.pid});
+    if(r.error) throw r.error;
+  }
+}
+async function disablePush(){
+  const reg=await navigator.serviceWorker.getRegistration();
+  const sub=reg&&await reg.pushManager.getSubscription();
+  if(sub){ await db.from('push_devices').delete().eq('endpoint',sub.endpoint);
+    await sub.unsubscribe(); }
+}
+
+function renderNotify(){
+  const box=$('notify'), n=S.notify, on=!!S.device&&S.device!=='unsupported';
+  if(S.device==='unsupported'){
+    box.innerHTML='<div class="nstate">This browser does not support notifications. '
+      +'On an iPhone, add the site to your home screen first.</div>'; return; }
+  const state = on
+    ? '<div class="nstate on">This device is switched on.</div>'
+    : '<div class="nstate off">This device is not receiving notifications.</div>';
+  if(!on||!n){
+    box.innerHTML=state+'<button class="mini" id="np-on">Turn on for this device</button>';
+    $('np-on').onclick=()=>go(async()=>{await enablePush();toast('Notifications on for this device.');});
+    return; }
+  box.innerHTML=state+`
+    <label class="nrow"><input type="checkbox" id="np-due" ${n.due_soon?'checked':''}>
+      <span>A bill is coming due<span class="sub2">within
+        <input type="number" id="np-lead" min="1" max="14" value="${n.lead_days}"> days</span></span></label>
+    <label class="nrow"><input type="checkbox" id="np-late" ${n.went_unpaid?'checked':''}>
+      <span>A bill went unpaid<span class="sub2">the morning after its due day</span></span></label>
+    <label class="nrow"><input type="checkbox" id="np-big" ${n.big_charge?'checked':''}>
+      <span>Something large lands<span class="sub2">over
+        <input type="number" id="np-amt" min="50" step="50" value="${Math.round(n.big_amount)}"></span></span></label>
+    <label class="nrow"><input type="checkbox" id="np-pay" ${n.payday?'checked':''}>
+      <span>Payday summary<span class="sub2">same days as the email</span></span></label>
+    <div class="dfield" style="margin-top:10px"><label>Quiet outside these hours</label>
+      <div class="row-flex"><input type="number" id="np-q1" min="0" max="23" value="${n.quiet_before}" style="width:62px">
+        <span class="hint">to</span>
+        <input type="number" id="np-q2" min="1" max="23" value="${n.quiet_after}" style="width:62px"></div></div>
+    <div class="row-flex"><button class="mini" id="np-save">Save notifications</button>
+      <button class="mini" id="np-test">Send a test</button>
+      <button class="mini danger" id="np-off">Turn off here</button></div>`;
+  $('np-save').onclick=()=>go(async()=>{
+    const {error}=await db.from('notify_prefs').update({
+      due_soon:$('np-due').checked, lead_days:Math.max(1,Math.min(14,+$('np-lead').value||3)),
+      went_unpaid:$('np-late').checked, payday:$('np-pay').checked,
+      big_charge:$('np-big').checked, big_amount:Math.max(50,+$('np-amt').value||500),
+      quiet_before:Math.max(0,Math.min(23,+$('np-q1').value||8)),
+      quiet_after:Math.max(1,Math.min(23,+$('np-q2').value||21)),
+      updated_at:new Date().toISOString()}).eq('profile_id',S.pid);
+    if(error) throw error; toast('Notification settings saved.');});
+  $('np-off').onclick=()=>go(async()=>{await disablePush();toast('Notifications off for this device.');});
+  $('np-test').onclick=async()=>{
+    try{ const reg=await navigator.serviceWorker.getRegistration();
+      await reg.showNotification('Turner Budget',{body:'Notifications are working on this device.',
+        icon:'/images/icon-192.png',badge:'/images/icon-192.png'});
+    }catch(e){ toast('Could not show a notification: '+e.message,true); }};
+}
+
 function renderDigest(){
   const d=S.digest, box=$('digest');
   if(!d){ box.innerHTML='<button class="mini" id="dgon">Turn on payday emails</button>';
@@ -1207,6 +1308,7 @@ function render(){
       const {error}=await db.from('profiles').update({hidden_tabs:h}).eq('id',S.pid);
       if(error)throw error; await loadProfiles(); }));
     $('cfgdone').onclick=()=>{cfg=false;render();};}
+  renderNotify();
   renderDigest();
   if(acct==='sum') renderSummary(); else if(acct==='ann') renderAnnual(); else renderAccount();
 }
