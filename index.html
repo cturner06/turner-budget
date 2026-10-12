@@ -292,6 +292,39 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 .part{display:flex;gap:10px;align-items:center;font-size:13.5px;padding:5px 0}
 .part .pn{width:80px;color:var(--mute);font-size:12.5px}
 .part input[type=number]{width:108px;text-align:right;font-family:'IBM Plex Mono',monospace}
+.cred{border:1px solid var(--edge-soft);border-radius:10px;padding:12px 13px;margin-bottom:9px;
+  background:var(--glass)}
+.cred .cname{font-weight:500;color:var(--ink);font-size:14.5px}
+.cred .cmeta{font-size:12.5px;color:var(--mute);margin-top:3px;line-height:1.7}
+.cred .cmeta a{color:var(--gold);text-decoration:none}
+.cred .cmeta a:hover{text-decoration:underline}
+.cred .crow{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.cred button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;
+  border-color:transparent;font-weight:600}
+.cred button.pay:hover{background:linear-gradient(180deg,#EAD165,#D6BC43);color:#17140A}
+.cred code{background:rgba(0,0,0,.4);border:1px solid var(--edge-soft);border-radius:6px;
+  padding:5px 9px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold)}
+#impwrap{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#impbox{width:100%;max-width:860px;max-height:88vh;overflow:auto;border-radius:14px;padding:24px 26px;
+  background:linear-gradient(170deg,rgba(26,26,29,.98),rgba(10,10,11,.99));
+  border:1px solid var(--edge);box-shadow:0 30px 70px rgba(0,0,0,.65)}
+#impbox h3{font:600 18px/1.2 Archivo,sans-serif;margin:0 0 5px;color:var(--gold)}
+#impbox .map{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+#impbox table{font-size:12.5px}
+#impbox td,#impbox th{padding:6px 9px}
+.mask{color:var(--gold-deep);font-family:'IBM Plex Mono',monospace}
+.vlock{background:var(--glass);border:1px solid var(--edge);border-radius:10px;padding:13px 15px;
+  margin-bottom:12px;font-size:13px;color:var(--ink2)}
+.vlock b{color:var(--gold)}
+.plan{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13.5px;
+  border-bottom:1px solid var(--rule2)}
+.plan:last-of-type{border:0}
+.plan .pname{flex:1;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan .pamt{color:var(--gold);flex:0 0 auto}
+.plan .pleft{color:var(--ash);font-size:12px;flex:0 0 58px;text-align:right}
+.plan button{font-size:12px;padding:4px 9px;flex:0 0 auto}
+.plan button.danger{color:#F0978F;border-color:rgba(224,102,92,.3);padding:4px 8px}
 .part label{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink2);cursor:pointer}
 .strip{display:grid;grid-template-columns:120px repeat(12,1fr);gap:3px;align-items:center;font-size:12px}
 .strip .lb{font-size:13px;color:var(--ink2)}
@@ -457,23 +490,30 @@ window.addEventListener('unhandledrejection',function(e){
   <button class="dhead" data-sec="email">Payday email<span class="dval" id="vemail"></span></button>
   <div class="dpanel" data-p="email"><div id="digest"></div></div>
 
-  <button class="dhead" data-sec="setup">Set up</button>
-  <div class="dpanel" data-p="setup">
+  <button class="dhead" data-sec="tabs">Add or hide tabs<span class="dval" id="vtabs"></span></button>
+  <div class="dpanel" data-p="tabs">
    <div class="row-flex">
     <button id="tabnew" class="mini">New tab</button>
-    <button id="tabcfg" class="mini">Show / hide tabs</button>
-    <button id="prt" class="mini">Print</button>
-    <button id="out" class="mini">Sign out</button></div>
-   <div id="tabcfgbox" class="cfgbox" hidden></div>
-   <div class="who" id="who" style="margin-top:11px"></div></div>
+    <button id="tabcfg" class="mini">Choose what shows</button></div>
+   <div id="tabcfgbox" class="cfgbox" hidden></div></div>
+
+  <button class="dhead" data-sec="vault">Logins<span class="dval" id="vvault"></span></button>
+  <div class="dpanel" data-p="vault"><div id="vaultbox"></div></div>
+
+  <button class="dhead" data-sec="account">Your account<span class="dval" id="vacct"></span></button>
+  <div class="dpanel" data-p="account">
+   <div class="who" id="who" style="margin-bottom:11px"></div>
+   <button id="out" class="mini">Sign out</button></div>
  </div>
 </aside>
 <main class="wrap">
  <div id="msg"></div><div class="tiles" id="tiles"></div>
  <div class="panel"><div class="ptop"><h2 id="ptitle">Bills</h2><span class="spacer"></span>
    <button id="addb" class="mini noprint">+ Add bill</button>
+   <button id="prt" class="mini noprint">Print</button>
    <input id="q" class="noprint" placeholder="Filter" style="width:150px;font-size:13px" aria-label="Filter">
    <select id="gb" class="noprint" style="font-size:13px" aria-label="Group by"></select>
+   <select id="sb" class="noprint" style="font-size:13px" aria-label="Sort by"></select>
    <select id="sf" class="noprint" style="font-size:13px" aria-label="Status filter">
     <option value="">All</option><option value="late">Not paid</option><option value="due">Due now</option>
     <option value="sched">Scheduled</option><option value="paid">Paid</option>
@@ -485,11 +525,12 @@ window.addEventListener('unhandledrejection',function(e){
 </main></div>
 <div id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v17 \u00b7 tidy menu';
+const BUILD='v25 \u00b7 import logins';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -527,7 +568,30 @@ const $=id=>document.getElementById(id);
 let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
 let acct=null,q='',sf='',drawer=null,adding=false,editing=null,cfg=false,busy=false;
-let grp='none', shut=new Set();
+let grp='none', srt='due', shut=new Set(), shareOpen=false;
+
+const SORTS={
+  acct:[['due','Due date'],['name','Name A\u2013Z'],['high','Amount, highest first'],
+        ['low','Amount, lowest first'],['status','What needs doing'],['unpaid','Still owed']],
+  ann :[['due','Month due'],['name','Name A\u2013Z'],['high','Amount, highest first'],
+        ['low','Amount, lowest first']]
+};
+const URGENCY={late:0,part:1,due:2,sched:3,ahead:4,paid:5};
+function sortRows(rows,kind){
+  const r=rows.slice();
+  const amt = kind==='ann' ? (x=>+x.b.amount) : (x=>budgetOf(x.b,cur));
+  const owed = x=>Math.max(0, amt(x) - (kind==='ann'
+      ? (x.rec?+x.rec.amount:0)
+      : (paidOf(x.b,per(cur))||0)));
+  if(srt==='name')   r.sort((a,b)=>a.b.name.localeCompare(b.b.name));
+  else if(srt==='high') r.sort((a,b)=>amt(b)-amt(a)||a.when-b.when);
+  else if(srt==='low')  r.sort((a,b)=>amt(a)-amt(b)||a.when-b.when);
+  else if(srt==='unpaid') r.sort((a,b)=>owed(b)-owed(a)||a.when-b.when);
+  else if(srt==='status') r.sort((a,b)=>
+    (URGENCY[status(a,cur)]??9)-(URGENCY[status(b,cur)]??9)||a.when-b.when);
+  else r.sort((a,b)=>a.when-b.when||a.b.name.localeCompare(b.b.name));
+  return r;
+}
 
 // ---- grouping ----
 const GROUPS={
@@ -574,6 +638,117 @@ const LBLA={paid:'Paid',late:'Not paid',due:'Coming up',sched:'Scheduled'};
 function toast(m,bad){const t=$('toast');t.textContent=m;t.className='on'+(bad?' bad':'');
   clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',2600);}
 function oops(e){console.error(e);toast(e.message||String(e),true);}
+
+/* ======================= VAULT =======================
+   Everything secret is encrypted and decrypted in this browser.
+   The server only ever holds ciphertext and public keys.
+
+   identity   ECDH P-256 keypair. Public key stored plainly.
+              Private key encrypted with a key derived from your
+              passphrase (PBKDF2-SHA256, 310k rounds).
+   tab key    One AES-256-GCM key per tab. Wrapped separately for
+              each person entitled to that tab, using ECDH between
+              the sharer's private key and the recipient's public key.
+   secrets    Encrypted with the tab key. Never leave here in the clear.
+   ==================================================== */
+const V={ priv:null, pub:null, keys:{}, open:false };
+const B64=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const UNB64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')
+  .padEnd(Math.ceil(s.length/4)*4,'=')),c=>c.charCodeAt(0));
+const RAND=n=>crypto.getRandomValues(new Uint8Array(n));
+const TXT=new TextEncoder(), DEC=new TextDecoder();
+
+async function passKey(pass,salt,iters){
+  const base=await crypto.subtle.importKey('raw',TXT.encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iters,hash:'SHA-256'},
+    base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function sharedKey(myPriv,theirPubRaw){
+  const theirs=await crypto.subtle.importKey('raw',UNB64(theirPubRaw),
+    {name:'ECDH',namedCurve:'P-256'},false,[]);
+  const bits=await crypto.subtle.deriveBits({name:'ECDH',public:theirs},myPriv,256);
+  const hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(32),
+    info:TXT.encode('turner-budget vault wrap')},hk,{name:'AES-GCM',length:256},false,
+    ['encrypt','decrypt']);
+}
+const gcmEnc=async(key,bytes)=>{const iv=RAND(12);
+  return {ct:B64(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,bytes)),iv:B64(iv)};};
+const gcmDec=async(key,ct,iv)=>new Uint8Array(
+  await crypto.subtle.decrypt({name:'AES-GCM',iv:UNB64(iv)},key,UNB64(ct)));
+
+async function vaultCreate(pass){
+  const pair=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits','deriveKey']);
+  const pubRaw=new Uint8Array(await crypto.subtle.exportKey('raw',pair.publicKey));
+  const privJwk=await crypto.subtle.exportKey('jwk',pair.privateKey);
+  const salt=RAND(16), iters=310000;
+  const kek=await passKey(pass,salt,iters);
+  const {ct,iv}=await gcmEnc(kek,TXT.encode(JSON.stringify(privJwk)));
+  const {error}=await db.from('user_keys').upsert({user_id:user.id,public_key:B64(pubRaw),
+    enc_private:ct,iv,salt:B64(salt),iterations:iters},{onConflict:'user_id'});
+  if(error) throw error;
+  V.priv=pair.privateKey; V.pub=B64(pubRaw); V.open=true;
+  return B64(pubRaw);
+}
+async function vaultUnlock(pass){
+  const {data,error}=await db.from('user_keys').select('*').eq('user_id',user.id).maybeSingle();
+  if(error) throw error;
+  if(!data) throw new Error('No vault on this account yet.');
+  const kek=await passKey(pass,UNB64(data.salt),data.iterations);
+  let jwk;
+  try{ jwk=JSON.parse(DEC.decode(await gcmDec(kek,data.enc_private,data.iv))); }
+  catch(e){ throw new Error('That passphrase does not match.'); }
+  V.priv=await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},
+    false,['deriveBits','deriveKey']);
+  V.pub=data.public_key; V.open=true; V.keys={};
+  await loadTabKey();
+}
+function vaultLock(){ V.priv=null; V.keys={}; V.open=false; }
+
+async function loadTabKey(code){
+  code=code||acct;
+  if(!V.open) return null;
+  const k=S.pid+'|'+code;
+  if(V.keys[k]) return V.keys[k];
+  const {data}=await db.from('vault_keys').select('*')
+    .eq('profile_id',S.pid).eq('tab_code',code).eq('user_id',user.id).maybeSingle();
+  if(!data) return null;
+  const {data:from}=await db.from('user_keys').select('public_key').eq('user_id',data.from_user).maybeSingle();
+  if(!from) return null;
+  const wrapKey=await sharedKey(V.priv,from.public_key);
+  const raw=await gcmDec(wrapKey,data.wrapped,data.iv);
+  V.keys[k]=await crypto.subtle.importKey('raw',raw,'AES-GCM',true,['encrypt','decrypt']);
+  return V.keys[k];
+}
+async function createTabKey(code){
+  code=code||acct;
+  const raw=RAND(32);
+  const key=await crypto.subtle.importKey('raw',raw,'AES-GCM',true,['encrypt','decrypt']);
+  await wrapFor(user.id,V.pub,raw,code);
+  V.keys[S.pid+'|'+code]=key;
+  return key;
+}
+async function wrapFor(uid,theirPub,rawKey,code){
+  code=code||acct;
+  const wrapKey=await sharedKey(V.priv,theirPub);
+  const {ct,iv}=await gcmEnc(wrapKey,rawKey);
+  const {error}=await db.from('vault_keys').upsert({profile_id:S.pid,tab_code:code,
+    user_id:uid,from_user:user.id,wrapped:ct,iv},{onConflict:'profile_id,tab_code,user_id'});
+  if(error) throw error;
+}
+async function grantVault(uid,theirPub){
+  const key=await loadTabKey(acct); if(!key) throw new Error('Unlock the vault first.');
+  const raw=new Uint8Array(await crypto.subtle.exportKey('raw',key));
+  await wrapFor(uid,theirPub,raw);
+}
+async function encSecret(obj,code){
+  const key=await loadTabKey(code)||await createTabKey(code);
+  return gcmEnc(key,TXT.encode(JSON.stringify(obj)));
+}
+async function decSecret(ct,iv,code){
+  const key=await loadTabKey(code); if(!key||!ct) return null;
+  try{ return JSON.parse(DEC.decode(await gcmDec(key,ct,iv))); }catch(e){ return null; }
+}
 
 /* ================= AUTH ================= */
 $('build').textContent='Build '+BUILD;
@@ -702,13 +877,18 @@ async function loadProfiles(){
 async function loadProfile(){
   localStorage.setItem('tb-pid',S.pid);
   S.prof=S.profiles.find(p=>p.id===S.pid);
-  const [t,b,p,sp,ar,dg]=await Promise.all([
+  const [t,b,p,sp,ar,pl,dg]=await Promise.all([
     db.from('tabs').select('*').eq('profile_id',S.pid).order('sort'),
     db.from('bills').select('*').eq('profile_id',S.pid).eq('archived',false),
     db.from('payments').select('*').eq('profile_id',S.pid),
     db.from('splits').select('*').eq('profile_id',S.pid).order('seq'),
     db.from('arrangements').select('*').eq('profile_id',S.pid),
+    db.from('plans').select('*').eq('profile_id',S.pid).eq('done',false).order('created_at'),
     db.from('digest_settings').select('*').eq('profile_id',S.pid)]);
+  const cr=await db.from('credentials').select('*').eq('profile_id',S.pid).order('creditor');
+  S.creds=cr.data||[];
+  const ts=await db.from('tab_shares').select('*').eq('profile_id',S.pid);
+  S.shares=ts.data||[];
   const np=await db.from('notify_prefs').select('*').eq('profile_id',S.pid);
   S.notify=(np.data&&np.data[0])||null;
   try{
@@ -724,6 +904,7 @@ async function loadProfile(){
   S.pay={}; p.data.forEach(r=>S.pay[r.bill_id+'|'+r.period]=r);
   S.splits={}; sp.data.forEach(r=>(S.splits[r.bill_id+'|'+r.period]=S.splits[r.bill_id+'|'+r.period]||[]).push(r));
   S.arr={}; ar.data.forEach(r=>S.arr[r.bill_id]=r);
+  S.plans={}; (pl.data||[]).forEach(r=>(S.plans[r.bill_id]=S.plans[r.bill_id]||[]).push(r));
   if(!acct||!S.tabs.some(x=>x.code===acct)) acct=(S.tabs[0]||{}).code||'sum';
 }
 
@@ -733,7 +914,21 @@ const COL=c=>acctOf(c).color||'#5B6B7F';
 const hidden=k=>(S.prof.hidden_tabs||[]).includes(k);
 const TABS=()=>S.tabs.map(a=>({k:a.code,n:a.name,c:a.color}))
   .concat([{k:'ann',n:'Annual'},{k:'sum',n:'Summary'}]);
-const dueDate=(b,m)=>new Date(m.getFullYear(),m.getMonth(),b.due_day?Math.min(b.due_day,lastDay(m)):lastDay(m));
+function dueDate(b,m){
+  let day=b.due_day;
+  if(!day){ const pl=S.plans[b.id]||[];
+    const days=pl.map(z=>z.due_day).filter(Boolean);
+    if(days.length) day=Math.min(...days); }
+  return new Date(m.getFullYear(),m.getMonth(),day?Math.min(day,lastDay(m)):lastDay(m));
+}
+// what the Due column says: a fixed day, or that it moves
+function dueLabel(b){
+  if(b.due_day) return String(b.due_day);
+  const pl=S.plans[b.id]||[];
+  const days=[...new Set(pl.map(z=>z.due_day).filter(Boolean))].sort((x,y)=>x-y);
+  if(days.length===1) return String(days[0]);
+  return 'Varies';
+}
 const per=m=>mk(m);
 const getPay=(b,p)=>S.pay[b.id+'|'+p]||null;
 const getSplits=(b,p)=>S.splits[b.id+'|'+p]||null;
@@ -741,7 +936,10 @@ function arrFor(b,m){const a=S.arr[b.id];if(!a)return null;
   const s=a.start_month.split('-').map(Number),st=new Date(s[0],s[1]-1,1);
   const off=(m.getFullYear()-st.getFullYear())*12+(m.getMonth()-st.getMonth());
   return(off>=0&&off<a.months)?{...a,left:a.months-off}:null;}
-const budgetOf=(b,m)=>{const a=arrFor(b,m);return a?+a.amount:+b.amount;};
+const plansOf=b=>S.plans[b.id]||null;
+const budgetOf=(b,m)=>{const a=arrFor(b,m); if(a) return +a.amount;
+  const pl=plansOf(b); if(pl&&pl.length) return pl.reduce((s2,p)=>s2+ +p.amount,0);
+  return +b.amount;};
 function paidOf(b,p){const sp=getSplits(b,p);
   if(sp)return sp.some(x=>x.paid)?sp.filter(x=>x.paid).reduce((s,x)=>s+ +x.amount,0):null;
   const r=getPay(b,p);return r?+r.amount:null;}
@@ -787,7 +985,8 @@ function drawerHTML(x,m){
   const ef=editing===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
      <div><label>Name</label><input id="ed-n" value="${esc(b.name)}" style="width:200px"></div>
      <div><label>Category</label><input id="ed-c" value="${esc(b.category)}" style="width:130px"></div>
-     <div><label>Due day</label><input id="ed-d" type="number" min="1" max="31" value="${b.due_day||''}" style="width:78px"></div>
+     <div><label>Due day</label><input id="ed-d" type="number" min="1" max="31" value="${b.due_day||''}"
+       placeholder="Varies" title="Leave empty if it moves around" style="width:78px"></div>
      <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${b.amount}" style="width:110px"></div>
      <div><label>Tab</label><select id="ed-ac">${S.tabs.map(z=>`<option value="${z.code}" ${z.code===b.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
      <button data-a="saveedit">Save changes</button><button data-a="canceledit">Cancel</button></div>
@@ -807,12 +1006,68 @@ function drawerHTML(x,m){
      <button data-a="savearr">${a?'Update':'Set'} arrangement</button>
      ${a?'<button data-a="delarr" class="danger">End it</button>':''}</div>
     ${act?`<p class="hint" style="margin:7px 0 0">Active — ${money(a.amount)} a month, ${act.left} left.</p>`:''}</div>`;
+  const pl=plansOf(b);
+  const planBox=(pl&&pl.length)||b.category==='BNPL'||b.category==='LOC'||!b.due_day?`<div class="parts"><h4>Plans</h4>
+     ${(pl||[]).map(z=>`<div class="plan">
+        <span class="pname">${esc(z.name)}</span>
+        <span class="pamt num">${money(z.amount)}</span>
+        ${z.left_count!=null?`<span class="pleft">${z.left_count} left</span>`:'<span class="pleft"></span>'}
+        <button data-a="plandone" data-id="${z.id}" title="Paid off \u2014 take it off the list">Paid off</button>
+        <button data-a="plandel" data-id="${z.id}" class="danger" title="Remove">&times;</button>
+      </div>`).join('')||'<p class="hint" style="margin:0 0 9px">No plans yet.</p>'}
+     <div class="form" style="margin-top:8px">
+      <div><label>What is it for</label><input id="pl-n" placeholder="Mattress, tyres\u2026" style="width:160px"></div>
+      <div><label>Per month</label><input id="pl-a" type="number" step="0.01" placeholder="0.00" style="width:100px"></div>
+      <div><label>Day</label><input id="pl-d" type="number" min="1" max="31" placeholder="--" style="width:66px"></div>
+      <div><label>Payments left</label><input id="pl-l" type="number" min="0" placeholder="--" style="width:96px"></div>
+      <button data-a="planadd">Add plan</button></div>
+     ${pl&&pl.length?`<p class="hint" style="margin:9px 0 0">Budget for this row is the ${pl.length} plans added up \u2014 ${money(pl.reduce((s2,z)=>s2+ +z.amount,0))}. Each keeps its own date; the row shows Varies.</p>`:''}
+    </div>`:'';
+  const cred=S.creds.find(c=>c.bill_id===b.id);
+  const shown=credShow[b.id];
+  const credBox=`<div class="parts"><h4>Account and login</h4>${
+    credOpen===b.id ? `<div class="form">
+      <div style="flex:1 1 150px"><label>Who it is with</label><input id="c-cr" value="${esc(cred?cred.creditor:b.name)}" style="width:100%"></div>
+      <div style="flex:1 1 190px"><label>Login page</label><input id="c-url" value="${esc(cred?cred.login_url:'')}" placeholder="https://" style="width:100%"></div>
+      <div style="flex:1 1 150px"><label>Username</label><input id="c-un" value="${esc(cred?cred.username:'')}" style="width:100%"></div>
+      <div><label>Account ends</label><input id="c-l4" maxlength="4" value="${esc(cred?cred.acct_last4:'')}" style="width:80px"></div>
+      <div><label>Their phone</label><input id="c-ph" value="${esc(cred?cred.phone:'')}" style="width:130px"></div>
+      <div style="flex:1 1 150px"><label>Who handles it</label><input id="c-hb" value="${esc(cred?cred.handled_by:'')}" placeholder="Chris, or alternating" style="width:100%"></div>
+      <label class="nrow" style="padding:0"><input type="checkbox" id="c-ap" ${cred&&cred.autopay?'checked':''}><span>On autopay</span></label>
+      <div style="flex:1 1 100%"><label>Notes</label><input id="c-nt" value="${esc(cred?cred.notes:'')}" style="width:100%"></div>
+      ${V.open?`<div style="flex:1 1 150px"><label>Password</label><input id="c-pw" type="password" placeholder="${cred&&cred.secret_ct?'\u2022\u2022\u2022 leave blank to keep':''}" style="width:100%"></div>
+        <div style="flex:1 1 130px"><label>PIN or answers</label><input id="c-pin" placeholder="optional" style="width:100%"></div>`
+        :'<p class="hint" style="flex:1 1 100%;margin:0">Unlock the vault in the menu to set a password here.</p>'}
+      <button data-a="credsave">Save</button><button data-a="credcancel">Cancel</button>
+      ${cred?'<button data-a="creddel" class="danger">Remove</button>':''}</div>`
+    : cred ? `<div class="cred">
+        <div class="cname">${esc(cred.creditor)}${cred.autopay?' <span class="tag paid">autopay</span>':''}</div>
+        <div class="cmeta">
+          ${cred.login_url?`<a href="${esc(cred.login_url)}" target="_blank" rel="noopener">${esc(cred.login_url)}</a><br>`:''}
+          ${cred.username?'User '+esc(cred.username)+'<br>':''}
+          ${cred.acct_last4?'Account ends '+esc(cred.acct_last4)+'<br>':''}
+          ${cred.phone?esc(cred.phone)+'<br>':''}
+          ${cred.handled_by?'Handled by '+esc(cred.handled_by)+'<br>':''}
+          ${cred.notes?esc(cred.notes):''}</div>
+        <div class="crow">
+          ${cred.login_url?`<button data-a="paythis" class="pay">Pay this</button>`:''}
+          ${cred.secret_ct ? (V.open
+            ? (shown?`<code>${esc(shown.password||'')}</code>
+                 ${shown.pin?`<code>${esc(shown.pin)}</code>`:''}
+                 <button data-a="credhide">Hide</button>
+                 <button data-a="credcopy" class="pay">Copy password</button>`
+               :'<button data-a="credshow">Show password</button>')
+            : '<span class="hint">Locked \u2014 unlock the vault in the menu</span>')
+           : '<span class="hint">No password saved</span>'}
+          <button data-a="credit" style="margin-left:auto">Edit</button></div></div>`
+    : `<p class="hint" style="margin:0 0 9px">Nothing saved for this one.</p>
+       <button data-a="credit">Add the login details</button>`}</div>`;
   return `<div class="dr"><div class="acts">
      <button data-a="edit">Edit bill</button><button data-a="split">Split into parts</button>
      <button data-a="zero">Mark paid at $0</button><button data-a="full">Mark paid in full</button>
      <button data-a="clear">Clear this month</button>${share}
      <button data-a="remove" class="danger">Remove bill</button>
-     <button data-a="close" style="margin-left:auto">Close</button></div>${ef}${parts}${arrBox}</div>`;
+     <button data-a="close" style="margin-left:auto">Close</button></div>${ef}${credBox}${planBox}${parts}${arrBox}</div>`;
 }
 function renderAccount(){
   $('sumview').hidden=true;$('tiles').hidden=false;document.querySelector('.panel').hidden=false;$('foothint').hidden=false;
@@ -833,7 +1088,8 @@ function renderAccount(){
    <div class="tile"><div class="l">Paid ahead</div><div class="v" style="color:${aheadN?'var(--p)':'var(--ash)'}">${aheadN}</div>
      <div class="c">recorded in ${lbl(nxt)}</div></div>`;
   $('ptitle').innerHTML=esc(A.name)+(A.institution?` <span class="hint" style="font-weight:400">${esc(A.institution)}</span>`:'')
-    +(A.kind==='project'?' <button class="mini noprint" id="tabren" style="margin-left:8px">Rename</button>'
+    +' <button class="mini noprint" id="tabshare" style="margin-left:8px">Share this tab</button>'
+    +(A.kind==='project'?'<button class="mini noprint" id="tabren" style="margin-left:5px">Rename</button>'
       +'<button class="mini noprint danger" id="tabdel" style="margin-left:5px">Delete tab</button>':'');
   const rows=all.filter(x=>{
     if(q&&!(x.b.name+' '+x.b.category).toLowerCase().includes(q))return false;
@@ -848,11 +1104,12 @@ function renderAccount(){
     const tags=(act?' <span class="tag arr">arrangement</span>':'')
       +(sp?` <span class="tag split">${sp.filter(z=>z.paid).length}/${sp.length} parts</span>`:'')
       +(C===0&&!sp?' <span class="tag zero">$0</span>':'')
-      +(x.b.shared_from?` <span class="tag shared">from ${esc(x.b.shared_by||'another profile')}</span>`:'');
+      +(x.b.shared_from?` <span class="tag shared">from ${esc(x.b.shared_by||'another profile')}</span>`:'')
+      +((plansOf(x.b)||[]).length?` <span class="tag split">${plansOf(x.b).length} plans</span>`:'');
     const open=drawer===x.b.id;
     return `<tr class="${s}${open?' open':''}">
       <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${esc(x.b.category)}</div></td>
-      <td class="c hidesm">${x.b.due_day||'last'}</td>
+      <td class="c hidesm">${dueLabel(x.b)}</td>
       <td data-l="Status"><span class="tag ${s}">${LBL[s]}</span></td>
       <td class="r num" data-l="Budget · day ${x.b.due_day||'last'}">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
       <td class="r lock" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
@@ -869,10 +1126,11 @@ function renderAccount(){
   const addRow=adding?`<tr><td colspan="8" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
     <div class="form"><div><label>Name</label><input id="nb-n" placeholder="Bill name" style="width:200px"></div>
      <div><label>Category</label><input id="nb-c" placeholder="Card, Utilities…" style="width:130px"></div>
-     <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31" value="1" style="width:78px"></div>
+     <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31"
+       placeholder="Varies" title="Leave empty if it moves around" style="width:78px"></div>
      <div><label>Amount</label><input id="nb-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
      <button data-a="savenew">Add it</button><button data-a="cancelnew">Cancel</button></div></div></td></tr>`:'';
-  const body=bucket(rows,'acct').map(([name,items])=>{
+  const body=bucket(sortRows(rows,'acct'),'acct').map(([name,items])=>{
     if(name===null) return items.map(rowHTML).join('');
     const gb=items.reduce((t,x)=>t+budgetOf(x.b,cur),0);
     const gc=items.reduce((t,x)=>t+(paidOf(x.b,p)||0),0);
@@ -891,6 +1149,7 @@ function renderAccount(){
     <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td>
     <td class="noprint"></td></tr></tfoot>`;
   wire();
+  const sh=$('tabshare'); if(sh) sh.onclick=()=>{shareOpen=!shareOpen;render();};
   const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this tab',A.name);if(!n)return;
     go(async()=>{const {error}=await db.from('tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
   const td=$('tabdel'); if(td) td.onclick=()=>{
@@ -900,8 +1159,32 @@ function renderAccount(){
       await db.from('bills').delete().eq('profile_id',S.pid).eq('tab_code',acct);
       const {error}=await db.from('tabs').delete().eq('id',A.id);if(error)throw error;
       acct=null;});};
-  $('msg').innerHTML=lateN?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
-    <b style="color:var(--red)">${lateN} not paid</b> on ${esc(A.name)} \u2014 past the due day with nothing recorded.</div>`:'';
+  const mine=S.shares.filter(z=>z.tab_code===acct);
+  const sharePanel = shareOpen ? `<div class="note" style="background:var(--glass)">
+    <div style="font-weight:500;color:var(--gold);margin-bottom:9px">Who can see ${esc(A.name)}</div>
+    ${mine.length?mine.map(z=>`<div class="plan">
+      <span class="pname">${esc(z.email)}</span>
+      <span class="pleft">${z.can_edit?'can edit':'read only'}</span>
+      <button data-sh="${z.user_id}" class="danger">Stop sharing</button></div>`).join('')
+      :'<p class="hint" style="margin:0 0 9px">Nobody else yet.</p>'}
+    <div class="form" style="margin-top:8px">
+      <div style="flex:1 1 200px"><label>Their email</label>
+        <input id="sh-em" type="email" placeholder="name@example.com" style="width:100%"></div>
+      <label class="nrow" style="padding:0"><input type="checkbox" id="sh-ed" checked>
+        <span>Let them record payments</span></label>
+      <button id="sh-go">Share</button></div>
+    <p class="hint" style="margin:9px 0 0">They need an account here first. This shares
+      ${esc(A.name)} only \u2014 nothing from your other tabs.</p></div>` : '';
+  $('msg').innerHTML=sharePanel+(lateN?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
+    <b style="color:var(--red)">${lateN} not paid</b> on ${esc(A.name)} \u2014 past the due day with nothing recorded.</div>`:'');
+  const sg=$('sh-go'); if(sg) sg.onclick=()=>go(async()=>{
+    const em=$('sh-em').value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) throw new Error('That does not look like an email address.');
+    const {error}=await db.rpc('share_tab',{p_id:S.pid,p_code:acct,p_email:em,p_edit:$('sh-ed').checked});
+    if(error) throw error; toast(em+' can now open '+A.name);});
+  document.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>go(async()=>{
+    const {error}=await db.rpc('unshare_tab',{p_id:S.pid,p_code:acct,p_user:b.dataset.sh});
+    if(error) throw error;}));
 }
 
 /* ================= ANNUAL ================= */
@@ -967,7 +1250,7 @@ function renderAnnual(){
         <button data-a="remove" class="danger">Remove</button>
         <button data-a="close" style="margin-left:auto">Close</button></div>${ef}</div></td></tr>`:'');
   };
-  const body=bucket(annRows,'ann').map(([name,items])=>{
+  const body=bucket(sortRows(annRows,'ann'),'ann').map(([name,items])=>{
     if(name===null) return items.map(annHTML).join('');
     const gb=items.reduce((t,x)=>t+ +x.b.amount,0);
     const gc=items.reduce((t,x)=>t+(x.rec?+x.rec.amount:0),0);
@@ -1092,7 +1375,8 @@ function wire(){
     i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();i.blur();}};});
   document.querySelectorAll('.menu[data-m]').forEach(m=>m.onclick=()=>{
     drawer=drawer===m.dataset.m?null:m.dataset.m;editing=null;render();});
-  document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>act(b.dataset.a,drawer,b.dataset.to));
+  document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>
+    act(b.dataset.a,drawer,b.dataset.to||b.dataset.id));
   document.querySelectorAll('.dr [data-sp]').forEach(i=>i.onchange=()=>go(async()=>{
     const {error}=await db.from('splits').update({amount:+i.value}).eq('id',i.dataset.sp);if(error)throw error;}));
   document.querySelectorAll('.dr [data-spp]').forEach(i=>i.onchange=()=>go(async()=>{
@@ -1106,7 +1390,7 @@ function act(a,id,to){
     if(!n||!amt) throw new Error('Give it a name and an amount.');
     const {error}=await db.from('bills').insert({profile_id:S.pid,tab_code:acct,name:n,
       category:$('nb-c').value.trim()||'Other',amount:amt,
-      due_day:Math.min(31,Math.max(1,+$('nb-d').value||1))});
+      due_day:$('nb-d').value===''?null:Math.min(31,Math.max(1,+$('nb-d').value))});
     if(error)throw error; adding=false;});
   if(a==='savenewann') return go(async()=>{
     const n=$('na-n').value.trim(),amt=+$('na-a').value;
@@ -1122,7 +1406,8 @@ function act(a,id,to){
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
     const {error}=await db.from('bills').update({name:n,category:$('ed-c').value.trim()||'Other',
-      due_day:Math.min(31,Math.max(1,+$('ed-d').value||1)),amount:+$('ed-a').value||0,
+      due_day:$('ed-d').value===''?null:Math.min(31,Math.max(1,+$('ed-d').value)),
+      amount:+$('ed-a').value||0,
       tab_code:$('ed-ac').value}).eq('id',b.id);
     if(error)throw error; editing=null;});
   if(a==='saveannedit') return go(async()=>{
@@ -1150,6 +1435,67 @@ function act(a,id,to){
   if(a==='remove'){ if(!confirm('Remove "'+b.name+'" from every month?'))return;
     return go(async()=>{const {error}=await db.from('bills').update({archived:true}).eq('id',b.id);
       if(error)throw error; drawer=null;});}
+  if(a==='credit'){ credOpen=b.id; return render(); }
+  if(a==='credcancel'){ credOpen=null; return render(); }
+  if(a==='paythis'){
+    const c=S.creds.find(z=>z.bill_id===b.id); if(!c) return;
+    window.open(c.login_url,'_blank','noopener');
+    if(c.username) navigator.clipboard.writeText(c.username)
+      .then(()=>toast('Username copied \u2014 paste it, then tap Copy password'))
+      .catch(()=>toast('Site opened. Copy the username from here.'));
+    else toast('Site opened.');
+    if(c.secret_ct && V.open){
+      decSecret(c.secret_ct,c.secret_iv,b.tab_code).then(out=>{ if(out){ credShow[b.id]=out; render();
+        setTimeout(()=>{ if(credShow[b.id]){ delete credShow[b.id]; render(); } },60000); }});
+    }
+    return; }
+  if(a==='credshow') return go(async()=>{
+    const c=S.creds.find(z=>z.bill_id===b.id);
+    const out=await decSecret(c.secret_ct,c.secret_iv,b.tab_code);
+    if(!out) throw new Error('Could not open that. Is the vault unlocked?');
+    credShow[b.id]=out;
+    setTimeout(()=>{ if(credShow[b.id]){ delete credShow[b.id]; render(); } },45000);});
+  if(a==='credhide'){ delete credShow[b.id]; return render(); }
+  if(a==='credcopy'){ const v=credShow[b.id];
+    if(v&&v.password) navigator.clipboard.writeText(v.password)
+      .then(()=>{toast('Copied. It clears from the clipboard in 30 seconds.');
+        setTimeout(()=>navigator.clipboard.writeText('').catch(()=>{}),30000);})
+      .catch(()=>toast('Could not reach the clipboard.',true));
+    return; }
+  if(a==='creddel') return go(async()=>{
+    if(!confirm('Remove the saved login for this bill?')) return;
+    const c=S.creds.find(z=>z.bill_id===b.id);
+    const {error}=await db.from('credentials').delete().eq('id',c.id);
+    if(error) throw error; credOpen=null;});
+  if(a==='credsave') return go(async()=>{
+    const c=S.creds.find(z=>z.bill_id===b.id);
+    const row={profile_id:S.pid,tab_code:b.tab_code,bill_id:b.id,
+      creditor:$('c-cr').value.trim()||b.name,
+      login_url:$('c-url').value.trim()||null, username:$('c-un').value.trim()||null,
+      acct_last4:$('c-l4').value.trim()||null, phone:$('c-ph').value.trim()||null,
+      handled_by:$('c-hb').value.trim()||null, autopay:$('c-ap').checked,
+      notes:$('c-nt').value.trim()||null};
+    const pw=$('c-pw')?$('c-pw').value:'', pin=$('c-pin')?$('c-pin').value:'';
+    if(V.open && (pw||pin)){
+      const enc=await encSecret({password:pw||((await decSecret(c&&c.secret_ct,c&&c.secret_iv,b.tab_code))||{}).password||'',
+        pin:pin||null}, b.tab_code);
+      row.secret_ct=enc.ct; row.secret_iv=enc.iv;
+    } else if(c){ row.secret_ct=c.secret_ct; row.secret_iv=c.secret_iv; }
+    const {error}= c ? await db.from('credentials').update(row).eq('id',c.id)
+                     : await db.from('credentials').insert(row);
+    if(error) throw error; credOpen=null; toast('Saved.');});
+  if(a==='planadd') return go(async()=>{
+    const n=$('pl-n').value.trim(), amt=+$('pl-a').value;
+    if(!n||!amt) throw new Error('A plan needs a name and a monthly amount.');
+    const {error}=await db.from('plans').insert({profile_id:S.pid,bill_id:b.id,name:n,amount:amt,
+      due_day:$('pl-d').value?Math.min(31,Math.max(1,+$('pl-d').value)):null,
+      left_count:$('pl-l').value===''?null:Math.max(0,+$('pl-l').value)});
+    if(error) throw error;});
+  if(a==='plandone') return go(async()=>{
+    const {error}=await db.from('plans').update({done:true}).eq('id',to); if(error) throw error;
+    toast('Plan cleared. It is off the budget.');});
+  if(a==='plandel') return go(async()=>{
+    const {error}=await db.from('plans').delete().eq('id',to); if(error) throw error;});
   if(a==='savearr') return go(async()=>{
     const row={profile_id:S.pid,bill_id:b.id,amount:+$('ar-amt').value||0,
       start_month:$('ar-start').value||per(cur),months:Math.max(1,+$('ar-mo').value||1),
@@ -1206,6 +1552,171 @@ async function disablePush(){
   const sub=reg&&await reg.pushManager.getSubscription();
   if(sub){ await db.from('push_devices').delete().eq('endpoint',sub.endpoint);
     await sub.unsubscribe(); }
+}
+
+let credOpen=null, credShow={};
+async function renderVault(){
+  const box=$('vaultbox');
+  const {data:mykey}=await db.from('user_keys').select('user_id').eq('user_id',user.id).maybeSingle();
+  $('vvault').textContent = !mykey ? 'not set up' : (V.open?'unlocked':'locked');
+  if(!mykey){
+    box.innerHTML=`<div class="vlock">Logins are encrypted on your device before they are sent.
+      Pick a passphrase \u2014 <b>not</b> your sign-in password. Nobody can recover it for you,
+      so write it down somewhere safe.</div>
+      <div class="dfield"><label>New vault passphrase</label><input id="v-p1" type="password" autocomplete="new-password"></div>
+      <div class="dfield"><label>Again</label><input id="v-p2" type="password" autocomplete="new-password"></div>
+      <button class="mini" id="v-make">Set up my vault</button>`;
+    $('v-make').onclick=()=>go(async()=>{
+      const a=$('v-p1').value,b=$('v-p2').value;
+      if(a.length<10) throw new Error('Use at least 10 characters.');
+      if(a!==b) throw new Error('Those do not match.');
+      await vaultCreate(a); toast('Vault ready. It unlocks with that passphrase.');});
+    return; }
+  if(!V.open){
+    box.innerHTML=`<div class="vlock">Locked. Logins stay hidden until you unlock.</div>
+      <div class="dfield"><label>Vault passphrase</label><input id="v-pw" type="password" autocomplete="current-password"></div>
+      <button class="mini" id="v-unlock">Unlock</button>`;
+    $('v-unlock').onclick=()=>go(async()=>{await vaultUnlock($('v-pw').value);toast('Vault unlocked.');});
+    const el=$('v-pw'); if(el) el.onkeydown=e=>{if(e.key==='Enter')$('v-unlock').click();};
+    return; }
+  const mem=await db.rpc('vault_members',{p_id:S.pid,p_code:acct});
+  const people=(mem.data||[]).filter(m=>m.user_id!==user.id);
+  box.innerHTML=`<div class="vlock">Unlocked. Logins show on the ${esc(acctOf(acct).name)} tab.</div>
+    ${people.length?`<div class="dlab" style="margin:12px 0 7px">Who else can read them</div>`+
+      people.map(m=>`<div class="plan"><span class="pname">${esc(m.email)}</span>
+        <span class="pleft">${m.has_vault?'has access':(m.has_key?'not yet':'no vault')}</span>
+        ${m.has_key&&!m.has_vault?`<button data-grant="${m.user_id}" data-pk="${m.public_key}">Give access</button>`:''}
+      </div>`).join('')
+      +'<p class="hint" style="margin:8px 0 0">Someone with no vault must set a passphrase on their own account first.</p>'
+      :'<p class="hint">Share this tab with someone and they will appear here.</p>'}
+    <div class="row-flex" style="margin-top:13px">
+      <button class="mini" id="v-import">Import from a spreadsheet</button>
+      <button class="mini" id="v-lock">Lock now</button></div>`;
+  $('v-import').onclick=()=>{closeMenu();importOpen();};
+  $('v-lock').onclick=()=>{vaultLock();credShow={};render();toast('Vault locked.');};
+  document.querySelectorAll('[data-grant]').forEach(b=>b.onclick=()=>go(async()=>{
+    await grantVault(b.dataset.grant,b.dataset.pk); toast('They can read these logins now.');}));
+}
+
+/* ---- import a spreadsheet, entirely in this browser ---- */
+let IMP=null;
+function importOpen(){
+  if(!V.open){ toast('Unlock the vault first \u2014 the passwords are encrypted here.',true); return; }
+  const w=document.createElement('div'); w.id='impwrap';
+  w.innerHTML=`<div id="impbox">
+    <h3>Bring in your spreadsheet</h3>
+    <p class="hint" style="margin:0 0 14px">The file is read on this device. Passwords are encrypted
+      before anything is sent, so nothing readable leaves your machine.</p>
+    <input type="file" id="imp-f" accept=".xlsx,.xlsm,.xls,.csv">
+    <div id="imp-rest"></div>
+    <div class="row-flex" style="margin-top:16px"><button id="imp-close">Close</button></div></div>`;
+  document.body.appendChild(w);
+  $('imp-close').onclick=()=>{IMP=null;w.remove();};
+  w.onclick=e=>{if(e.target===w){IMP=null;w.remove();}};
+  $('imp-f').onchange=e=>readSheet(e.target.files[0]);
+}
+function readSheet(file){
+  if(!file) return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(fr.result),{type:'array'});
+      IMP={wb, sheet:wb.SheetNames.find(n=>/credit|site|login|password/i.test(n))||wb.SheetNames[0]};
+      pickSheet();
+    }catch(err){ $('imp-rest').innerHTML=`<div class="vlock" style="border-color:rgba(224,102,92,.4)">
+      Could not read that file: ${esc(err.message)}</div>`; }
+  };
+  fr.readAsArrayBuffer(file);
+}
+function pickSheet(){
+  const rows=XLSX.utils.sheet_to_json(IMP.wb.Sheets[IMP.sheet],{header:1,blankrows:false,defval:''});
+  IMP.rows=rows.filter(r=>r.some(c=>String(c).trim()));
+  const width=Math.max(...IMP.rows.map(r=>r.length));
+  const guess=(re,fallback)=>{
+    for(let c=0;c<width;c++){
+      const col=IMP.rows.map(r=>String(r[c]||'')).join(' ');
+      if(re.test(col)) return c;
+    } return fallback;
+  };
+  IMP.map={
+    creditor: 0,
+    url: guess(/https?:\/\/|www\./i, 1),
+    user: guess(/@|user|login|email/i, 2),
+    pass: guess(/pass|pwd/i, 3),
+    note: -1
+  };
+  const opts=i=>Array.from({length:width},(_,c)=>
+    `<option value="${c}" ${c===i?'selected':''}>Column ${String.fromCharCode(65+c)}</option>`).join('')
+    +`<option value="-1" ${i===-1?'selected':''}>Not in the file</option>`;
+  $('imp-rest').innerHTML=`
+    <div class="dfield" style="margin-top:14px"><label>Sheet</label>
+      <select id="imp-sheet">${IMP.wb.SheetNames.map(n=>
+        `<option ${n===IMP.sheet?'selected':''}>${esc(n)}</option>`).join('')}</select></div>
+    <div class="map">
+      <div><label class="hint">Creditor</label><select id="m-cr">${opts(IMP.map.creditor)}</select></div>
+      <div><label class="hint">Login page</label><select id="m-url">${opts(IMP.map.url)}</select></div>
+      <div><label class="hint">Username</label><select id="m-un">${opts(IMP.map.user)}</select></div>
+      <div><label class="hint">Password</label><select id="m-pw">${opts(IMP.map.pass)}</select></div>
+      <div><label class="hint">Notes</label><select id="m-nt">${opts(IMP.map.note)}</select></div>
+    </div>
+    <div id="imp-prev"></div>
+    <div class="row-flex" style="margin-top:12px">
+      <button id="imp-go" class="mini">Import them</button>
+      <span class="hint" id="imp-count"></span></div>`;
+  $('imp-sheet').onchange=e=>{IMP.sheet=e.target.value;pickSheet();};
+  ['m-cr','m-url','m-un','m-pw','m-nt'].forEach(id=>$(id).onchange=preview);
+  $('imp-go').onclick=()=>go(runImport);
+  preview();
+}
+function impRows(){
+  const m={creditor:+$('m-cr').value,url:+$('m-url').value,user:+$('m-un').value,
+           pass:+$('m-pw').value,note:+$('m-nt').value};
+  const get=(r,i)=>i<0?'':String(r[i]??'').trim();
+  return IMP.rows.map(r=>({
+    creditor:get(r,m.creditor), url:get(r,m.url), username:get(r,m.user),
+    password:get(r,m.pass), notes:get(r,m.note)}))
+    .filter(x=>x.creditor && !/^creditor$/i.test(x.creditor)
+             && (x.username||x.password||x.url));
+}
+function preview(){
+  const rows=impRows();
+  const known=c=>S.creds.find(z=>z.creditor.toLowerCase().slice(0,12)===c.toLowerCase().slice(0,12));
+  $('imp-prev').innerHTML=`<table><thead><tr><th>Creditor</th><th>Username</th>
+      <th>Password</th><th>Goes to</th></tr></thead><tbody>${
+    rows.slice(0,60).map(x=>{const k=known(x.creditor);
+      return `<tr><td>${esc(x.creditor)}</td><td>${esc(x.username)||'<span class="hint">—</span>'}</td>
+        <td>${x.password?'<span class="mask">'+'\u2022'.repeat(Math.min(10,x.password.length))+'</span>'
+          :'<span class="hint">—</span>'}</td>
+        <td>${k?'<span class="tag paid">updates '+esc(k.creditor)+'</span>'
+               :'<span class="tag due">new entry</span>'}</td></tr>`;}).join('')
+    }</tbody></table>`;
+  $('imp-count').textContent=`${rows.length} to import`;
+}
+async function runImport(){
+  const rows=impRows();
+  if(!rows.length) throw new Error('Nothing matched those columns.');
+  let made=0, updated=0;
+  for(const x of rows){
+    const hit=S.creds.find(z=>z.creditor.toLowerCase().slice(0,12)===x.creditor.toLowerCase().slice(0,12));
+    const code=hit?hit.tab_code:acct;
+    const row={profile_id:S.pid, tab_code:code, creditor:hit?hit.creditor:x.creditor,
+      login_url:x.url||(hit?hit.login_url:null),
+      username:x.username||(hit?hit.username:null),
+      notes:x.notes||(hit?hit.notes:null)};
+    if(x.password){
+      const enc=await encSecret({password:x.password,pin:null},code);
+      row.secret_ct=enc.ct; row.secret_iv=enc.iv;
+    } else if(hit){ row.secret_ct=hit.secret_ct; row.secret_iv=hit.secret_iv; }
+    if(hit){ const {error}=await db.from('credentials').update(row).eq('id',hit.id);
+      if(error) throw error; updated++; }
+    else { if(!row.bill_id){ const b=S.bills.find(z=>
+        z.name.toLowerCase().slice(0,10)===x.creditor.toLowerCase().slice(0,10));
+        if(b){ row.bill_id=b.id; row.tab_code=b.tab_code; } }
+      const {error}=await db.from('credentials').insert(row);
+      if(error) throw error; made++; }
+  }
+  const w=$('impwrap'); if(w) w.remove(); IMP=null;
+  toast(`${updated} updated, ${made} added. You can delete the spreadsheet.`);
 }
 
 function renderNotify(){
@@ -1302,7 +1813,7 @@ function render(){
       ${t.c?`<span class="d" style="background:${t.c}"></span>`:''}${esc(t.n)}
       ${n?`<span class="n">${n}</span>`:''}</button>`;}).join('');
   document.querySelectorAll('.dtab').forEach(t=>t.onclick=()=>{
-    acct=t.dataset.a;drawer=null;adding=false;editing=null;closeMenu();render();});
+    acct=t.dataset.a;drawer=null;adding=false;editing=null;shareOpen=false;closeMenu();render();});
   const ct=vis.find(t=>t.k===acct);
   $('curtab').innerHTML = ct
     ? (ct.c?`<span class="d" style="background:${ct.c}"></span>`:'')+esc(ct.n)
@@ -1313,6 +1824,11 @@ function render(){
   $('gb').innerHTML=opts.map(([v,t])=>
     `<option value="${v}" ${v===grp?'selected':''}>${v==='none'?t:'Group by '+t.toLowerCase()}</option>`).join('');
   $('gb').hidden = acct==='sum';
+  const sopts=SORTS[kind];
+  if(!sopts.some(o=>o[0]===srt)) srt='due';
+  $('sb').innerHTML=sopts.map(([v,t])=>
+    `<option value="${v}" ${v===srt?'selected':''}>Sort by ${t.toLowerCase()}</option>`).join('');
+  $('sb').hidden = acct==='sum';
   $('addb').textContent=acct==='ann'?'+ Add annual charge':'+ Add bill';
   $('addb').hidden=acct==='sum';
   const box=$('tabcfgbox'); box.hidden=!cfg;
@@ -1325,6 +1841,7 @@ function render(){
       const {error}=await db.from('profiles').update({hidden_tabs:h}).eq('id',S.pid);
       if(error)throw error; await loadProfiles(); }));
     $('cfgdone').onclick=()=>{cfg=false;render();};}
+  renderVault();
   renderNotify();
   renderDigest();
   sectionSummaries();
@@ -1347,6 +1864,9 @@ function sectionSummaries(){
     : (S.device && S.notify) ? 'on' : 'off';
   $('vemail').textContent = S.digest
     ? (S.digest.enabled?S.digest.recipient.split('@')[0]:'off') : 'off';
+  const hid=(S.prof.hidden_tabs||[]).length;
+  $('vtabs').textContent = hid? hid+' hidden' : S.tabs.length+' showing';
+  $('vacct').textContent = user.email.split('@')[0];
 }
 document.querySelectorAll('.dhead').forEach(hd=>hd.onclick=()=>{
   openSec = openSec===hd.dataset.sec ? null : hd.dataset.sec;
@@ -1373,6 +1893,7 @@ $('prt').onclick=()=>window.print();
 $('q').oninput=e=>{q=e.target.value.toLowerCase();render();};
 $('sf').onchange=e=>{sf=e.target.value;render();};
 $('gb').onchange=e=>{grp=e.target.value;shut.clear();render();};
+$('sb').onchange=e=>{srt=e.target.value;render();};
 $('addb').onclick=()=>{adding=!adding;drawer=null;render();};
 $('tabcfg').onclick=()=>{cfg=!cfg;render();};
 $('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side business, anything');
