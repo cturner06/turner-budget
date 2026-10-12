@@ -2,7 +2,7 @@
 // Shell is cached so the app opens instantly even on a dead signal.
 // Anything with a query string (OAuth returns ?code=...) and anything
 // off-origin (Supabase, fonts, CDN) always goes straight to the network.
-const V = 'tb-v3';
+const V = 'tb-v4';
 const SHELL = ['/', '/index.html',
                '/images/manifest.webmanifest',
                '/images/icon-192.png', '/images/icon-512.png',

@@ -213,6 +213,13 @@ td.drawer{padding:0;background:#F7F9FC}
   <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" placeholder="At least 6 characters">
   <button class="prim" id="signin">Sign in</button>
   <button class="alt" id="signup">No account yet? Create one</button>
+  <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--rule);
+    display:flex;align-items:center;gap:10px">
+    <span class="hint" id="build">build</span><span class="spacer"></span>
+    <button class="mini" id="nuke">Clear cache &amp; reload</button></div>
+  <pre id="diag" style="display:none;white-space:pre-wrap;word-break:break-all;
+    font:400 11px/1.5 'IBM Plex Mono',monospace;color:var(--mute);background:var(--lock);
+    border:1px solid var(--rule);border-radius:4px;padding:9px;margin:12px 0 0"></pre>
 </div></div>
 <div id="app" hidden>
 <header><div class="wrap">
@@ -256,6 +263,7 @@ td.drawer{padding:0;background:#F7F9FC}
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
+const BUILD='v4 \u00b7 implicit';
 const db=window.supabase.createClient(SB_URL,SB_KEY,{auth:{
   flowType:'implicit',   // static site, no server: tokens come back in the hash
   persistSession:true, autoRefreshToken:true,
@@ -282,6 +290,17 @@ function toast(m,bad){const t=$('toast');t.textContent=m;t.className='on'+(bad?'
 function oops(e){console.error(e);toast(e.message||String(e),true);}
 
 /* ================= AUTH ================= */
+$('build').textContent='Build '+BUILD;
+$('nuke').onclick=async()=>{
+  try{ if('serviceWorker' in navigator){
+    const rs=await navigator.serviceWorker.getRegistrations();
+    await Promise.all(rs.map(r=>r.unregister())); }
+    if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+    localStorage.clear();
+  }catch(e){}
+  location.replace(location.origin+location.pathname+'?fresh='+Date.now());
+};
+function diag(t){const d=$('diag');d.style.display='block';d.textContent=t;}
 function gmsg(h,cls){$('gmsg').innerHTML=h?`<div class="${cls||'err'}">${esc(h)}</div>`:'';}
 const HOME=location.origin+location.pathname;   // no query, no hash
 $('google').onclick=async()=>{
@@ -339,8 +358,21 @@ function tidyUrl(){ try{history.replaceState({},'',HOME);}catch(e){} }
 
   const {data,error}=await db.auth.getSession();
   if(error){ showGate(); gmsg(error.message); return; }
-  if(data.session){ user=data.session.user; start(); }
-  else showGate();
+  if(data.session){ user=data.session.user; start(); return; }
+
+  showGate();
+  // came back from Google with nothing usable — say exactly what landed
+  if(document.referrer.indexOf('supabase')>-1 || u.searchParams.has('fresh')===false
+     && (u.search||u.hash)){
+    gmsg('Came back without a session. Details below — send me this.');
+  }
+  if(u.search||u.hash){
+    diag('url     '+location.href+'\n'
+       + 'search  '+(u.search||'(none)')+'\n'
+       + 'hash    '+(u.hash||'(none)')+'\n'
+       + 'referrer '+(document.referrer||'(none)')+'\n'
+       + 'build   '+BUILD);
+  }
 })();
 
 /* ================= LOAD ================= */
