@@ -311,6 +311,10 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 .cred button.pay:hover{background:linear-gradient(180deg,#EAD165,#D6BC43);color:#17140A}
 .cred code{background:rgba(0,0,0,.4);border:1px solid var(--edge-soft);border-radius:6px;
   padding:5px 9px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold)}
+#ps-drop{border:1px dashed var(--edge);border-radius:10px;padding:10px 12px;
+  background:rgba(255,255,255,.025);transition:border-color .15s,background .15s}
+#ps-drop.over{border-color:var(--gold);background:var(--gold-wash)}
+#ps-drop textarea:focus{outline:none}
 #impwrap{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;
   background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #impbox{width:100%;max-width:860px;max-height:88vh;overflow:auto;border-radius:14px;padding:24px 26px;
@@ -537,7 +541,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v30 \u00b7 paste plans';
+const BUILD='v31 \u00b7 paste a picture';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1407,6 +1411,21 @@ function wire(){
     r[f] = f==='name' ? i.value : (i.value===''?null:+String(i.value).replace(/[^0-9.]/g,''));
     render();});
   const img=$('ps-img'); if(img) img.onchange=e=>readShot(e.target.files[0]);
+  const drop=$('ps-drop');
+  if(drop){
+    const grab=dt=>{ if(!dt) return null;
+      const f=[...(dt.files||[])].find(x=>/^image\//.test(x.type)); if(f) return f;
+      const it=[...(dt.items||[])].find(x=>/^image\//.test(x.type));
+      return it?it.getAsFile():null; };
+    drop.addEventListener('paste',e=>{
+      const f=grab(e.clipboardData);
+      if(f){ e.preventDefault(); readShot(f); }});
+    ['dragenter','dragover'].forEach(k=>drop.addEventListener(k,e=>{
+      e.preventDefault(); drop.classList.add('over');}));
+    ['dragleave','drop'].forEach(k=>drop.addEventListener(k,e=>{
+      e.preventDefault(); drop.classList.remove('over');}));
+    drop.addEventListener('drop',e=>{ const f=grab(e.dataTransfer); if(f) readShot(f); });
+  }
   document.querySelectorAll('.dr [data-sp]').forEach(i=>i.onchange=()=>go(async()=>{
     const {error}=await db.from('splits').update({amount:+i.value}).eq('id',i.dataset.sp);if(error)throw error;}));
   document.querySelectorAll('.dr [data-spp]').forEach(i=>i.onchange=()=>go(async()=>{
@@ -1644,13 +1663,15 @@ function pastePanel(b){
   return `<div class="parts"><h4>Load a schedule</h4>
     <p class="hint" style="margin:0 0 9px">Copy the payment list from ${esc(b.name.replace(/ \(.*/,''))}
       and paste it, or drop a screenshot.</p>
-    <textarea id="ps-t" rows="4" placeholder="Paste the list here"
-      style="width:100%;font-size:13px"></textarea>
-    <div class="row-flex" style="margin-top:8px">
-      <button data-a="psread">Read what I pasted</button>
-      <label class="mini" style="cursor:pointer;border:1px solid var(--edge-soft);border-radius:7px;padding:6px 11px">
-        Use a screenshot<input type="file" id="ps-img" accept="image/*" hidden></label>
-      <span class="hint" id="ps-stat"></span></div>
+    <div id="ps-drop">
+      <textarea id="ps-t" rows="4"
+        placeholder="Snip the screen with Win+Shift+S, then Ctrl+V here \u2014 or paste the text, or drop an image"
+        style="width:100%;font-size:13px;background:none;border:0;resize:vertical"></textarea>
+      <div class="row-flex" style="margin-top:6px">
+        <button data-a="psread">Read it</button>
+        <label class="mini" style="cursor:pointer;border:1px solid var(--edge-soft);border-radius:7px;padding:6px 11px">
+          Pick a file<input type="file" id="ps-img" accept="image/*" hidden></label>
+        <span class="hint" id="ps-stat"></span></div></div>
     ${rows.length?`<table style="margin-top:12px;font-size:12.5px"><thead><tr>
         <th>What</th><th class="r">Amount</th><th class="c">Day</th><th></th></tr></thead><tbody>
       ${rows.map((r,i)=>`<tr>
