@@ -332,7 +332,8 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
   border-bottom:1px solid var(--rule2)}
 .plan:last-of-type{border:0}
 .plan .pname{flex:1;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.plan .pamt{color:var(--gold);flex:0 0 auto}
+.plan .pamt{color:var(--gold);flex:0 0 auto;text-align:right}
+.plan .pcad{display:block;font-size:11px;color:var(--ash);font-weight:400;margin-top:1px}
 .plan .pleft{color:var(--ash);font-size:12px;flex:0 0 58px;text-align:right}
 .plan button{font-size:12px;padding:4px 9px;flex:0 0 auto}
 .plan button.danger{color:#F0978F;border-color:rgba(224,102,92,.3);padding:4px 8px}
@@ -541,7 +542,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v35 \u00b7 reads the picture';
+const BUILD='v37 \u00b7 every two weeks';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -949,8 +950,23 @@ function arrFor(b,m){const a=S.arr[b.id];if(!a)return null;
   const off=(m.getFullYear()-st.getFullYear())*12+(m.getMonth()-st.getMonth());
   return(off>=0&&off<a.months)?{...a,left:a.months-off}:null;}
 const plansOf=b=>S.plans[b.id]||null;
+const STEP={weekly:7,biweekly:14};
+function planHits(p,m){
+  if(!p.cadence||p.cadence==='monthly') return 1;
+  const step=STEP[p.cadence]||14;
+  if(!p.next_due) return p.cadence==='weekly'?4:2;
+  const first=new Date(m.getFullYear(),m.getMonth(),1);
+  const last=new Date(m.getFullYear(),m.getMonth()+1,0);
+  let d=new Date(p.next_due+'T00:00:00');
+  while(d>first) d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-step);
+  let n=0;
+  while(d<=last){ if(d>=first) n++; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+step); }
+  return n;
+}
+const planCost=(p,m)=>+p.amount*planHits(p,m);
+const CADENCE={monthly:'once a month',biweekly:'every 2 weeks',weekly:'weekly'};
 const budgetOf=(b,m)=>{const a=arrFor(b,m); if(a) return +a.amount;
-  const pl=plansOf(b); if(pl&&pl.length) return pl.reduce((s2,p)=>s2+ +p.amount,0);
+  const pl=plansOf(b); if(pl&&pl.length) return pl.reduce((s2,p)=>s2+planCost(p,m),0);
   return +b.amount;};
 function paidOf(b,p){const sp=getSplits(b,p);
   if(sp)return sp.some(x=>x.paid)?sp.filter(x=>x.paid).reduce((s,x)=>s+ +x.amount,0):null;
@@ -1029,8 +1045,11 @@ function drawerHTML(x,m){
   const pl=plansOf(b);
   const planBox=(pl&&pl.length)||b.category==='BNPL'||b.category==='LOC'||!b.due_day?`<div class="parts"><h4>Plans</h4>
      ${(pl||[]).map(z=>`<div class="plan">
-        <span class="pname">${esc(z.name)}</span>
-        <span class="pamt num">${money(z.amount)}</span>
+        <span class="pname">${esc(z.name)}
+          <span class="pcad">${CADENCE[z.cadence]||'once a month'}${
+            planHits(z,m)>1?' \u00b7 '+planHits(z,m)+' this month':''}</span></span>
+        <span class="pamt num">${money(z.amount)}${planHits(z,m)>1?
+          '<span class="pcad">= '+money(planCost(z,m))+'</span>':''}</span>
         ${z.left_count!=null?`<span class="pleft">${z.left_count} left</span>`:'<span class="pleft"></span>'}
         <button data-a="plandone" data-id="${z.id}" title="Paid off \u2014 take it off the list">Paid off</button>
         <button data-a="plandel" data-id="${z.id}" class="danger" title="Remove">&times;</button>
@@ -1039,11 +1058,18 @@ function drawerHTML(x,m){
       <div><label>What is it for</label><input id="pl-n" placeholder="Mattress, tyres\u2026" style="width:160px"></div>
       <div><label>Per month</label><input id="pl-a" type="number" step="0.01" placeholder="0.00" style="width:100px"></div>
       <div><label>Day</label><input id="pl-d" type="number" min="1" max="31" placeholder="--" style="width:66px"></div>
+      <div><label>How often</label><select id="pl-c">
+        <option value="monthly">Once a month</option>
+        <option value="biweekly">Every 2 weeks</option>
+        <option value="weekly">Weekly</option></select></div>
+      <div><label>Next payment</label><input id="pl-nd" type="date"></div>
       <div><label>Payments left</label><input id="pl-l" type="number" min="0" placeholder="--" style="width:96px"></div>
       <button data-a="planadd">Add plan</button>
       <button data-a="pasteopen">${pasteFor===b.id?'Hide the paste box':'Paste a schedule'}</button></div>
      ${pasteFor===b.id?pastePanel(b):''}
-     ${pl&&pl.length?`<p class="hint" style="margin:9px 0 0">Budget for this row is the ${pl.length} plans added up \u2014 ${money(pl.reduce((s2,z)=>s2+ +z.amount,0))}. Each keeps its own date; the row shows Varies.</p>`:''}
+     ${pl&&pl.length?`<p class="hint" style="margin:9px 0 0">This month the ${pl.length} plans come to
+       ${money(pl.reduce((s2,z)=>s2+planCost(z,m),0))}. Anything every two weeks is counted
+       by how many times it actually lands \u2014 usually twice, sometimes three.</p>`:''}
     </div>`:'';
   const cred=S.creds.find(c=>c.bill_id===b.id);
   const shown=credShow[b.id];
@@ -1409,7 +1435,8 @@ function wire(){
     const r=pasted[+i.dataset.ps]; if(!r) return;
     const f=i.dataset.f;
     if(f==='keep') r.skip=!i.checked;
-    else r[f] = f==='name' ? i.value : (i.value===''?null:+String(i.value).replace(/[^0-9.]/g,''));
+    else if(f==='name'||f==='cadence') r[f]=i.value;
+    else r[f] = i.value===''?null:+String(i.value).replace(/[^0-9.]/g,'');
     render();});
   const img=$('ps-img'); if(img) img.onchange=e=>readShot(e.target.files[0]);
   const drop=$('ps-drop');
@@ -1559,13 +1586,21 @@ function act(a,id,to){
     if(!keep.length) throw new Error('Nothing ticked to add.');
     const rows=keep.map(r=>({profile_id:S.pid,bill_id:b.id,
       name:(r.name+(r.desc?' \u2014 '+r.desc:'')).slice(0,80),
-      amount:+r.amount||0, due_day:r.day?Math.min(31,Math.max(1,+r.day)):null}));
+      amount:+r.amount||0,
+      cadence:r.cadence||'monthly',
+      next_due:(r.cadence==='biweekly'&&r.day)
+        ? new Date(cur.getFullYear(),cur.getMonth(),Math.min(31,+r.day)).toISOString().slice(0,10)
+        : null,
+      due_day:r.day?Math.min(31,Math.max(1,+r.day)):null}));
     const {error}=await db.from('plans').insert(rows); if(error) throw error;
     pasted=[]; pasteFor=null; lastRead=''; toast(rows.length+' plans added.');});
   if(a==='planadd') return go(async()=>{
     const n=$('pl-n').value.trim(), amt=+$('pl-a').value;
     if(!n||!amt) throw new Error('A plan needs a name and a monthly amount.');
+    const cad=$('pl-c').value;
     const {error}=await db.from('plans').insert({profile_id:S.pid,bill_id:b.id,name:n,amount:amt,
+      cadence:cad,
+      next_due:$('pl-nd').value||null,
       due_day:$('pl-d').value?Math.min(31,Math.max(1,+$('pl-d').value)):null,
       left_count:$('pl-l').value===''?null:Math.max(0,+$('pl-l').value)});
     if(error) throw error;});
@@ -1662,12 +1697,21 @@ function parseSchedule(text){
     const day=w?+w[2]:null;
     const overdue=/overdue|past\s*due/i.test(after)||/overdue|past\s*due/i.test(before.slice(-30));
     // the merchant: strip the boilerplate first, then take what is left
-    const SCRUB=/\b(affirm virtual card|general merchandise|virtual card|affirm|klarna|cash app|afterpay|overdue|past\s*due|due|payment|installment|autopay|upcoming)\b/ig;
+    // OCR turns "Affirm Virtual Card" into things like "Affe Viral Card N",
+    // so match loosely rather than on exact spelling
+    const SCRUB=/\b(aff?[a-z]{0,4}\s+v[a-z]{0,4}al?\s+card[a-z ]{0,3}|virtual\s+card|affirm|klarna|cash\s*app|afterpay|gen[a-z]*\s+merch[a-z]*|merchandise|overdue|past\s*due|due|payment|installment|autopay|upcoming|pay\s+in\s+\d+)\b/ig;
     const tidy=before.replace(SCRUB,'  ').replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{1,2}\b/ig,'  ');
     const bits=tidy.split(/[\n\r]+|\s{2,}|\u00b7/).map(x=>x.trim())
       .filter(x=>x && !HAS_MONEY.test(x) && !FILLER.test(x) && !/^\d+$/.test(x)
                  && !MON.test(x) && x.length>1);
-    const name=(bits[bits.length-1]||'').replace(/[\u00b7\-\s]+$/,'').slice(0,60);
+    const JUNK=/card|merch|virtual|viral|instal|^[^a-z]*$/i;
+    let name='';
+    for(let j=bits.length-1;j>=0;j--){
+      const cand=bits[j].replace(/[\u00b7\-\s]+$/,'').trim();
+      if(cand.length>2 && !JUNK.test(cand)){ name=cand; break; }
+    }
+    if(!name) name=(bits[bits.length-1]||'').replace(/[\u00b7\-\s]+$/,'');
+    name=name.slice(0,60);
     const desc='';
     out.push({name:name||'Plan', desc:/^\s*$/.test(desc)?'':desc,
       amount, day, overdue});
@@ -1704,12 +1748,16 @@ function pastePanel(b){
           Pick a file<input type="file" id="ps-img" accept="image/*" hidden></label>
         <span class="hint" id="ps-stat"></span></div></div>
     ${rows.length?`<table style="margin-top:12px;font-size:12.5px"><thead><tr>
-        <th class="c">Add</th><th>What</th><th class="r">Amount</th><th class="c">Day</th><th></th></tr></thead><tbody>
+        <th class="c">Add</th><th>What</th><th class="r">Amount</th><th class="c">Day</th>
+        <th>How often</th><th></th></tr></thead><tbody>
       ${rows.map((r,i)=>`<tr${r.skip?' style="opacity:.5"':''}>
         <td class="c"><input type="checkbox" data-ps="${i}" data-f="keep" ${r.skip?'':'checked'}></td>
         <td><input value="${esc(r.name)}" data-ps="${i}" data-f="name" style="width:100%;font-size:12.5px"></td>
         <td class="r"><input value="${r.amount}" data-ps="${i}" data-f="amount" style="width:88px;text-align:right;font-size:12.5px"></td>
         <td class="c"><input value="${r.day||''}" data-ps="${i}" data-f="day" style="width:54px;text-align:center;font-size:12.5px"></td>
+        <td><select data-ps="${i}" data-f="cadence" style="font-size:12.5px">
+          <option value="monthly" ${r.cadence!=='biweekly'?'selected':''}>Monthly</option>
+          <option value="biweekly" ${r.cadence==='biweekly'?'selected':''}>Every 2 weeks</option></select></td>
         <td>${r.already?'<span class="tag sched">already here</span>'
             :r.twice?'<span class="tag sched">repeated</span>'
             :r.overdue?'<span class="tag late">overdue</span>':''}</td></tr>`).join('')}
@@ -1926,18 +1974,30 @@ async function readShot(file){
     say('Reading\u2026');
     // Mode 6 (one uniform block) reads a payment list best. Tested against a
     // 277px-wide phone screenshot: auto mode found 3 amounts, this finds 7.
-    const {data}=await Tesseract.recognize(prepped,'eng',{
-      logger:m=>{ if(m.status==='recognizing text') say('Reading\u2026 '+Math.round(m.progress*100)+'%'); }},
-      {tessedit_pageseg_mode:'6'});
-    lastRead=data.text||'';
-    pasted=parseSchedule(lastRead);
-    if(!pasted.length){
-      // one more go, letting it find the blocks itself
-      say('Trying another way\u2026');
-      const second=await Tesseract.recognize(prepped,'eng',{},{tessedit_pageseg_mode:'4'});
-      if((second.data.text||'').length>lastRead.length) lastRead=second.data.text;
-      pasted=parseSchedule(lastRead);
+    // Two passes with different page modes. Each drops a different row or two,
+    // so the union of them is better than either alone.
+    const reads=[];
+    for(const mode of ['6','4']){
+      say('Reading\u2026 pass '+(reads.length+1)+' of 2');
+      try{
+        const r=await Tesseract.recognize(prepped,'eng',{
+          logger:m=>{ if(m.status==='recognizing text')
+            say('Reading\u2026 pass '+(reads.length+1)+' of 2 \u00b7 '+Math.round(m.progress*100)+'%'); }},
+          {tessedit_pageseg_mode:mode});
+        reads.push(r.data.text||'');
+      }catch(e){ /* keep whatever the other pass gives */ }
     }
+    lastRead=reads.join('\n\n----- second pass -----\n\n');
+    const merged=[];
+    reads.forEach(t=>parseSchedule(t).forEach(r=>{
+      const twin=merged.find(x=>Math.abs(x.amount-r.amount)<0.005);
+      if(!twin) merged.push(r);
+      else{ // keep the better-looking version of a row both passes found
+        if(!twin.day && r.day) twin.day=r.day;
+        if((r.name||'').length>(twin.name||'').length && !/card|merch/i.test(r.name)) twin.name=r.name;
+      }
+    }));
+    pasted=merged;
     say(pasted.length? pasted.length+' found \u2014 check them before adding.'
       :'Nothing readable. Open \u201cShow what it read\u201d.');
     render();
