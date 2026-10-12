@@ -2,7 +2,6 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Turner Budget</title>
-<link rel="manifest" href="images/manifest.webmanifest">
 <meta name="theme-color" content="#12263F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -281,13 +280,19 @@ window.addEventListener('unhandledrejection',function(e){
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v6 \u00b7 no-cache';
+const BUILD='v7 \u00b7 no sw';
+// Clear out any service worker left over from earlier builds. Runs once,
+// guarded, and nothing registers one again — two of these fighting each
+// other on every load is what made the page blink.
 (async()=>{ try{
+  if(sessionStorage.getItem('tb-swpurged')) return;
+  sessionStorage.setItem('tb-swpurged','1');
   if('serviceWorker' in navigator){
     const rs=await navigator.serviceWorker.getRegistrations();
-    await Promise.all(rs.map(r=>r.unregister()));
+    if(rs.length){ await Promise.all(rs.map(r=>r.unregister()));
+      if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+    }
   }
-  if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
 }catch(e){} })();
 if(!window.supabase||!window.supabase.createClient){
   window.__ERRS.push('The Supabase library did not load. Check the network — the app needs '
@@ -916,19 +921,4 @@ $('pdel').onclick=()=>{
   go(async()=>{const {error}=await db.from('profiles').delete().eq('id',S.pid);
     if(error)throw error; await loadProfiles(); S.pid=S.profiles[0].id; acct=null;});};
 
-/* ================= INSTALL ================= */
-if('serviceWorker' in navigator)
-  addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-let deferred=null;
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;showInstall();});
-function showInstall(){
-  if(document.getElementById('inst'))return;
-  const b=document.createElement('button');
-  b.id='inst';b.className='mini';b.textContent='Install app';
-  b.onclick=async()=>{ if(!deferred)return; deferred.prompt();
-    const {outcome}=await deferred.userChoice; deferred=null; b.remove();
-    if(outcome==='accepted') toast('Installed. Look for Budget on your home screen.'); };
-  const bar=document.querySelector('.hrow .row-flex'); if(bar) bar.appendChild(b);
-}
-addEventListener('appinstalled',()=>{const b=document.getElementById('inst');if(b)b.remove();});
 </script></body></html>
