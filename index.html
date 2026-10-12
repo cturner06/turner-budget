@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Turner Budget</title>
-<meta name="theme-color" content="#12263F">
+<meta name="theme-color" content="#0A0A0B">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,196 +10,327 @@
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <link rel="icon" href="images/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#12263F;--ink2:#3C5069;--mute:#7A8899;--paper:#FBFAF7;--card:#FFFFFF;
- --rule:#DCE1E8;--rule2:#EEF1F5;--lock:#F4F6F9;
- --gold:#C9A227;--goldw:#FBF3DA;--red:#B3261E;--redw:#FBEBEA;--green:#1E7A5A;--greenw:#E6F3ED;
- --p:#2E5E8C;--f:#7A5AA8;--b:#0F7A6C;--v:#A8663A;}
-*{box-sizing:border-box}html,body{margin:0;padding:0}
-/* An id selector outranks the browser's built-in [hidden] rule, so #gate and
-   #boot stayed painted over the app even after the code hid them. */
+:root{
+  /* ground */
+  --black:#000000; --obsidian:#0A0A0B; --coal:#141416;
+  /* old gold */
+  --gold:#CFB53B; --gold-deep:#8E7524; --gold-wash:rgba(207,181,59,.12);
+  --goldw:rgba(207,181,59,.14);
+  /* ink on dark */
+  --ink:#EDE8DA; --ink2:#C9C2B2; --mute:#8B8475; --ash:#6E685C;
+  /* glass */
+  --glass:rgba(255,255,255,.045); --glass-2:rgba(255,255,255,.07);
+  --edge:rgba(207,181,59,.17); --edge-soft:rgba(255,255,255,.08);
+  --rule:rgba(255,255,255,.10); --rule2:rgba(255,255,255,.055);
+  --lock:rgba(255,255,255,.025);
+  /* state */
+  --green:#4FA883; --greenw:rgba(79,168,131,.14);
+  --red:#E0665C;   --redw:rgba(224,102,92,.13);
+  /* tab hues, muted for a black ground */
+  --p:#6FA3D6; --f:#A98BDC; --b:#4FBFAE; --v:#D49A69;
+  --card:transparent; --paper:var(--obsidian);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
 [hidden]{display:none!important}
-body{background:var(--paper);color:var(--ink);font:400 15px/1.55 'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
-button{font:inherit;cursor:pointer;background:none;border:1px solid var(--rule);color:var(--ink);border-radius:4px;padding:6px 12px}
-button:hover{border-color:var(--ink2);background:#fff}
-button:disabled{opacity:.5;cursor:default}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
-input,select{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:4px;padding:6px 9px}
-h1{font:600 19px/1.2 'IBM Plex Sans';margin:0;letter-spacing:-.01em}
-.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
-.spacer{flex:1}.hint{color:var(--mute);font-size:12px}
+body{
+  background:var(--obsidian); color:var(--ink);
+  font:400 15px/1.6 Archivo,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  min-height:100vh;
+}
+/* something for the glass to refract */
+body:before{
+  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(900px 620px at 12% -8%,  rgba(207,181,59,.16), transparent 62%),
+    radial-gradient(760px 560px at 92% 8%,   rgba(90,120,170,.10), transparent 60%),
+    radial-gradient(1100px 800px at 50% 115%,rgba(207,181,59,.07), transparent 65%),
+    var(--black);
+}
+.num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+.spacer{flex:1}
+.hint{color:var(--mute);font-size:12.5px}
 .row-flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+h1{font:600 20px/1.15 Archivo,sans-serif;margin:0;letter-spacing:-.025em;color:var(--ink)}
+h2{font:500 15px/1.2 Archivo,sans-serif;margin:0;letter-spacing:-.015em}
 
-/* ---- sign in ---- */
-#gate{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
-#gate .box{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:30px 32px;width:100%;max-width:380px}
-#gate h2{font:600 21px/1.2 'IBM Plex Sans';margin:0 0 4px}
-#gate .s{color:var(--mute);font-size:13px;margin-bottom:22px}
-#gate .gbtn{width:100%;padding:11px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:500}
-#gate .or{display:flex;align-items:center;gap:11px;color:var(--mute);font-size:11px;margin:18px 0;text-transform:uppercase;letter-spacing:.06em}
+button{
+  font:500 14px/1 Archivo,sans-serif; cursor:pointer; color:var(--ink2);
+  background:var(--glass); border:1px solid var(--edge-soft); border-radius:7px;
+  padding:8px 14px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  transition:border-color .15s,color .15s,background .15s;
+}
+button:hover{border-color:var(--edge);color:var(--ink);background:var(--glass-2)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--gold);outline-offset:2px}
+input,select{
+  font:400 14px/1.4 Archivo,sans-serif; color:var(--ink);
+  background:rgba(255,255,255,.04); border:1px solid var(--edge-soft);
+  border-radius:7px; padding:8px 11px;
+}
+input::placeholder{color:var(--ash)}
+select{appearance:none;padding-right:26px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50%),
+                   linear-gradient(135deg,var(--mute) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+select option{background:var(--coal);color:var(--ink)}
+
+/* ---------- sign in ---------- */
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--mute);font-size:14px;z-index:90}
+#gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:100;padding:22px}
+#gate .box{
+  width:100%;max-width:392px;padding:34px 34px 26px;border-radius:16px;
+  background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.028));
+  border:1px solid var(--edge); backdrop-filter:blur(22px) saturate(135%);
+  -webkit-backdrop-filter:blur(22px) saturate(135%);
+  box-shadow:0 30px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1);
+}
+#gate h2{font:600 26px/1.1 Archivo,sans-serif;letter-spacing:-.03em;color:var(--gold)}
+#gate .s{color:var(--mute);font-size:13.5px;margin:6px 0 24px}
+#gate .gbtn{width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:11px;font-size:15px}
+#gate .or{display:flex;align-items:center;gap:12px;color:var(--ash);font-size:12px;margin:20px 0}
 #gate .or:before,#gate .or:after{content:'';flex:1;height:1px;background:var(--rule)}
-#gate label{font-size:11px;color:var(--mute);display:block;margin:0 0 4px}
-#gate input{width:100%;margin-bottom:12px;padding:9px 11px}
-#gate .prim{width:100%;padding:10px;background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
-#gate .prim:hover{background:#0B1B2E}
-#gate .alt{width:100%;margin-top:9px;font-size:13px;border:0;color:var(--ink2)}
-#gate .err{background:var(--redw);border:1px solid #F0C4C1;color:var(--red);border-radius:4px;padding:9px 12px;font-size:13px;margin-bottom:14px}
-#gate .ok{background:var(--greenw);border:1px solid #BFE0D2;color:var(--green);border-radius:4px;padding:9px 12px;font-size:13px;margin-bottom:14px}
-#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper);z-index:90;color:var(--mute);font-size:14px}
+#gate label{font-size:12.5px;color:var(--mute);display:block;margin:0 0 5px}
+#gate input{width:100%;margin-bottom:14px;padding:11px 13px;font-size:15px}
+#gate .prim{
+  width:100%;padding:12px;font-size:15px;font-weight:600;letter-spacing:.01em;
+  color:#17140A;background:linear-gradient(175deg,#E0C654,var(--gold));
+  border:0;box-shadow:0 6px 18px rgba(207,181,59,.22)}
+#gate .prim:hover{background:linear-gradient(175deg,#EAD165,#D6BC43);color:#17140A}
+#gate .alt{width:100%;margin-top:10px;font-size:13.5px;border:0;background:none;color:var(--mute)}
+#gate .alt:hover{color:var(--gold);background:none}
+#gate .err{background:var(--redw);border:1px solid rgba(224,102,92,.34);color:#F0978F;
+  border-radius:8px;padding:11px 14px;font-size:13.5px;margin-bottom:16px}
+#gate .ok{background:var(--greenw);border:1px solid rgba(79,168,131,.34);color:#7FD4AE;
+  border-radius:8px;padding:11px 14px;font-size:13.5px;margin-bottom:16px}
 
-header{background:var(--paper);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:30}
-.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 0 0}
-.sub{color:var(--mute);font-size:13px}
-.who{font-size:12px;color:var(--mute);display:flex;align-items:center;gap:8px}
-.tabs{display:flex;gap:3px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+/* ---------- chrome ---------- */
+header{
+  position:sticky;top:0;z-index:30;
+  background:rgba(10,10,11,.72); backdrop-filter:blur(18px) saturate(130%);
+  -webkit-backdrop-filter:blur(18px) saturate(130%);
+  border-bottom:1px solid var(--rule);
+}
+.hrow{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:15px 0 0}
+.sub{color:var(--mute);font-size:13.5px}
+.who{font-size:12.5px;color:var(--ash)}
+.prow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 0 0;font-size:13.5px}
+.prow .pl{font-size:12.5px;color:var(--mute)}
+.prow select{min-width:158px}
+.cfgbox{
+  margin-top:12px;padding:13px 16px;border-radius:10px;
+  background:var(--glass);border:1px solid var(--edge-soft);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13.5px}
+.cfgbox label{display:flex;gap:8px;align-items:center;cursor:pointer;color:var(--ink2)}
+.tabs{display:flex;gap:4px;margin-top:14px;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{border:1px solid var(--rule);border-bottom:none;background:#fff;color:var(--ink2);
- padding:8px 16px;border-radius:5px 5px 0 0;font-size:13.5px;white-space:nowrap;display:flex;align-items:center;gap:8px}
-.tab .d{width:8px;height:8px;border-radius:50%}
-.tab.on{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
-.tab .n{font-family:'IBM Plex Mono';font-size:11px;opacity:.75}
-.prow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:10px 0 0;font-size:13px}
-.prow .pl{font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.055em}
-.prow select{font-size:13px;padding:5px 8px;min-width:150px}
-.cfgbox{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:11px 14px;margin-top:10px;
- display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px}
-.cfgbox label{display:flex;gap:7px;align-items:center;cursor:pointer}
+.tab{
+  border:1px solid var(--edge-soft);border-bottom:none;background:var(--glass);
+  color:var(--ink2);padding:9px 17px;border-radius:9px 9px 0 0;font-size:14px;
+  white-space:nowrap;display:flex;align-items:center;gap:9px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tab:hover{background:var(--glass-2);color:var(--ink)}
+.tab .d{width:7px;height:7px;border-radius:50%}
+.tab.on{
+  background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;
+  border-color:transparent;font-weight:600;
+  box-shadow:0 -1px 14px rgba(207,181,59,.3)}
+.tab.on:hover{color:#17140A}
+.tab .n{font-family:'IBM Plex Mono',monospace;font-size:11.5px;opacity:.72}
+main{padding:26px 0 80px}
 
-main{padding:22px 0 70px}
-.tiles,.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+/* ---------- glass surfaces ---------- */
+.tiles,.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}
 @media(max-width:780px){.tiles,.sgrid{grid-template-columns:repeat(2,1fr)}}
-.tile{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:13px 16px}
-.tile .l{font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.055em}
-.tile .v{font:500 23px/1.2 'IBM Plex Mono';margin-top:5px}
-.tile .c{font-size:11.5px;color:var(--mute);margin-top:3px}
-.prog{height:5px;background:var(--rule2);border-radius:3px;overflow:hidden;margin-top:9px}
-.prog i{display:block;height:100%;background:var(--green);border-radius:3px}
-.panel{background:var(--card);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
-.ptop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--rule2)}
-.ptop h2{font:600 14px/1 'IBM Plex Sans';margin:0}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;font-weight:500;color:var(--mute);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
- padding:9px 10px;border-bottom:1px solid var(--rule);background:#fff}
-th.mo small{display:block;font-size:9.5px;letter-spacing:.02em;text-transform:none;color:#A2AEBC;font-weight:400}
-td{padding:0 10px;border-bottom:1px solid var(--rule2);height:40px}
-tbody tr:hover td{background:#FAFBFD}
+.tile{
+  padding:15px 18px;border-radius:12px;
+  background:linear-gradient(165deg,rgba(255,255,255,.07),rgba(255,255,255,.028));
+  border:1px solid var(--edge-soft);
+  backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.tile .l{font-size:12.5px;color:var(--mute)}
+.tile .v{font:500 25px/1.15 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+  margin-top:7px;letter-spacing:-.02em;color:var(--ink)}
+.tile .c{font-size:12px;color:var(--ash);margin-top:4px}
+.prog{height:4px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:11px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:3px}
+.panel{
+  border-radius:13px;overflow:hidden;
+  background:linear-gradient(170deg,rgba(255,255,255,.055),rgba(255,255,255,.022));
+  border:1px solid var(--edge-soft);
+  backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.ptop{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:14px 18px;
+  border-bottom:1px solid var(--rule2)}
+
+/* ---------- ledger ---------- */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;color:var(--mute);font-size:12.5px;
+  padding:11px 12px;border-bottom:1px solid var(--rule);background:transparent}
+th.mo small{display:block;font-size:11px;color:var(--ash);font-weight:400;margin-top:2px}
+td{padding:0 12px;border-bottom:1px solid var(--rule2);height:42px;color:var(--ink2)}
+tbody tr:hover td{background:rgba(255,255,255,.028)}
 .r{text-align:right}.c{text-align:center}
-.bn{font-weight:500}.cat{font-size:11px;color:var(--mute)}
-td.lock{background:var(--lock);color:var(--mute);font-family:'IBM Plex Mono'}
-td.lock .ld{font-size:9.5px;color:#A2AEBC}
+.bn{font-weight:500;color:var(--ink)}
+.cat{font-size:12px;color:var(--ash)}
+td.lock{background:var(--lock);color:var(--mute);font-family:'IBM Plex Mono',monospace;
+  font-variant-numeric:tabular-nums}
+td.lock .ld{font-size:12px;color:var(--ash)}
 td.cell{padding:0}
-td.cell input{width:100%;height:39px;border:0;border-radius:0;background:none;text-align:right;
- font-family:'IBM Plex Mono';font-size:13.5px;padding:0 10px}
-td.cell input:hover{background:#F4F7FB}
-td.cell input:focus{background:var(--goldw);outline:2px solid var(--gold);outline-offset:-2px}
-td.cell.next input{color:var(--ink2)}
-td.cell.next input::placeholder{color:#C3CBD6}
+td.cell input{width:100%;height:41px;border:0;border-radius:0;background:none;text-align:right;
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:14px;
+  padding:0 12px;color:var(--ink)}
+td.cell input:hover{background:rgba(255,255,255,.04)}
+td.cell input:focus{background:var(--gold-wash);outline:1px solid var(--gold);outline-offset:-1px}
+td.cell.next input{color:var(--mute)}
+td.cell.next input::placeholder{color:var(--ash)}
 tr.paid .bn{color:var(--green)}
-tr.late td{background:var(--redw)}tr.late:hover td{background:#F7E2E0}
-.tag{display:inline-block;font:500 10px/1 'IBM Plex Mono';padding:4px 7px;border-radius:3px}
-.tag.paid{background:var(--greenw);color:var(--green)}
-.tag.late{background:var(--red);color:#fff}
-.tag.due{background:var(--goldw);color:#7A5F12}
-.tag.sched{background:var(--rule2);color:var(--mute)}
-.tag.ahead{background:#E8EEF6;color:var(--p)}
-.tag.part{background:var(--goldw);color:#7A5F12}
-.tag.arr{background:#EDE7F6;color:#5B3FA8}
-.tag.split{background:#E8EEF6;color:var(--p)}
-.tag.zero{background:var(--rule2);color:var(--ink2)}
-.tag.shared{background:var(--greenw);color:var(--green)}
-.tag.annual{background:var(--goldw);color:#7A5F12}
-tfoot td{height:44px;background:var(--ink);color:#fff;font-weight:500;border:0;font-family:'IBM Plex Mono'}
-tfoot td.lbl{font-family:'IBM Plex Sans'}
-.var{font-size:10px;color:var(--mute);font-family:'IBM Plex Mono'}
+tr.late td{background:rgba(224,102,92,.09)}
+tr.late:hover td{background:rgba(224,102,92,.14)}
+tfoot td{height:46px;border:0;border-top:1px solid var(--edge);
+  background:rgba(207,181,59,.09);color:var(--gold);font-weight:600;
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+tfoot td.lbl{font-family:Archivo,sans-serif;color:var(--ink)}
+tr.grp td{
+  height:38px;background:rgba(207,181,59,.08);border-top:1px solid var(--edge);
+  border-bottom:1px solid var(--rule2);cursor:pointer;color:var(--gold);font-weight:500}
+tr.grp:hover td{background:rgba(207,181,59,.13)}
+tr.grp .gname{display:flex;align-items:center;gap:9px}
+tr.grp .chev{display:inline-block;width:9px;color:var(--gold-deep);transition:transform .15s}
+tr.grp.shut .chev{transform:rotate(-90deg)}
+tr.grp .gcount{color:var(--mute);font-weight:400;font-size:12.5px}
+tr.grp .gsum{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.var{font-size:11.5px;color:var(--ash);font-family:'IBM Plex Mono',monospace}
 .var.up{color:var(--red)}.var.dn{color:var(--green)}
-.note{background:var(--goldw);border:1px solid #E8D48A;border-radius:5px;padding:10px 14px;margin-bottom:14px;font-size:13px}
-.mini{font-size:12px;padding:4px 9px}
-.menu{border:0;background:none;color:var(--mute);font-size:17px;line-height:1;padding:4px 7px;border-radius:4px}
-.menu:hover{background:var(--rule2);color:var(--ink)}
-tr.open td{background:#F7F9FC}
-td.drawer{padding:0;background:#F7F9FC}
-.dr{padding:13px 14px;border-bottom:1px solid var(--rule)}
-.dr h4{font:600 12px/1 'IBM Plex Sans';margin:0 0 9px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
-.acts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
-.acts button{font-size:12px;padding:5px 11px}
-.acts button.danger{color:var(--red);border-color:#E9C4C1}
-.acts button.danger:hover{background:var(--redw)}
-.form{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
-.form label{font-size:11px;color:var(--mute);display:block;margin-bottom:3px}
-.form input,.form select{font-size:13px;padding:5px 8px}
-.parts{margin-top:10px;border-top:1px solid var(--rule2);padding-top:9px}
-.part{display:flex;gap:9px;align-items:center;font-size:13px;padding:4px 0}
-.part .pn{width:78px;color:var(--mute);font-size:12px}
-.part input[type=number]{width:104px;text-align:right;font-family:'IBM Plex Mono'}
-.part label{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);cursor:pointer}
-.strip{display:grid;grid-template-columns:118px repeat(12,1fr);gap:3px;align-items:center;font-size:11px}
-.strip .lb{font-size:12px;color:var(--ink2)}
-.strip .hd2{font-family:'IBM Plex Mono';font-size:10px;color:var(--mute);text-align:center}
-.cellm{height:30px;border-radius:3px;display:flex;align-items:center;justify-content:center;
- font-family:'IBM Plex Mono';font-size:10px;color:#fff;cursor:pointer}
-.cellm.nowm{outline:2px solid var(--gold);outline-offset:-1px}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;
- padding:10px 18px;border-radius:5px;font-size:13px;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none}
+
+.tag{display:inline-block;font:500 11.5px/1 Archivo,sans-serif;padding:5px 9px;border-radius:5px}
+.tag.paid{background:var(--greenw);color:#7FD4AE}
+.tag.late{background:rgba(224,102,92,.22);color:#F0978F;border:1px solid rgba(224,102,92,.3)}
+.tag.due{background:var(--goldw);color:var(--gold)}
+.tag.sched{background:rgba(255,255,255,.06);color:var(--mute)}
+.tag.ahead{background:rgba(111,163,214,.15);color:#8FBCE6}
+.tag.part{background:var(--goldw);color:var(--gold)}
+.tag.arr{background:rgba(169,139,220,.15);color:#BFA6E8}
+.tag.split{background:rgba(111,163,214,.15);color:#8FBCE6}
+.tag.zero{background:rgba(255,255,255,.06);color:var(--mute)}
+.tag.shared{background:var(--greenw);color:#7FD4AE}
+.tag.annual{background:var(--goldw);color:var(--gold)}
+
+.note{background:var(--goldw);border:1px solid var(--edge);border-radius:10px;
+  padding:12px 16px;margin-bottom:16px;font-size:13.5px;color:var(--ink2);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.note b{color:var(--gold)}
+.mini{font-size:13px;padding:6px 11px}
+td.act{padding:0;text-align:center;width:46px}
+.menu{border:1px solid transparent;background:none;color:var(--gold-deep);font-size:19px;
+  line-height:1;padding:5px 9px;border-radius:7px;transition:all .15s}
+.menu:hover{background:var(--gold-wash);border-color:var(--edge);color:var(--gold)}
+tr.open .menu{background:var(--gold-wash);border-color:var(--edge);color:var(--gold)}
+tr.open td{background:rgba(207,181,59,.055)}
+td.drawer{padding:0;background:rgba(0,0,0,.28)}
+.dr{padding:15px 16px;border-bottom:1px solid var(--rule2)}
+.dr h4{font:500 13px/1 Archivo,sans-serif;margin:0 0 11px;color:var(--gold)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.acts button{font-size:13px;padding:6px 12px}
+.acts button.danger{color:#F0978F;border-color:rgba(224,102,92,.3)}
+.acts button.danger:hover{background:var(--redw);border-color:rgba(224,102,92,.5);color:#F0978F}
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+.form label{font-size:12px;color:var(--mute);display:block;margin-bottom:4px}
+.form input,.form select{font-size:13.5px;padding:7px 10px}
+.parts{margin-top:12px;border-top:1px solid var(--rule2);padding-top:11px}
+.part{display:flex;gap:10px;align-items:center;font-size:13.5px;padding:5px 0}
+.part .pn{width:80px;color:var(--mute);font-size:12.5px}
+.part input[type=number]{width:108px;text-align:right;font-family:'IBM Plex Mono',monospace}
+.part label{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink2);cursor:pointer}
+.strip{display:grid;grid-template-columns:120px repeat(12,1fr);gap:3px;align-items:center;font-size:12px}
+.strip .lb{font-size:13px;color:var(--ink2)}
+.strip .hd2{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ash);text-align:center}
+.cellm{height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink);cursor:pointer;
+  border:1px solid rgba(255,255,255,.05)}
+.cellm:hover{border-color:var(--edge)}
+.cellm.nowm{outline:1.5px solid var(--gold);outline-offset:-1px}
+#diag{background:rgba(0,0,0,.4);border:1px solid var(--edge-soft);color:var(--mute)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  background:rgba(20,20,22,.92);color:var(--gold);border:1px solid var(--edge);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:12px 20px;border-radius:9px;font-size:13.5px;z-index:80;opacity:0;
+  transition:opacity .2s;pointer-events:none;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 #toast.on{opacity:1}
-#toast.bad{background:var(--red)}
-@media print{.noprint{display:none!important}header{position:static}body{background:#fff}
- @page{size:landscape;margin:10mm}}
+#toast.bad{color:#F0978F;border-color:rgba(224,102,92,.4)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  body:before{display:none} body{background:#fff;color:#000}
+  .noprint{display:none!important} header{position:static;background:none}
+  .panel,.tile{background:none;border:1px solid #ccc;backdrop-filter:none;box-shadow:none}
+  td,th{color:#000} tfoot td{background:#eee;color:#000}
+  @page{size:landscape;margin:10mm}
+}
+
 /* ---------- phone ---------- */
 @media(max-width:760px){
  :root{padding-top:env(safe-area-inset-top,0px)}
- .wrap{padding:0 11px}
- body{font-size:15px}
- h1{font-size:17px}
+ .wrap{padding:0 13px}
+ h1{font-size:18px}
  .hidesm{display:none}
  header{padding-top:env(safe-area-inset-top,0px)}
- .hrow{gap:9px;padding:10px 0 0}
- .hrow .sub{order:3;width:100%;margin-top:-4px}
+ .hrow{gap:10px;padding:12px 0 0}
+ .hrow .sub{order:3;width:100%;margin-top:-5px}
  .who{display:none}
- .prow{gap:6px}
+ .prow{gap:7px}
  .prow .pl{display:none}
  .prow select{min-width:0;flex:1}
- .tiles,.sgrid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
- .tile{padding:10px 12px}.tile .v{font-size:19px}
- .ptop{padding:10px 12px}
- .panel{border-radius:8px}
-
- /* table becomes a stack of cards */
+ .tiles,.sgrid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+ .tile{padding:12px 13px}.tile .v{font-size:20px}
+ .ptop{padding:12px 13px}
  #tbl,#tbl tbody,#tbl tr,#tbl td{display:block;width:100%}
- #tbl thead,#tbl tfoot th,#tbl td.lock:empty{display:none}
- #tbl tbody tr{border:1px solid var(--rule);border-radius:8px;margin:0 0 9px;padding:11px 12px;
-   background:#fff;position:relative}
+ #tbl thead,#tbl tfoot th{display:none}
+ #tbl tbody tr.grp{border:0;border-radius:0;margin:14px 0 8px;padding:0;background:none;backdrop-filter:none}
+ #tbl tbody tr.grp td{display:flex;justify-content:space-between;align-items:center;height:auto;
+   padding:9px 12px;border-radius:8px;background:rgba(207,181,59,.1);border:1px solid var(--edge)}
+ #tbl tbody tr{border:1px solid var(--edge-soft);border-radius:11px;margin:0 0 10px;
+   padding:13px 14px;background:var(--glass);position:relative;
+   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
  #tbl tbody tr:hover td{background:none}
- #tbl tbody tr.late{background:var(--redw);border-color:#F0C4C1}
- #tbl tbody tr.open{background:#F7F9FC}
+ #tbl tbody tr.late{background:rgba(224,102,92,.1);border-color:rgba(224,102,92,.26)}
+ #tbl tbody tr.open{background:rgba(207,181,59,.07)}
  #tbl td{border:0;height:auto;padding:0;text-align:left!important}
  #tbl td[data-l]{display:flex;justify-content:space-between;align-items:center;
-   padding:6px 0;border-top:1px solid var(--rule2);gap:12px}
- #tbl td[data-l]:before{content:attr(data-l);font-size:10.5px;color:var(--mute);
-   text-transform:uppercase;letter-spacing:.05em;flex:0 0 auto}
- #tbl td.name{padding:0 34px 7px 0;border:0}
- #tbl td.name .bn{font-size:15px}
- #tbl td.lock{background:none;padding:6px 0}
- #tbl td.cell{padding:0;border-top:1px solid var(--rule2)}
- #tbl td.cell input{height:42px;font-size:16px;text-align:right;
-   border:1px solid var(--rule);border-radius:6px;background:#fff;padding:0 11px;margin:5px 0}
+   padding:7px 0;border-top:1px solid var(--rule2);gap:12px}
+ #tbl td[data-l]:before{content:attr(data-l);font-size:12.5px;color:var(--mute);flex:0 0 auto}
+ #tbl td.name{padding:0 36px 8px 0;border:0}
+ #tbl td.name .bn{font-size:16px}
+ #tbl td.lock{background:none;padding:7px 0}
+ #tbl td.cell{padding:0;border-top:1px solid var(--rule2);
+   display:grid;grid-template-columns:1fr 152px;align-items:center;gap:10px}
+ #tbl td.cell input{height:44px;font-size:16px;border:1px solid var(--edge-soft);
+   border-radius:8px;background:rgba(255,255,255,.04);padding:0 12px;margin:6px 0}
  #tbl td.cell.next input{border-style:dashed}
- #tbl td.cell:before{content:attr(data-l);font-size:10.5px;color:var(--mute);
-   text-transform:uppercase;letter-spacing:.05em;display:block;padding-top:7px}
- #tbl td.cell{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:10px}
- #tbl .menu{position:absolute!important;right:6px;top:7px;font-size:21px;padding:4px 9px}
- #tbl tr.drawerrow,#tbl td.drawer{border:0;padding:0;background:none;margin-bottom:9px}
- .dr{border:1px solid var(--rule);border-radius:8px;background:#F7F9FC;padding:12px}
+ #tbl td.cell:before{content:attr(data-l);font-size:12.5px;color:var(--mute);padding-top:7px}
+ #tbl td.act{position:absolute;right:7px;top:8px;width:auto;padding:0;border:0}
+ #tbl td.act:before{content:none}
+ #tbl .menu{font-size:22px;padding:5px 11px;border-color:var(--edge-soft)}
+ #tbl tr.drawerrow,#tbl td.drawer{border:0;padding:0;background:none;margin-bottom:10px}
+ .dr{border:1px solid var(--edge-soft);border-radius:11px;background:rgba(0,0,0,.3);padding:14px}
  .form input,.form select{font-size:16px}
- .form>div{flex:1 1 130px}
+ .form>div{flex:1 1 132px}
  .acts button{flex:1 1 auto}
- .strip{grid-template-columns:70px repeat(12,minmax(26px,1fr));gap:2px}
- .strip .lb{font-size:10px}.cellm{font-size:8px;height:26px}
- #sumview table{font-size:12.5px}
- #toast{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
- main{padding-bottom:calc(50px + env(safe-area-inset-bottom,0px))}
- #gate .box{padding:24px 20px}
+ .strip{grid-template-columns:72px repeat(12,minmax(26px,1fr));gap:2px}
+ .strip .lb{font-size:11px}.cellm{font-size:9px;height:28px}
+ #sumview table{font-size:13px}
+ #toast{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+ main{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}
+ #gate .box{padding:26px 22px}
  #gate input{font-size:16px}
 }
 </style></head><body>
@@ -269,6 +400,7 @@ window.addEventListener('unhandledrejection',function(e){
  <div class="panel"><div class="ptop"><h2 id="ptitle">Bills</h2><span class="spacer"></span>
    <button id="addb" class="mini noprint">+ Add bill</button>
    <input id="q" class="noprint" placeholder="Filter" style="width:150px;font-size:13px" aria-label="Filter">
+   <select id="gb" class="noprint" style="font-size:13px" aria-label="Group by"></select>
    <select id="sf" class="noprint" style="font-size:13px" aria-label="Status filter">
     <option value="">All</option><option value="late">Not paid</option><option value="due">Due now</option>
     <option value="sched">Scheduled</option><option value="paid">Paid</option>
@@ -283,7 +415,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v9 \u00b7 gate fix';
+const BUILD='v12 \u00b7 actions column';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -321,6 +453,49 @@ const $=id=>document.getElementById(id);
 let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
 let acct=null,q='',sf='',drawer=null,adding=false,editing=null,cfg=false,busy=false;
+let grp='none', shut=new Set();
+
+// ---- grouping ----
+const GROUPS={
+  acct:[['none','No grouping'],['cat','Category'],['status','Status'],['week','Week of the month']],
+  ann :[['none','No grouping'],['tab','Tab'],['month','Month'],['status','Status']]
+};
+const weekOf=d=>{const n=Math.ceil(d.getDate()/7);return n>4?4:n;};
+const WEEK=['1st – 7th','8th – 14th','15th – 21st','22nd – end'];
+function groupKey(x,kind){
+  if(grp==='none') return null;
+  if(kind==='ann'){
+    if(grp==='tab')   return acctOf(x.b.tab_code).name;
+    if(grp==='month') return MN[x.b.due_month-1];
+    if(grp==='status')return LBLA[x.s]||x.s;
+    return null;
+  }
+  if(grp==='cat')    return x.b.category||'Other';
+  if(grp==='status') return LBL[status(x,cur)];
+  if(grp==='week')   return WEEK[weekOf(x.when)-1];
+  return null;
+}
+function bucket(rows,kind){
+  if(grp==='none') return [[null,rows]];
+  const m=new Map();
+  rows.forEach(x=>{const k=groupKey(x,kind)||'Other';
+    if(!m.has(k)) m.set(k,[]); m.get(k).push(x);});
+  const order=[...m.keys()];
+  if(kind==='ann'&&grp==='month') order.sort((a,b)=>MN.indexOf(a)-MN.indexOf(b));
+  else if(grp==='week') order.sort((a,b)=>WEEK.indexOf(a)-WEEK.indexOf(b));
+  else if(grp==='status'){const o=['Not paid','Part paid','Due now','Scheduled','Paid ahead','Paid','Coming up'];
+    order.sort((a,b)=>o.indexOf(a)-o.indexOf(b));}
+  else order.sort((a,b)=>a.localeCompare(b));
+  return order.map(k=>[k,m.get(k)]);
+}
+function groupRow(name,items,budget,cleared,cols){
+  const off=shut.has(name);
+  return `<tr class="grp${off?' shut':''}" data-g="${esc(name)}">
+    <td colspan="${cols}"><span class="gname"><span class="chev">\u25BE</span>${esc(name)}
+      <span class="gcount">${items} ${items===1?'bill':'bills'}</span></span>
+      <span class="gsum">${money(cleared)} of ${money(budget)}</span></td></tr>`;
+}
+const LBLA={paid:'Paid',late:'Not paid',due:'Coming up',sched:'Scheduled'};
 
 function toast(m,bad){const t=$('toast');t.textContent=m;t.className='on'+(bad?' bad':'');
   clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',2600);}
@@ -570,7 +745,7 @@ function renderAccount(){
      <div class="c">${done.length} of ${all.length}</div><div class="prog"><i style="width:${pct}%"></i></div></div>
    <div class="tile"><div class="l">Still owed</div><div class="v">${money0(owed)}</div>
      <div class="c">${lateN?lateN+' past the due day':'nothing overdue'}</div></div>
-   <div class="tile"><div class="l">Paid ahead</div><div class="v" style="color:${aheadN?'var(--p)':'var(--mute)'}">${aheadN}</div>
+   <div class="tile"><div class="l">Paid ahead</div><div class="v" style="color:${aheadN?'var(--p)':'var(--ash)'}">${aheadN}</div>
      <div class="c">recorded in ${lbl(nxt)}</div></div>`;
   $('ptitle').innerHTML=esc(A.name)+(A.institution?` <span class="hint" style="font-weight:400">${esc(A.institution)}</span>`:'')
     +(A.kind==='project'?' <button class="mini noprint" id="tabren" style="margin-left:8px">Rename</button>'
@@ -579,13 +754,7 @@ function renderAccount(){
     if(q&&!(x.b.name+' '+x.b.category).toLowerCase().includes(q))return false;
     if(sf&&status(x,cur)!==sf)return false;return true;});
   let tl=0,tc=0,tn=0,tb=0;
-  const addRow=adding?`<tr><td colspan="7" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
-    <div class="form"><div><label>Name</label><input id="nb-n" placeholder="Bill name" style="width:200px"></div>
-     <div><label>Category</label><input id="nb-c" placeholder="Card, Utilities…" style="width:130px"></div>
-     <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31" value="1" style="width:78px"></div>
-     <div><label>Amount</label><input id="nb-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
-     <button data-a="savenew">Add it</button><button data-a="cancelnew">Cancel</button></div></div></td></tr>`:'';
-  const body=rows.map(x=>{
+  const rowHTML=x=>{
     const s=status(x,cur),bg=budgetOf(x.b,cur),act=arrFor(x.b,cur),sp=getSplits(x.b,p);
     const L=paidOf(x.b,per(prev)),C=paidOf(x.b,p),N=paidOf(x.b,per(nxt));
     tb+=bg;tl+=L||0;tc+=C||0;tn+=N||0;
@@ -602,25 +771,40 @@ function renderAccount(){
       <td data-l="Status"><span class="tag ${s}">${LBL[s]}</span></td>
       <td class="r num" data-l="Budget · day ${x.b.due_day||'last'}">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
       <td class="r lock" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
-      <td class="cell" data-l="${lbl(cur)}">${sp?`<div style="padding:0 10px;text-align:right" class="num">${money(C||0)}</div>`
+      <td class="cell" data-l="${lbl(cur)}">${sp?`<div style="padding:0 12px;text-align:right;line-height:41px" class="num">${money(C||0)}</div>`
         :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="number" step="0.01" inputmode="decimal"
         value="${C!==null?C:''}" placeholder="${bg.toFixed(2)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
-      <td class="cell next" data-l="${lbl(nxt)} · early" style="position:relative"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
+      <td class="cell next" data-l="${lbl(nxt)} \u00b7 early"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
         type="number" step="0.01" inputmode="decimal" value="${N!==null?N:''}" placeholder="\u2014"
-        aria-label="${esc(x.b.name)} next month">
-        <button class="menu noprint" data-m="${x.b.id}" aria-label="Actions for ${esc(x.b.name)}"
-         style="position:absolute;right:-30px;top:7px">&#8943;</button></td></tr>`
-     +(open?`<tr class="drawerrow"><td colspan="7" class="drawer">${drawerHTML(x,cur)}</td></tr>`:'');
+        aria-label="${esc(x.b.name)} next month"></td>
+      <td class="act noprint"><button class="menu" data-m="${x.b.id}"
+        aria-label="Actions for ${esc(x.b.name)}" title="Edit, split, arrangement">&#8943;</button></td></tr>`
+     +(open?`<tr class="drawerrow"><td colspan="8" class="drawer">${drawerHTML(x,cur)}</td></tr>`:'');
+  };
+  const addRow=adding?`<tr><td colspan="8" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
+    <div class="form"><div><label>Name</label><input id="nb-n" placeholder="Bill name" style="width:200px"></div>
+     <div><label>Category</label><input id="nb-c" placeholder="Card, Utilities…" style="width:130px"></div>
+     <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31" value="1" style="width:78px"></div>
+     <div><label>Amount</label><input id="nb-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
+     <button data-a="savenew">Add it</button><button data-a="cancelnew">Cancel</button></div></div></td></tr>`:'';
+  const body=bucket(rows,'acct').map(([name,items])=>{
+    if(name===null) return items.map(rowHTML).join('');
+    const gb=items.reduce((t,x)=>t+budgetOf(x.b,cur),0);
+    const gc=items.reduce((t,x)=>t+(paidOf(x.b,p)||0),0);
+    return groupRow(name,items.length,gb,gc,8)
+      + (shut.has(name)?'':items.map(rowHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
    <thead><tr><th>Bill</th><th class="c hidesm">Due</th><th>Status</th><th class="r">Budget</th>
     <th class="r mo">Last<small>${lbl(prev)} \u00b7 locked</small></th>
     <th class="r mo">Current<small>${lbl(cur)}</small></th>
-    <th class="r mo">Next<small>${lbl(nxt)} \u00b7 early</small></th></tr></thead>
-   <tbody>${addRow}${body||'<tr><td colspan="7" class="hint" style="padding:18px">Nothing matches.</td></tr>'}</tbody>
+    <th class="r mo">Next<small>${lbl(nxt)} \u00b7 early</small></th>
+    <th class="c noprint" style="width:46px">Edit</th></tr></thead>
+   <tbody>${addRow}${body||'<tr><td colspan="8" class="hint" style="padding:18px">Nothing matches.</td></tr>'}</tbody>
    <tfoot><tr><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
     <td class="r">${money(tb)}</td><td class="r" style="opacity:.6">${money(tl)}</td>
-    <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td></tr></tfoot>`;
+    <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td>
+    <td class="noprint"></td></tr></tfoot>`;
   wire();
   const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this tab',A.name);if(!n)return;
     go(async()=>{const {error}=await db.from('tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
@@ -631,7 +815,7 @@ function renderAccount(){
       await db.from('bills').delete().eq('profile_id',S.pid).eq('tab_code',acct);
       const {error}=await db.from('tabs').delete().eq('id',A.id);if(error)throw error;
       acct=null;});};
-  $('msg').innerHTML=lateN?`<div class="note" style="background:var(--redw);border-color:#F0C4C1">
+  $('msg').innerHTML=lateN?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
     <b style="color:var(--red)">${lateN} not paid</b> on ${esc(A.name)} \u2014 past the due day with nothing recorded.</div>`:'';
 }
 
@@ -656,7 +840,7 @@ function renderAnnual(){
      <div class="c">plan around it</div></div>`;
   $('ptitle').textContent='Annual charges — '+Y;
   const others=S.profiles.filter(z=>z.id!==S.pid);
-  const addRow=adding?`<tr><td colspan="7" class="drawer"><div class="dr"><h4>Add an annual charge</h4>
+  const addRow=adding?`<tr><td colspan="8" class="drawer"><div class="dr"><h4>Add an annual charge</h4>
     <div class="form"><div><label>Name</label><input id="na-n" placeholder="Licence renewal" style="width:190px"></div>
      <div><label>Tab</label><select id="na-ac">${S.tabs.map(z=>`<option value="${z.code}">${esc(z.name)}</option>`).join('')}</select></div>
      <div><label>Month</label><select id="na-m">${MN.map((z,i)=>`<option value="${i+1}">${z}</option>`).join('')}</select></div>
@@ -664,9 +848,11 @@ function renderAnnual(){
      <div><label>Amount</label><input id="na-a" type="number" step="0.01" placeholder="0.00" style="width:110px"></div>
      <button data-a="savenewann">Add it</button><button data-a="cancelnew">Cancel</button></div></div></td></tr>`:'';
   let tb=0,tp=0;
-  const body=list.filter(a=>!q||(a.name+' '+acctOf(a.tab_code).name).toLowerCase().includes(q)).map(a=>{
-    const rec=getPay(a,Y), due=new Date(+Y,a.due_month-1,Math.min(a.due_day||15,lastDay(new Date(+Y,a.due_month-1,1))));
-    const s=rec?'paid':due<TODAY?'late':(due-TODAY)/864e5<=30?'due':'sched';
+  const annRows=list.filter(a=>!q||(a.name+' '+acctOf(a.tab_code).name).toLowerCase().includes(q))
+    .map(a=>{const rec=getPay(a,Y),
+      due=new Date(+Y,a.due_month-1,Math.min(a.due_day||15,lastDay(new Date(+Y,a.due_month-1,1))));
+      return {b:a,when:due,rec,s:rec?'paid':due<TODAY?'late':(due-TODAY)/864e5<=30?'due':'sched'};});
+  const annHTML=({b:a,rec,s})=>{
     tb+=+a.amount;tp+=rec?+rec.amount:0;
     const open=drawer===a.id;
     const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
@@ -690,18 +876,26 @@ function renderAnnual(){
         value="${rec?rec.amount:''}" placeholder="${(+a.amount).toFixed(2)}" aria-label="${esc(a.name)} paid">
         <button class="menu noprint" data-m="${a.id}" aria-label="Actions for ${esc(a.name)}"
          style="position:absolute;right:-30px;top:7px">&#8943;</button></td></tr>`
-     +(open?`<tr class="drawerrow"><td colspan="7" class="drawer"><div class="dr"><div class="acts">
+     +(open?`<tr class="drawerrow"><td colspan="8" class="drawer"><div class="dr"><div class="acts">
         <button data-a="edit">Edit charge</button><button data-a="annfull">Mark paid in full</button>
         <button data-a="annzero">Mark paid at $0</button><button data-a="annclear">Clear</button>${share}
         <button data-a="remove" class="danger">Remove</button>
         <button data-a="close" style="margin-left:auto">Close</button></div>${ef}</div></td></tr>`:'');
+  };
+  const body=bucket(annRows,'ann').map(([name,items])=>{
+    if(name===null) return items.map(annHTML).join('');
+    const gb=items.reduce((t,x)=>t+ +x.b.amount,0);
+    const gc=items.reduce((t,x)=>t+(x.rec?+x.rec.amount:0),0);
+    return groupRow(name,items.length,gb,gc,8)+(shut.has(name)?'':items.map(annHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
    <thead><tr><th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
-    <th class="r">Set aside /mo</th><th>Status</th><th class="r mo">Paid<small>${Y}</small></th></tr></thead>
-   <tbody>${addRow}${body||'<tr><td colspan="7" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
+    <th class="r">Set aside /mo</th><th>Status</th><th class="r mo">Paid<small>${Y}</small></th>
+    <th class="c noprint" style="width:46px">Edit</th></tr></thead>
+   <tbody>${addRow}${body||'<tr><td colspan="8" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
    <tfoot><tr><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
-    <td class="r">${money(tb/12)}</td><td></td><td class="r">${money(tp)}</td></tr></tfoot>`;
+    <td class="r">${money(tb/12)}</td><td></td><td class="r">${money(tp)}</td>
+    <td class="noprint"></td></tr></tfoot>`;
   wire(); $('msg').innerHTML='';
 }
 
@@ -728,7 +922,7 @@ function renderSummary(){
     const mx=Math.max(...months.map(x=>ann.filter(a=>a.due_month===x.getMonth()+1).reduce((s,a)=>s+ +a.amount,0)),1);
     const t=v?Math.max(.3,v/mx):0;
     return `<div class="cellm ${mk(m)===mk(cur)?'nowm':''}" data-m="${mk(m)}"
-      style="background:${v?'rgba(201,162,39,'+t+')':'var(--rule2)'};color:${v?'#3B2F06':'var(--mute)'}"
+      style="background:${v?'rgba(207,181,59,'+t+')':'rgba(255,255,255,.04)'};color:${v?'#17140A':'var(--ash)'}"
       title="${MN[m.getMonth()]} annual: ${money(v)}">${v?money0(v).replace('$',''):''}</div>`;}).join('');
   const arrs=Object.values(S.arr).map(a=>{const b=S.bills.find(z=>z.id===a.bill_id);if(!b)return'';
     const act=arrFor(b,cur);
@@ -737,6 +931,23 @@ function renderSummary(){
       <td>${act?`<span class="tag arr">active · ${act.left} left</span>`:'<span class="tag sched">not this month</span>'}</td>
       <td class="hint">${esc(a.note)}</td></tr>`;}).join('');
   const shared=(S.prof.shared_with||[]).length;
+  const cats={};
+  vis.forEach(a=>billsFor(cur,a.code).forEach(x=>{
+    const k=x.b.category||'Other', bg=budgetOf(x.b,cur), v=paidOf(x.b,per(cur));
+    const c=cats[k]||(cats[k]={n:0,budget:0,cleared:0,owed:0});
+    c.n++; c.budget+=bg;
+    if(v!==null&&allPaid(x.b,per(cur))) c.cleared+=v; else c.owed+=bg-(v||0);
+  }));
+  const catTot=Object.values(cats).reduce((s2,c)=>({n:s2.n+c.n,budget:s2.budget+c.budget,
+    cleared:s2.cleared+c.cleared,owed:s2.owed+c.owed}),{n:0,budget:0,cleared:0,owed:0});
+  const catRows=Object.entries(cats).sort((a,b)=>b[1].budget-a[1].budget).map(([k,c])=>{
+    const pc=catTot.budget?Math.round(c.budget/catTot.budget*100):0;
+    return `<tr><td class="bn">${esc(k)}</td><td class="c num">${c.n}</td>
+      <td class="r num">${money(c.budget)}</td>
+      <td class="r num" style="color:var(--green)">${money(c.cleared)}</td>
+      <td class="r num">${money(c.owed)}</td>
+      <td class="r num" style="color:var(--mute)">${pc}%</td></tr>`;}).join('')
+    ||'<tr><td colspan="6" class="hint" style="padding:16px">Nothing this month.</td></tr>';
   $('sumview').innerHTML=`
    <div class="sgrid">
     <div class="tile"><div class="l">Monthly obligations</div><div class="v">${money0(T.budget)}</div>
@@ -770,6 +981,14 @@ function renderSummary(){
      <span class="hint">Click a month to jump to it</span></div>
     <div style="padding:14px 16px"><div class="strip">
      <div></div>${months.map(m=>`<div class="hd2">${MN[m.getMonth()]}</div>`).join('')}${strip}</div></div></div>
+   <div class="panel" style="margin-bottom:16px"><div class="ptop"><h2>By category — ${lbl(cur)}</h2>
+     <span class="hint">every tab combined</span></div>
+    <table><thead><tr><th>Category</th><th class="c">Bills</th><th class="r">Budget</th>
+      <th class="r">Cleared</th><th class="r">Still owed</th><th class="r">Share</th></tr></thead>
+     <tbody>${catRows}</tbody>
+     <tfoot><tr><td class="lbl">All categories</td><td class="c">${catTot.n}</td>
+      <td class="r">${money(catTot.budget)}</td><td class="r">${money(catTot.cleared)}</td>
+      <td class="r">${money(catTot.owed)}</td><td class="r">100%</td></tr></tfoot></table></div>
    ${arrs?`<div class="panel"><div class="ptop"><h2>Payment arrangements</h2></div>
      <table><thead><tr><th>Bill</th><th class="r">Per month</th><th class="c">Term</th><th>State</th><th>Note</th></tr></thead>
      <tbody>${arrs}</tbody></table></div>`:''}`;
@@ -780,6 +999,8 @@ function renderSummary(){
 
 /* ================= WIRE ================= */
 function wire(){
+  document.querySelectorAll('tr.grp').forEach(r=>r.onclick=()=>{
+    const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
   document.querySelectorAll('.in').forEach(i=>{
     i.onchange=()=>{const b=S.bills.find(z=>z.id===i.dataset.b),p=i.dataset.p;
       go(async()=>{await clearSplits(b,p);await setPay(b,p,i.value===''?null:+i.value);});};
@@ -871,6 +1092,12 @@ function render(){
       ${n?`<span class="n">${n}</span>`:''}</button>`;}).join('');
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
     acct=t.dataset.a;drawer=null;adding=false;editing=null;render();});
+  const kind = acct==='ann'?'ann':'acct';
+  const opts = GROUPS[kind];
+  if(!opts.some(o=>o[0]===grp)) grp='none';
+  $('gb').innerHTML=opts.map(([v,t])=>
+    `<option value="${v}" ${v===grp?'selected':''}>${v==='none'?t:'Group by '+t.toLowerCase()}</option>`).join('');
+  $('gb').hidden = acct==='sum';
   $('addb').textContent=acct==='ann'?'+ Add annual charge':'+ Add bill';
   $('addb').hidden=acct==='sum';
   const box=$('tabcfgbox'); box.hidden=!cfg;
@@ -895,6 +1122,7 @@ $('now').onclick=()=>{cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);rende
 $('prt').onclick=()=>window.print();
 $('q').oninput=e=>{q=e.target.value.toLowerCase();render();};
 $('sf').onchange=e=>{sf=e.target.value;render();};
+$('gb').onchange=e=>{grp=e.target.value;shut.clear();render();};
 $('addb').onclick=()=>{adding=!adding;drawer=null;render();};
 $('tabcfg').onclick=()=>{cfg=!cfg;render();};
 $('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side business, anything');
