@@ -280,7 +280,7 @@ window.addEventListener('unhandledrejection',function(e){
 <script>
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
-const BUILD='v7 \u00b7 no sw';
+const BUILD='v8 \u00b7 plain return';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -339,10 +339,11 @@ function gmsg(h,cls){$('gmsg').innerHTML=h?`<div class="${cls||'err'}">${esc(h)}
 const HOME=location.origin+location.pathname;   // no query, no hash
 $('google').onclick=async()=>{
   gmsg('');
-  // unique return address: a hash alone can't bust the GitHub Pages CDN cache,
-  // so an old index.html gets served on the way back and the tokens are lost
+  // Return to the bare origin. Supabase matches its redirect allowlist on the
+  // path only, so any query string here makes it fall back to Site URL and
+  // drop the tokens. The service worker that once needed a cache-buster is gone.
   const {error}=await db.auth.signInWithOAuth({provider:'google',
-    options:{redirectTo:HOME+'?r='+Date.now()}});
+    options:{redirectTo:HOME}});
   if(error) gmsg(error.message);
 };
 $('signin').onclick=async()=>{
@@ -405,7 +406,7 @@ function tidyUrl(){ try{history.replaceState({},'',HOME);}catch(e){} }
 
   showGate();
   // came back from Google with nothing usable — say exactly what landed
-  if(u.searchParams.has('r')){
+  if(document.referrer && document.referrer.indexOf('supabase.co')>-1){
     gmsg('Google sent you back but no session came with it. Details below — send me this.');
     diag('url      '+location.href+'\n'
        + 'search   '+(u.search||'(none)')+'\n'
