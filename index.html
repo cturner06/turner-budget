@@ -542,7 +542,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v37 \u00b7 every two weeks';
+const BUILD='v38 \u00b7 two plan types';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -950,21 +950,40 @@ function arrFor(b,m){const a=S.arr[b.id];if(!a)return null;
   const off=(m.getFullYear()-st.getFullYear())*12+(m.getMonth()-st.getMonth());
   return(off>=0&&off<a.months)?{...a,left:a.months-off}:null;}
 const plansOf=b=>S.plans[b.id]||null;
-const STEP={weekly:7,biweekly:14};
 function planHits(p,m){
-  if(!p.cadence||p.cadence==='monthly') return 1;
-  const step=STEP[p.cadence]||14;
-  if(!p.next_due) return p.cadence==='weekly'?4:2;
   const first=new Date(m.getFullYear(),m.getMonth(),1);
   const last=new Date(m.getFullYear(),m.getMonth()+1,0);
+  if(p.kind==='dated'){
+    if(!p.due_date) return 0;
+    const d=new Date(p.due_date+'T00:00:00');
+    return (d>=first&&d<=last)?1:0;
+  }
+  const n=Math.max(1,+p.every_n||1), unit=p.every_unit||'month';
+  if(unit==='month'){
+    if(n<=1) return 1;
+    if(!p.next_due) return 1;
+    const a=new Date(p.next_due+'T00:00:00');
+    const off=(m.getFullYear()-a.getFullYear())*12+(m.getMonth()-a.getMonth());
+    return (off>=0 && off%n===0)?1:0;
+  }
+  const step=n*(unit==='week'?7:1);
+  if(!p.next_due) return Math.max(1,Math.round(30/step));
   let d=new Date(p.next_due+'T00:00:00');
   while(d>first) d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-step);
-  let n=0;
-  while(d<=last){ if(d>=first) n++; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+step); }
-  return n;
+  let k=0;
+  while(d<=last){ if(d>=first) k++; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+step); }
+  return k;
 }
 const planCost=(p,m)=>+p.amount*planHits(p,m);
-const CADENCE={monthly:'once a month',biweekly:'every 2 weeks',weekly:'weekly'};
+function planWhen(p){
+  if(p.kind==='dated')
+    return p.due_date? new Date(p.due_date+'T00:00:00')
+      .toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'no date set';
+  const n=Math.max(1,+p.every_n||1), u=p.every_unit||'month';
+  if(u==='month') return n===1?'every month':'every '+n+' months';
+  if(u==='week')  return n===1?'every week':'every '+n+' weeks';
+  return n===1?'every day':'every '+n+' days';
+}
 const budgetOf=(b,m)=>{const a=arrFor(b,m); if(a) return +a.amount;
   const pl=plansOf(b); if(pl&&pl.length) return pl.reduce((s2,p)=>s2+planCost(p,m),0);
   return +b.amount;};
@@ -1046,10 +1065,12 @@ function drawerHTML(x,m){
   const planBox=(pl&&pl.length)||b.category==='BNPL'||b.category==='LOC'||!b.due_day?`<div class="parts"><h4>Plans</h4>
      ${(pl||[]).map(z=>`<div class="plan">
         <span class="pname">${esc(z.name)}
-          <span class="pcad">${CADENCE[z.cadence]||'once a month'}${
-            planHits(z,m)>1?' \u00b7 '+planHits(z,m)+' this month':''}</span></span>
+          <span class="pcad">${planWhen(z)}${
+            planHits(z,m)>1?' \u00b7 '+planHits(z,m)+' this month'
+            :planHits(z,m)===0?' \u00b7 not this month':''}</span></span>
         <span class="pamt num">${money(z.amount)}${planHits(z,m)>1?
-          '<span class="pcad">= '+money(planCost(z,m))+'</span>':''}</span>
+          '<span class="pcad">= '+money(planCost(z,m))+'</span>'
+          :planHits(z,m)===0?'<span class="pcad">\u2014</span>':''}</span>
         ${z.left_count!=null?`<span class="pleft">${z.left_count} left</span>`:'<span class="pleft"></span>'}
         <button data-a="plandone" data-id="${z.id}" title="Paid off \u2014 take it off the list">Paid off</button>
         <button data-a="plandel" data-id="${z.id}" class="danger" title="Remove">&times;</button>
@@ -1058,11 +1079,16 @@ function drawerHTML(x,m){
       <div><label>What is it for</label><input id="pl-n" placeholder="Mattress, tyres\u2026" style="width:160px"></div>
       <div><label>Per month</label><input id="pl-a" type="number" step="0.01" placeholder="0.00" style="width:100px"></div>
       <div><label>Day</label><input id="pl-d" type="number" min="1" max="31" placeholder="--" style="width:66px"></div>
-      <div><label>How often</label><select id="pl-c">
-        <option value="monthly">Once a month</option>
-        <option value="biweekly">Every 2 weeks</option>
-        <option value="weekly">Weekly</option></select></div>
-      <div><label>Next payment</label><input id="pl-nd" type="date"></div>
+      <div><label>Type</label><select id="pl-k">
+        <option value="repeats">Repeats</option>
+        <option value="dated">One set date</option></select></div>
+      <div id="pl-rep"><label>Every</label>
+        <span class="row-flex" style="gap:5px">
+          <input id="pl-n" type="number" min="1" max="60" value="1" style="width:58px">
+          <select id="pl-u"><option value="month">months</option>
+            <option value="week">weeks</option><option value="day">days</option></select></span></div>
+      <div id="pl-nextwrap"><label>Next payment</label><input id="pl-nd" type="date"></div>
+      <div id="pl-datedwrap" hidden><label>Due on</label><input id="pl-dd" type="date"></div>
       <div><label>Payments left</label><input id="pl-l" type="number" min="0" placeholder="--" style="width:96px"></div>
       <button data-a="planadd">Add plan</button>
       <button data-a="pasteopen">${pasteFor===b.id?'Hide the paste box':'Paste a schedule'}</button></div>
@@ -1435,9 +1461,12 @@ function wire(){
     const r=pasted[+i.dataset.ps]; if(!r) return;
     const f=i.dataset.f;
     if(f==='keep') r.skip=!i.checked;
-    else if(f==='name'||f==='cadence') r[f]=i.value;
+    else if(f==='name'||f==='kind') r[f]=i.value;
     else r[f] = i.value===''?null:+String(i.value).replace(/[^0-9.]/g,'');
     render();});
+  const kk=$('pl-k');
+  if(kk) kk.onchange=()=>{ const dated=kk.value==='dated';
+    $('pl-rep').hidden=dated; $('pl-nextwrap').hidden=dated; $('pl-datedwrap').hidden=!dated; };
   const img=$('ps-img'); if(img) img.onchange=e=>readShot(e.target.files[0]);
   const drop=$('ps-drop');
   if(drop){
@@ -1586,21 +1615,19 @@ function act(a,id,to){
     if(!keep.length) throw new Error('Nothing ticked to add.');
     const rows=keep.map(r=>({profile_id:S.pid,bill_id:b.id,
       name:(r.name+(r.desc?' \u2014 '+r.desc:'')).slice(0,80),
-      amount:+r.amount||0,
-      cadence:r.cadence||'monthly',
-      next_due:(r.cadence==='biweekly'&&r.day)
-        ? new Date(cur.getFullYear(),cur.getMonth(),Math.min(31,+r.day)).toISOString().slice(0,10)
-        : null,
-      due_day:r.day?Math.min(31,Math.max(1,+r.day)):null}));
+      ...planShape(r)}));
     const {error}=await db.from('plans').insert(rows); if(error) throw error;
     pasted=[]; pasteFor=null; lastRead=''; toast(rows.length+' plans added.');});
   if(a==='planadd') return go(async()=>{
     const n=$('pl-n').value.trim(), amt=+$('pl-a').value;
     if(!n||!amt) throw new Error('A plan needs a name and a monthly amount.');
-    const cad=$('pl-c').value;
+    const kind=$('pl-k').value;
     const {error}=await db.from('plans').insert({profile_id:S.pid,bill_id:b.id,name:n,amount:amt,
-      cadence:cad,
-      next_due:$('pl-nd').value||null,
+      kind,
+      every_n:kind==='repeats'?Math.max(1,Math.min(60,+$('pl-n').value||1)):1,
+      every_unit:kind==='repeats'?$('pl-u').value:'month',
+      next_due:kind==='repeats'?($('pl-nd').value||null):null,
+      due_date:kind==='dated'?($('pl-dd').value||null):null,
       due_day:$('pl-d').value?Math.min(31,Math.max(1,+$('pl-d').value)):null,
       left_count:$('pl-l').value===''?null:Math.max(0,+$('pl-l').value)});
     if(error) throw error;});
@@ -1692,9 +1719,10 @@ function parseSchedule(text){
     if(!/\./.test(raw)) raw=raw.replace(/(\d{2})$/,'.$1');   // 1004 -> 10.04
     const amount=+raw;
     if(!amount||amount>100000) continue;
-    const tail=(after.match(MON)||[])[0]||'';
     const w=after.match(MON);
     const day=w?+w[2]:null;
+    const MONN={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+    const mon=w?MONN[w[1].toLowerCase()]||null:null;
     const overdue=/overdue|past\s*due/i.test(after)||/overdue|past\s*due/i.test(before.slice(-30));
     // the merchant: strip the boilerplate first, then take what is left
     // OCR turns "Affirm Virtual Card" into things like "Affe Viral Card N",
@@ -1714,7 +1742,7 @@ function parseSchedule(text){
     name=name.slice(0,60);
     const desc='';
     out.push({name:name||'Plan', desc:/^\s*$/.test(desc)?'':desc,
-      amount, day, overdue});
+      amount, day, mon, overdue});
   }
   return out;
 }
@@ -1731,6 +1759,23 @@ function markDupes(b){
     return {...r, already, twice, skip: r.skip!==undefined ? r.skip : (already||twice)};
   });
 }
+// turn a parsed row into the right shape of plan
+function planShape(r){
+  const yr=cur.getFullYear();
+  const iso=(y,mo,d)=>new Date(y,mo-1,Math.min(31,d)).toISOString().slice(0,10);
+  const mo=r.mon||(cur.getMonth()+1);
+  // a date earlier than this month almost certainly means next year's run-up
+  const year=(r.mon && r.mon < cur.getMonth()+1 && cur.getMonth()+1-r.mon>6)?yr+1:yr;
+  if(r.kind==='dated')
+    return {kind:'dated', every_n:1, every_unit:'month',
+            due_date:r.day?iso(year,mo,r.day):null, due_day:r.day||null};
+  if(r.kind==='biweekly')
+    return {kind:'repeats', every_n:2, every_unit:'week',
+            next_due:r.day?iso(year,mo,r.day):null, due_day:r.day||null};
+  return {kind:'repeats', every_n:1, every_unit:'month',
+          next_due:null, due_day:r.day?Math.min(31,Math.max(1,r.day)):null};
+}
+
 function pastePanel(b){
   const rows=markDupes(b);
   const keep=rows.filter(r=>!r.skip);
@@ -1749,15 +1794,17 @@ function pastePanel(b){
         <span class="hint" id="ps-stat"></span></div></div>
     ${rows.length?`<table style="margin-top:12px;font-size:12.5px"><thead><tr>
         <th class="c">Add</th><th>What</th><th class="r">Amount</th><th class="c">Day</th>
-        <th>How often</th><th></th></tr></thead><tbody>
+        <th>Type</th><th></th></tr></thead><tbody>
       ${rows.map((r,i)=>`<tr${r.skip?' style="opacity:.5"':''}>
         <td class="c"><input type="checkbox" data-ps="${i}" data-f="keep" ${r.skip?'':'checked'}></td>
         <td><input value="${esc(r.name)}" data-ps="${i}" data-f="name" style="width:100%;font-size:12.5px"></td>
         <td class="r"><input value="${r.amount}" data-ps="${i}" data-f="amount" style="width:88px;text-align:right;font-size:12.5px"></td>
         <td class="c"><input value="${r.day||''}" data-ps="${i}" data-f="day" style="width:54px;text-align:center;font-size:12.5px"></td>
-        <td><select data-ps="${i}" data-f="cadence" style="font-size:12.5px">
-          <option value="monthly" ${r.cadence!=='biweekly'?'selected':''}>Monthly</option>
-          <option value="biweekly" ${r.cadence==='biweekly'?'selected':''}>Every 2 weeks</option></select></td>
+        <td><select data-ps="${i}" data-f="kind" style="font-size:12.5px">
+          <option value="repeats" ${r.kind!=='dated'?'selected':''}>Repeats monthly</option>
+          <option value="biweekly" ${r.kind==='biweekly'?'selected':''}>Every 2 weeks</option>
+          <option value="dated" ${r.kind==='dated'?'selected':''}>One set date</option></select>
+          ${r.kind==='dated'&&r.mon?`<div class="hint" style="margin-top:3px">${MN[r.mon-1]} ${r.day||''}</div>`:''}</td>
         <td>${r.already?'<span class="tag sched">already here</span>'
             :r.twice?'<span class="tag sched">repeated</span>'
             :r.overdue?'<span class="tag late">overdue</span>':''}</td></tr>`).join('')}
