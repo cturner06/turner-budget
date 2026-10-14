@@ -155,6 +155,13 @@ select option{background:var(--coal);color:var(--ink)}
 .dtab.on{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;font-weight:600}
 .dtab .d{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .dtab .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;opacity:.75}
+.mem{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:13.5px;
+  border-bottom:1px solid var(--rule2)}
+.mem:last-of-type{border:0}
+.mem .me{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.mem .role{font-size:11.5px;color:var(--ash);flex:0 0 auto}
+.mem .role.owner{color:var(--gold)}
+.mem button{font-size:12px;padding:4px 9px}
 .nstate{font-size:12.5px;margin-bottom:11px;padding:9px 12px;border-radius:8px;
   background:var(--glass);border:1px solid var(--edge-soft);color:var(--ink2)}
 .nstate.on{border-color:rgba(79,168,131,.4);color:#7FD4AE}
@@ -315,6 +322,35 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
   background:rgba(255,255,255,.025);transition:border-color .15s,background .15s}
 #ps-drop.over{border-color:var(--gold);background:var(--gold-wash)}
 #ps-drop textarea:focus{outline:none}
+#helpwrap{position:fixed;inset:0;z-index:72;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+#helpbox{width:100%;max-width:960px;height:min(84vh,760px);border-radius:14px;display:flex;overflow:hidden;
+  background:linear-gradient(170deg,rgba(26,26,29,.98),rgba(10,10,11,.99));
+  border:1px solid var(--edge);box-shadow:0 30px 70px rgba(0,0,0,.65)}
+#helpnav{width:218px;flex:0 0 auto;border-right:1px solid var(--rule2);overflow-y:auto;padding:14px 10px}
+#helpnav button{display:block;width:100%;text-align:left;border:0;background:none;color:var(--ink2);
+  padding:9px 12px;border-radius:8px;font-size:13.5px;margin-bottom:2px}
+#helpnav button:hover{background:var(--glass);color:var(--ink)}
+#helpnav button.on{background:var(--gold-wash);color:var(--gold);font-weight:500}
+#helpbody{flex:1;overflow-y:auto;padding:24px 28px}
+#helpbody h3{font:600 20px/1.25 Archivo,sans-serif;margin:0 0 4px;color:var(--gold);letter-spacing:-.02em}
+#helpbody .lede{color:var(--mute);font-size:13.5px;margin:0 0 18px}
+#helpbody h4{font:500 14px/1.3 Archivo,sans-serif;margin:20px 0 6px;color:var(--ink)}
+#helpbody p{margin:0 0 11px;font-size:14px;color:var(--ink2);line-height:1.65}
+#helpbody ol,#helpbody ul{margin:0 0 11px;padding-left:20px;font-size:14px;color:var(--ink2);line-height:1.7}
+#helpbody li{margin-bottom:4px}
+#helpbody b{color:var(--ink)}
+#helpbody .kbd{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:rgba(0,0,0,.4);
+  border:1px solid var(--edge-soft);border-radius:5px;padding:2px 7px;color:var(--gold)}
+#helpbody .warn{border-left:2px solid var(--gold);padding:2px 0 2px 13px;margin:14px 0;color:var(--mute);font-size:13.5px}
+#helptop{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--rule2)}
+@media(max-width:760px){
+  #helpbox{flex-direction:column;height:92vh}
+  #helpnav{width:100%;flex:0 0 auto;max-height:132px;border-right:0;border-bottom:1px solid var(--rule2);
+    display:flex;gap:6px;overflow-x:auto;padding:10px}
+  #helpnav button{width:auto;white-space:nowrap;padding:7px 12px}
+  #helpbody{padding:18px 16px}
+}
 #impwrap{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;
   background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #impbox{width:100%;max-width:860px;max-height:88vh;overflow:auto;border-radius:14px;padding:24px 26px;
@@ -336,6 +372,11 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 .plan .pcad{display:block;font-size:11px;color:var(--ash);font-weight:400;margin-top:1px}
 .plan .pleft{color:var(--ash);font-size:12px;flex:0 0 58px;text-align:right}
 .plan button{font-size:12px;padding:4px 9px;flex:0 0 auto}
+.plan.done{opacity:.6}
+.plan.done .pname{text-decoration:line-through;text-decoration-color:var(--ash)}
+.plan button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;
+  border-color:transparent;font-weight:600;white-space:nowrap}
+.plan button.pay:hover{background:linear-gradient(180deg,#EAD165,#D6BC43);color:#17140A}
 .plan button.danger{color:#F0978F;border-color:rgba(224,102,92,.3);padding:4px 8px}
 .part label{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink2);cursor:pointer}
 .strip{display:grid;grid-template-columns:120px repeat(12,1fr);gap:3px;align-items:center;font-size:12px}
@@ -488,12 +529,14 @@ window.addEventListener('unhandledrejection',function(e){
     <button id="next" aria-label="Next month">&rarr;</button>
     <button id="now" class="mini">Today</button></div></div>
 
-  <button class="dhead" data-sec="profile">Profile<span class="dval" id="vprof"></span></button>
+  <button class="dhead" data-sec="profile">Household<span class="dval" id="vprof"></span></button>
   <div class="dpanel" data-p="profile">
-   <select id="prof" aria-label="Profile" style="width:100%;margin-bottom:9px"></select>
-   <div class="row-flex">
-    <button id="pnew" class="mini">New</button><button id="pren" class="mini">Rename</button>
-    <button id="pdup" class="mini">Duplicate</button><button id="pshare" class="mini">Invite</button>
+   <select id="prof" aria-label="Household" style="width:100%;margin-bottom:11px"></select>
+   <div id="members"></div>
+   <div class="row-flex" style="margin-top:11px">
+    <button id="pnew" class="mini">Start a new household</button>
+    <button id="pren" class="mini">Rename</button>
+    <button id="pdup" class="mini">Duplicate</button>
     <button id="pdel" class="mini">Delete</button></div></div>
 
   <button class="dhead" data-sec="notify">Phone notifications<span class="dval" id="vnotify"></span></button>
@@ -506,11 +549,17 @@ window.addEventListener('unhandledrejection',function(e){
   <div class="dpanel" data-p="tabs">
    <div class="row-flex">
     <button id="tabnew" class="mini">New tab</button>
-    <button id="tabcfg" class="mini">Choose what shows</button></div>
+    <button id="tabcfg" class="mini">Choose what shows</button>
+    <button id="carenew" class="mini">New care file</button></div>
    <div id="tabcfgbox" class="cfgbox" hidden></div></div>
 
   <button class="dhead" data-sec="vault">Logins<span class="dval" id="vvault"></span></button>
   <div class="dpanel" data-p="vault"><div id="vaultbox"></div></div>
+
+  <button class="dhead" data-sec="help">How this works<span class="dval">guide</span></button>
+  <div class="dpanel" data-p="help">
+   <p class="hint" style="margin:0 0 10px">Short answers to the things people ask first.</p>
+   <button id="helpopen" class="mini">Open the guide</button></div>
 
   <button class="dhead" data-sec="account">Your account<span class="dval" id="vacct"></span></button>
   <div class="dpanel" data-p="account">
@@ -542,7 +591,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v38 \u00b7 two plan types';
+const BUILD='v47 \u00b7 care file';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -581,6 +630,32 @@ const $=id=>document.getElementById(id);
 let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
 let acct=null,q='',sf='',drawer=null,adding=false,editing=null,cfg=false,busy=false;
+
+/* ---- remember where you were, per profile ---- */
+const VIEWKEY='tb-view';
+function loadView(){
+  try{ return JSON.parse(localStorage.getItem(VIEWKEY)||'{}'); }catch(e){ return {}; }
+}
+function saveView(){
+  try{
+    const all=loadView();
+    all[S.pid]={acct, grp, srt, sf, month:cur.getMonth(), year:cur.getFullYear(), at:Date.now()};
+    all.__last=S.pid;
+    localStorage.setItem(VIEWKEY, JSON.stringify(all));
+  }catch(e){}
+}
+function applyView(){
+  const v=(loadView()||{})[S.pid];
+  if(!v) return;
+  if(v.acct) acct=v.acct;
+  if(v.grp) grp=v.grp;
+  if(v.srt) srt=v.srt;
+  sf=v.sf||'';
+  // the month only carries over for the rest of the day; after that, today
+  const sameDay = v.at && (Date.now()-v.at) < 14*36e5;
+  if(sameDay && typeof v.month==='number')
+    cur=new Date(v.year, v.month, 1);
+}
 let grp='none', srt='due', shut=new Set(), shareOpen=false;
 
 const SORTS={
@@ -870,14 +945,16 @@ async function start(){
   try{
     await loadProfiles();
     if(!S.profiles.length){
-      const {data,error}=await db.rpc('create_profile',{p_name:'Household',p_seed:true});
+      // first run on a fresh account: an empty household of their own
+      const {data,error}=await db.rpc('create_household',{p_name:'My household'});
       if(error) throw error; await loadProfiles(); S.pid=data;
     }
     if(!S.profiles.length) throw new Error('Signed in, but no profile came back. '
       +'That is a permissions problem on the server, not your account.');
-    S.pid=S.pid||localStorage.getItem('tb-pid')||S.profiles[0].id;
+    S.pid=S.pid||loadView().__last||localStorage.getItem('tb-pid')||S.profiles[0].id;
     if(!S.profiles.some(p=>p.id===S.pid)) S.pid=S.profiles[0].id;
     await loadProfile();
+    applyView();
     $('boot').hidden=true;$('app').hidden=false;
     $('who').textContent=user.email;
     render();
@@ -890,13 +967,14 @@ async function loadProfiles(){
 async function loadProfile(){
   localStorage.setItem('tb-pid',S.pid);
   S.prof=S.profiles.find(p=>p.id===S.pid);
-  const [t,b,p,sp,ar,pl,dg]=await Promise.all([
+  const [t,b,p,sp,ar,pl,pp,dg]=await Promise.all([
     db.from('tabs').select('*').eq('profile_id',S.pid).order('sort'),
     db.from('bills').select('*').eq('profile_id',S.pid).eq('archived',false),
     db.from('payments').select('*').eq('profile_id',S.pid),
     db.from('splits').select('*').eq('profile_id',S.pid).order('seq'),
     db.from('arrangements').select('*').eq('profile_id',S.pid),
     db.from('plans').select('*').eq('profile_id',S.pid).eq('done',false).order('created_at'),
+    db.from('plan_payments').select('*').eq('profile_id',S.pid),
     db.from('digest_settings').select('*').eq('profile_id',S.pid)]);
   const cr=await db.from('credentials').select('*').eq('profile_id',S.pid).order('creditor');
   S.creds=cr.data||[];
@@ -918,6 +996,7 @@ async function loadProfile(){
   S.splits={}; sp.data.forEach(r=>(S.splits[r.bill_id+'|'+r.period]=S.splits[r.bill_id+'|'+r.period]||[]).push(r));
   S.arr={}; ar.data.forEach(r=>S.arr[r.bill_id]=r);
   S.plans={}; (pl.data||[]).forEach(r=>(S.plans[r.bill_id]=S.plans[r.bill_id]||[]).push(r));
+  S.planPays={}; (pp.data||[]).forEach(r=>(S.planPays[r.plan_id]=S.planPays[r.plan_id]||[]).push(r));
   if(!acct||!S.tabs.some(x=>x.code===acct)) acct=(S.tabs[0]||{}).code||'sum';
 }
 
@@ -975,6 +1054,21 @@ function planHits(p,m){
   return k;
 }
 const planCost=(p,m)=>+p.amount*planHits(p,m);
+// what the parent row should say about the plans underneath it
+function planRollup(b,m){
+  const pl=plansOf(b); if(!pl||!pl.length) return null;
+  const p=per(m);
+  let dueN=0, paidN=0, made=0, want=0, owing=0, known=0;
+  pl.forEach(z=>{
+    const hits=planHits(z,m); dueN+=hits;
+    paidN+=Math.min(hits, planPaysIn(z,p).length);
+    const m2=(S.planPays[z.id]||[]).length; made+=m2;
+    if(z.total_count){ want+=z.total_count; known++;
+      owing += Math.max(0, z.total_count-m2) * +z.amount; }
+  });
+  return {n:pl.length, dueN, paidN, made, want, known, owing,
+          thisMonth: pl.reduce((s2,z)=>s2+planCost(z,m),0)};
+}
 function planWhen(p){
   if(p.kind==='dated')
     return p.due_date? new Date(p.due_date+'T00:00:00')
@@ -987,10 +1081,24 @@ function planWhen(p){
 const budgetOf=(b,m)=>{const a=arrFor(b,m); if(a) return +a.amount;
   const pl=plansOf(b); if(pl&&pl.length) return pl.reduce((s2,p)=>s2+planCost(p,m),0);
   return +b.amount;};
-function paidOf(b,p){const sp=getSplits(b,p);
+const planPaysIn=(plan,period)=>(S.planPays[plan.id]||[])
+  .filter(x=>String(x.paid_on).slice(0,7)===period);
+function paidOf(b,p){
+  const pl=plansOf(b);
+  if(pl&&pl.length&&/^\d{4}-\d{2}$/.test(p)){
+    const t=pl.reduce((s2,z)=>s2+planPaysIn(z,p).reduce((a,x)=>a+ +x.amount,0),0);
+    return t>0?t:null;
+  }
+  const sp=getSplits(b,p);
   if(sp)return sp.some(x=>x.paid)?sp.filter(x=>x.paid).reduce((s,x)=>s+ +x.amount,0):null;
   const r=getPay(b,p);return r?+r.amount:null;}
-const allPaid=(b,p)=>{const sp=getSplits(b,p);return sp?sp.every(x=>x.paid):paidOf(b,p)!==null;};
+function allPaid(b,p){
+  const pl=plansOf(b);
+  if(pl&&pl.length&&/^\d{4}-\d{2}$/.test(p)){
+    const m=new Date(+p.slice(0,4),+p.slice(5,7)-1,1);
+    return pl.every(z=>planHits(z,m)===0 || planPaysIn(z,p).length>=planHits(z,m));
+  }
+  const sp=getSplits(b,p); return sp?sp.every(x=>x.paid):paidOf(b,p)!==null;}
 const monthly=code=>S.bills.filter(b=>!b.is_annual&&b.tab_code===code);
 const annuals=()=>S.bills.filter(b=>b.is_annual).sort((a,b)=>(a.due_month-b.due_month)||a.name.localeCompare(b.name));
 function billsFor(m,code){return monthly(code).map(b=>({b,when:dueDate(b,m)})).sort((x,y)=>x.when-y.when);}
@@ -1063,18 +1171,27 @@ function drawerHTML(x,m){
     ${act?`<p class="hint" style="margin:7px 0 0">Active — ${money(a.amount)} a month, ${act.left} left.</p>`:''}</div>`;
   const pl=plansOf(b);
   const planBox=(pl&&pl.length)||b.category==='BNPL'||b.category==='LOC'||!b.due_day?`<div class="parts"><h4>Plans</h4>
-     ${(pl||[]).map(z=>`<div class="plan">
+     ${(pl||[]).map(z=>{
+        const made=(S.planPays[z.id]||[]).length;
+        const want=z.total_count;
+        const dueNow=planHits(z,m);
+        const paidNow=planPaysIn(z,per(m)).length;
+        const settled=dueNow>0&&paidNow>=dueNow;
+        return `<div class="plan${settled?' done':''}">
         <span class="pname">${esc(z.name)}
           <span class="pcad">${planWhen(z)}${
-            planHits(z,m)>1?' \u00b7 '+planHits(z,m)+' this month'
-            :planHits(z,m)===0?' \u00b7 not this month':''}</span></span>
-        <span class="pamt num">${money(z.amount)}${planHits(z,m)>1?
-          '<span class="pcad">= '+money(planCost(z,m))+'</span>'
-          :planHits(z,m)===0?'<span class="pcad">\u2014</span>':''}</span>
-        ${z.left_count!=null?`<span class="pleft">${z.left_count} left</span>`:'<span class="pleft"></span>'}
-        <button data-a="plandone" data-id="${z.id}" title="Paid off \u2014 take it off the list">Paid off</button>
+            dueNow>1?' \u00b7 '+dueNow+' due this month':dueNow===0?' \u00b7 not this month':''}${
+            want?' \u00b7 '+made+' of '+want+' paid':made?' \u00b7 '+made+' paid':''}</span></span>
+        <span class="pamt num">${money(z.amount)}${dueNow>1?
+          '<span class="pcad">= '+money(planCost(z,m))+'</span>':''}</span>
+        ${want?`<span class="pleft">${Math.max(0,want-made)} left</span>`:'<span class="pleft"></span>'}
+        ${dueNow>0 ? (settled
+          ? `<button data-a="planundo" data-id="${z.id}">Undo</button>`
+          : `<button data-a="planpay" data-id="${z.id}" class="pay">Pay ${money(z.amount)}</button>`)
+          : '<span class="pleft"></span>'}
+        <button data-a="plandone" data-id="${z.id}" title="Close it without paying">Close</button>
         <button data-a="plandel" data-id="${z.id}" class="danger" title="Remove">&times;</button>
-      </div>`).join('')||'<p class="hint" style="margin:0 0 9px">No plans yet.</p>'}
+      </div>`;}).join('')||'<p class="hint" style="margin:0 0 9px">No plans yet.</p>'}
      <div class="form" style="margin-top:8px">
       <div><label>What is it for</label><input id="pl-n" placeholder="Mattress, tyres\u2026" style="width:160px"></div>
       <div><label>Per month</label><input id="pl-a" type="number" step="0.01" placeholder="0.00" style="width:100px"></div>
@@ -1089,11 +1206,12 @@ function drawerHTML(x,m){
             <option value="week">weeks</option><option value="day">days</option></select></span></div>
       <div id="pl-nextwrap"><label>Next payment</label><input id="pl-nd" type="date"></div>
       <div id="pl-datedwrap" hidden><label>Due on</label><input id="pl-dd" type="date"></div>
-      <div><label>Payments left</label><input id="pl-l" type="number" min="0" placeholder="--" style="width:96px"></div>
+      <div><label>How many payments</label><input id="pl-l" type="number" min="1" max="120" placeholder="e.g. 4" style="width:104px"></div>
       <button data-a="planadd">Add plan</button>
       <button data-a="pasteopen">${pasteFor===b.id?'Hide the paste box':'Paste a schedule'}</button></div>
      ${pasteFor===b.id?pastePanel(b):''}
-     ${pl&&pl.length?`<p class="hint" style="margin:9px 0 0">This month the ${pl.length} plans come to
+     ${pl&&pl.length?`<p class="hint" style="margin:9px 0 0">Pay each plan on its own line \u2014 the row above
+       adds them up. This month the ${pl.length} plans come to
        ${money(pl.reduce((s2,z)=>s2+planCost(z,m),0))}. Anything every two weeks is counted
        by how many times it actually lands \u2014 usually twice, sometimes three.</p>`:''}
     </div>`:'';
@@ -1180,15 +1298,27 @@ function renderAccount(){
       +(sp?` <span class="tag split">${sp.filter(z=>z.paid).length}/${sp.length} parts</span>`:'')
       +(C===0&&!sp?' <span class="tag zero">$0</span>':'')
       +(x.b.shared_from?` <span class="tag shared">from ${esc(x.b.shared_by||'another profile')}</span>`:'')
-      +((plansOf(x.b)||[]).length?` <span class="tag split">${plansOf(x.b).length} plans</span>`:'');
+      +(x.b.is_example?' <span class="tag sched">example</span>':'')
+      +(()=>{const R=planRollup(x.b,cur); if(!R) return '';
+        return ` <span class="tag split">${R.n} ${R.n===1?'plan':'plans'}</span>`
+          +(R.dueN>R.n?` <span class="tag due">${R.dueN} payments due</span>`:'');})();
     const open=drawer===x.b.id;
     return `<tr class="${s}${open?' open':''}">
-      <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${esc(x.b.category)}</div></td>
+      <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${(()=>{
+        const R=planRollup(x.b,cur);
+        if(!R) return esc(x.b.category);
+        const bits=[esc(x.b.category)];
+        bits.push(R.paidN+' of '+R.dueN+' paid this month');
+        if(R.known===R.n && R.want) bits.push(R.made+' of '+R.want+' payments overall');
+        else if(R.made) bits.push(R.made+' payments made');
+        if(R.owing>0) bits.push(money0(R.owing)+' still to run');
+        return bits.join(' \u00b7 ');
+      })()}</div></td>
       <td class="c hidesm">${dueLabel(x.b)}</td>
       <td data-l="Status"><span class="tag ${s}">${LBL[s]}</span></td>
       <td class="r num" data-l="Budget · day ${x.b.due_day||'last'}">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
       <td class="r lock" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
-      <td class="cell" data-l="${lbl(cur)}">${sp?`<div class="num splitsum">${money(C||0)}</div>`
+      <td class="cell" data-l="${lbl(cur)}">${(sp||(plansOf(x.b)||[]).length)?`<div class="num splitsum">${money(C||0)}</div>`
         :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="text" inputmode="decimal"
         value="${C!==null?money(C):''}" placeholder="${money(bg)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
       <td class="cell next" data-l="${lbl(nxt)} \u00b7 early"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
@@ -1218,7 +1348,9 @@ function renderAccount(){
     <th class="r mo">Current<small>${lbl(cur)}</small></th>
     <th class="r mo">Next<small>${lbl(nxt)} \u00b7 early</small></th>
     <th class="c noprint" style="width:46px">Edit</th></tr></thead>
-   <tbody>${addRow}${body||'<tr><td colspan="8" class="hint" style="padding:18px">Nothing matches.</td></tr>'}</tbody>
+   <tbody>${addRow}${body||`<tr><td colspan="8" class="hint" style="padding:20px">${
+     all.length?'Nothing matches that filter.'
+     :'No bills on '+esc(A.name)+' yet. Add the first one with <b>+ Add bill</b> above.'}</td></tr>`}</tbody>
    <tfoot><tr><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
     <td class="r">${money(tb)}</td><td class="r" style="opacity:.6">${money(tl)}</td>
     <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td>
@@ -1250,8 +1382,19 @@ function renderAccount(){
       <button id="sh-go">Share</button></div>
     <p class="hint" style="margin:9px 0 0">They need an account here first. This shares
       ${esc(A.name)} only \u2014 nothing from your other tabs.</p></div>` : '';
-  $('msg').innerHTML=sharePanel+(lateN?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
+  const exN=S.bills.filter(z=>z.is_example&&!z.archived).length;
+  const exBanner = exN ? `<div class="note">
+    <b>These are examples.</b> ${exN} sample ${exN===1?'bill is':'bills are'} here to show how it works.
+    Edit them into your real ones, or clear them and start fresh.
+    <div class="row-flex" style="margin-top:9px">
+      <button id="ex-clear" class="mini">Clear ${exN===1?'the example':'all '+exN+' examples'}</button></div></div>` : '';
+  $('msg').innerHTML=exBanner+sharePanel+(lateN?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
     <b style="color:var(--red)">${lateN} not paid</b> on ${esc(A.name)} \u2014 past the due day with nothing recorded.</div>`:'');
+  const xc=$('ex-clear');
+  if(xc) xc.onclick=()=>{
+    if(!confirm('Remove the example bills? Anything you have added or edited stays.')) return;
+    go(async()=>{const {error}=await db.rpc('clear_examples',{p_id:S.pid});
+      if(error) throw error; toast('Examples cleared.');});};
   const sg=$('sh-go'); if(sg) sg.onclick=()=>go(async()=>{
     const em=$('sh-em').value.trim();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) throw new Error('That does not look like an email address.');
@@ -1345,7 +1488,7 @@ function renderAnnual(){
 /* ================= SUMMARY ================= */
 function renderSummary(){
   $('tiles').hidden=true;document.querySelector('.panel').hidden=true;$('foothint').hidden=true;$('sumview').hidden=false;
-  const vis=S.tabs.filter(a=>!hidden(a.code));
+  const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
   const F=vis.map(a=>({a,f:figures(cur,a.code)}));
   const T=F.reduce((s,x)=>({n:s.n+x.f.n,budget:s.budget+x.f.budget,cleared:s.cleared+x.f.cleared,
     owed:s.owed+x.f.owed,late:s.late+x.f.late,arrN:s.arrN+x.f.arrN}),{n:0,budget:0,cleared:0,owed:0,late:0,arrN:0});
@@ -1445,14 +1588,25 @@ function wire(){
   wireCat('ed-c'); wireCat('nb-c');
   document.querySelectorAll('tr.grp').forEach(r=>r.onclick=()=>{
     const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
+  // Cents-first entry, the way a card terminal works: every digit you type
+  // slides in from the right and the decimal looks after itself.
+  // 1 -> $0.01, 15 -> $0.15, 1500 -> $15.00
   document.querySelectorAll('.in').forEach(i=>{
-    // dollars while you read it, a bare number while you type
-    i.onfocus=()=>{const n=unmoney(i.value); i.value=n===null?'':String(n); i.select();};
-    i.onblur=()=>{const n=unmoney(i.value); i.value=n===null?'':money(n);};
-    i.onchange=()=>{const b=S.bills.find(z=>z.id===i.dataset.b),p=i.dataset.p;
-      const n=unmoney(i.value);
-      go(async()=>{await clearSplits(b,p);await setPay(b,p,n);});};
-    i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();i.blur();}};});
+    const show=d=>{ i.value = d==='' ? '' : money(+d/100);
+      const end=i.value.length;
+      try{ i.setSelectionRange(end,end); }catch(e){} };
+    const digits=()=>String(i.value).replace(/\D/g,'').replace(/^0+(?=\d)/,'');
+    i.onfocus=()=>{ const end=i.value.length;
+      try{ i.setSelectionRange(end,end); }catch(e){} };
+    i.oninput=()=>show(digits());
+    i.onblur=()=>{ const d=digits(); i.value = d==='' ? '' : money(+d/100);
+      const b=S.bills.find(z=>z.id===i.dataset.b), p=i.dataset.p;
+      const n = d==='' ? null : +d/100;
+      const was = i.dataset.was===undefined ? null : (i.dataset.was===''?null:+i.dataset.was);
+      if(n!==was){ i.dataset.was = n===null?'':String(n);
+        go(async()=>{ await clearSplits(b,p); await setPay(b,p,n); }); } };
+    i.dataset.was = (()=>{const d=digits();return d===''?'':String(+d/100);})();
+    i.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); i.blur(); } };});
   document.querySelectorAll('.menu[data-m]').forEach(m=>m.onclick=()=>{
     drawer=drawer===m.dataset.m?null:m.dataset.m;editing=null;render();});
   document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>
@@ -1511,7 +1665,7 @@ function act(a,id,to){
   if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
-    const {error}=await db.from('bills').update({name:n,category:catValue('ed-c'),
+    const {error}=await db.from('bills').update({is_example:false,name:n,category:catValue('ed-c'),
       due_day:$('ed-d').value===''?null:Math.min(31,Math.max(1,+$('ed-d').value)),
       amount:+$('ed-a').value||0,
       tab_code:$('ed-ac').value}).eq('id',b.id);
@@ -1629,8 +1783,30 @@ function act(a,id,to){
       next_due:kind==='repeats'?($('pl-nd').value||null):null,
       due_date:kind==='dated'?($('pl-dd').value||null):null,
       due_day:$('pl-d').value?Math.min(31,Math.max(1,+$('pl-d').value)):null,
+      total_count:$('pl-l').value===''?null:Math.max(1,Math.min(120,+$('pl-l').value)),
       left_count:$('pl-l').value===''?null:Math.max(0,+$('pl-l').value)});
     if(error) throw error;});
+  if(a==='planpay') return go(async()=>{
+    const z=(plansOf(b)||[]).find(x=>x.id===to); if(!z) throw new Error('Plan not found.');
+    const {error}=await db.from('plan_payments').insert({profile_id:S.pid,bill_id:b.id,
+      plan_id:z.id, amount:+z.amount,
+      paid_on:new Date().toISOString().slice(0,10)});
+    if(error) throw error;
+    // move a repeating plan on to its next date
+    if(z.kind!=='dated' && z.next_due){
+      const step=(z.every_unit==='week'?7:z.every_unit==='day'?1:0)*(+z.every_n||1);
+      const d=new Date(z.next_due+'T00:00:00');
+      const nd = step ? new Date(d.getFullYear(),d.getMonth(),d.getDate()+step)
+                      : new Date(d.getFullYear(),d.getMonth()+(+z.every_n||1),d.getDate());
+      await db.from('plans').update({next_due:nd.toISOString().slice(0,10)}).eq('id',z.id);
+    }
+    toast('Recorded '+money(z.amount)+' against '+z.name);});
+  if(a==='planundo') return go(async()=>{
+    const rows=(S.planPays[to]||[]).slice().sort((x,y)=>String(y.paid_on).localeCompare(String(x.paid_on)));
+    if(!rows.length) throw new Error('Nothing recorded yet.');
+    const {error}=await db.from('plan_payments').delete().eq('id',rows[0].id);
+    if(error) throw error;
+    await db.from('plans').update({done:false}).eq('id',to);});
   if(a==='plandone') return go(async()=>{
     const {error}=await db.from('plans').update({done:true}).eq('id',to); if(error) throw error;
     toast('Plan cleared. It is off the budget.');});
@@ -1644,6 +1820,408 @@ function act(a,id,to){
   if(a==='delarr') return go(async()=>{
     const {error}=await db.from('arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
 }
+
+/* ======================= CARE FILE ======================= */
+const CARE_SECTIONS=[
+ ['who','Who this is about',
+  'Full name, date of birth, address, where they live now if that is different.'],
+ ['medical','Medical',
+  'Conditions, allergies, blood type. Doctors and the practice. Pharmacy. Hospital they usually attend.'],
+ ['meds','Medication',
+  'What they take, the dose, when, and what it is for. Note anything that must not be stopped suddenly.'],
+ ['contacts','People to call',
+  'In the order you would ring them. Next of kin first, then anyone with a say.'],
+ ['care','Day to day',
+  'Routine, mobility, what help is needed and when. Carers or agencies and their hours.'],
+ ['legal','Legal and documents',
+  'Where the will is. Power of attorney, healthcare proxy, advance directive \u2014 who holds them and where.'],
+ ['money','Money and benefits',
+  'Pensions, benefits, insurance policies. Who to notify. Where statements arrive.'],
+ ['home','Home and access',
+  'Spare keys, alarm, pets, the neighbour who checks in, utilities to deal with.'],
+ ['wishes','Wishes',
+  'Funeral or cremation, service, burial plot, organ donation, anything they have said they want.'],
+ ['other','Anything else', 'Whatever does not fit above.'],
+];
+const CARE_LABEL=Object.fromEntries(CARE_SECTIONS.map(([k,t])=>[k,t]));
+let careOpen=null, careShow={}, careAdd=null;
+
+async function careLoad(){
+  const {data}=await db.from('care_notes').select('*')
+    .eq('profile_id',S.pid).eq('tab_code',acct).order('sort');
+  S.care=data||[];
+}
+function renderCare(){
+  $('sumview').hidden=true; $('tiles').hidden=false;
+  document.querySelector('.panel').hidden=false; $('foothint').hidden=true;
+  $('gb').hidden=true; $('sb').hidden=true; $('sf').hidden=true;
+  const A=acctOf(acct), notes=S.care||[];
+  const filled=CARE_SECTIONS.filter(([k])=>notes.some(n=>n.section===k)).length;
+  $('tiles').innerHTML=`
+   <div class="tile"><div class="l">Entries</div><div class="v">${notes.length}</div>
+     <div class="c">across ${filled} of ${CARE_SECTIONS.length} sections</div></div>
+   <div class="tile"><div class="l">Readable by</div><div class="v" style="font-size:19px">${
+     V.open?'you, now':'nobody'}</div>
+     <div class="c">${V.open?'vault is unlocked':'unlock it in the menu'}</div></div>
+   <div class="tile"><div class="l">Shared with</div><div class="v">${
+     S.shares.filter(z=>z.tab_code===acct).length}</div>
+     <div class="c">people besides you</div></div>
+   <div class="tile"><div class="l">Last change</div><div class="v" style="font-size:17px">${
+     notes.length? new Date(Math.max(...notes.map(n=>+new Date(n.updated_at))))
+       .toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '\u2014'}</div>
+     <div class="c">keep it current</div></div>`;
+  $('ptitle').innerHTML=esc(A.name)
+    +' <button class="mini noprint" id="tabshare" style="margin-left:8px">Share this file</button>'
+    +'<button class="mini noprint" id="tabren" style="margin-left:5px">Rename</button>'
+    +'<button class="mini noprint danger" id="tabdel" style="margin-left:5px">Delete</button>';
+  $('addb').hidden=true;
+
+  const lock = !V.open ? `<div class="note" style="background:var(--glass)">
+    <b>Everything here is encrypted.</b> Unlock the vault from the menu to read or write it.
+    Titles show either way so you can see what is on file.
+    <div class="row-flex" style="margin-top:9px"><button class="mini" id="care-unlock">Unlock</button></div></div>` : '';
+
+  const body=CARE_SECTIONS.map(([key,title,hint])=>{
+    const mine=notes.filter(n=>n.section===key);
+    return `<tr class="grp"><td colspan="8"><span class="gname">${esc(title)}
+        <span class="gcount">${mine.length||'nothing yet'}</span></span>
+        <span class="gsum"><button class="mini" data-careadd="${key}">Add</button></span></td></tr>`
+      + (careAdd===key?`<tr><td colspan="8" class="drawer"><div class="dr">
+          <div class="form">
+            <div style="flex:1 1 200px"><label>Heading</label>
+              <input id="cn-t" placeholder="e.g. ${esc(hint.split('.')[0])}" style="width:100%"></div>
+            <div style="flex:1 1 100%"><label>Details</label>
+              <textarea id="cn-b" rows="4" style="width:100%;font-size:14px"></textarea></div>
+            <button data-a="caresave" data-sec="${key}">Save</button>
+            <button data-a="carecancel">Cancel</button></div>
+          <p class="hint" style="margin:8px 0 0">${esc(hint)}</p></div></td></tr>`:'')
+      + mine.map(n=>{
+          const open=careOpen===n.id, shown=careShow[n.id];
+          return `<tr class="${open?'open':''}">
+            <td colspan="6"><span class="bn">${esc(n.title)}</span>
+              <div class="cat">updated ${new Date(n.updated_at).toLocaleDateString('en-US',
+                {month:'short',day:'numeric',year:'numeric'})}</div></td>
+            <td class="r">${n.body_ct?'<span class="tag sched">encrypted</span>'
+              :'<span class="hint">no details</span>'}</td>
+            <td class="act noprint"><button class="menu" data-care="${n.id}">&ctdot;</button></td></tr>`
+          + (open?`<tr><td colspan="8" class="drawer"><div class="dr">
+              ${shown!==undefined
+                ? `<div style="white-space:pre-wrap;font-size:14px;color:var(--ink);
+                     background:rgba(0,0,0,.3);border:1px solid var(--edge-soft);border-radius:8px;
+                     padding:12px;margin-bottom:11px">${esc(shown||'(empty)')}</div>`
+                : (V.open?'<p class="hint" style="margin:0 0 10px">Hidden until you open it.</p>'
+                   :'<p class="hint" style="margin:0 0 10px">Locked.</p>')}
+              <div class="acts">
+                ${V.open&&shown===undefined?`<button data-a="careshow" data-id="${n.id}">Show</button>`:''}
+                ${shown!==undefined?`<button data-a="carehide" data-id="${n.id}">Hide</button>`:''}
+                ${V.open?`<button data-a="careedit" data-id="${n.id}">Edit</button>`:''}
+                <button data-a="caredel" data-id="${n.id}" class="danger">Remove</button>
+                <button data-a="careclose" style="margin-left:auto">Close</button></div>
+              ${careAdd==='edit:'+n.id?`<div class="form" style="margin-top:11px">
+                 <div style="flex:1 1 200px"><label>Heading</label>
+                   <input id="cn-t" value="${esc(n.title)}" style="width:100%"></div>
+                 <div style="flex:1 1 100%"><label>Details</label>
+                   <textarea id="cn-b" rows="4" style="width:100%;font-size:14px">${esc(shown||'')}</textarea></div>
+                 <button data-a="caresave" data-sec="${esc(n.section)}" data-id="${n.id}">Save</button>
+                 <button data-a="carecancel">Cancel</button></div>`:''}
+            </div></td></tr>`:'');
+        }).join('');
+  }).join('');
+
+  $('tbl').innerHTML=`<tbody>${body}</tbody>`;
+  $('msg').innerHTML=lock+`<div class="note">
+    <b>Keep numbers out of here.</b> Write where a document is kept, not what it says.
+    No Social Security numbers, no full account or card numbers \u2014 a note that says
+    &ldquo;in the grey folder, second drawer&rdquo; is as useful and cannot be stolen.</div>`;
+  on('care-unlock',()=>{ openMenu(); openSec='vault'; paintSections(); });
+  const sh=$('tabshare'); if(sh) sh.onclick=()=>{shareOpen=!shareOpen;render();};
+  const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this file',A.name);if(!n)return;
+    go(async()=>{const {error}=await db.from('tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
+  const td=$('tabdel'); if(td) td.onclick=()=>{
+    if(!confirm('Delete "'+A.name+'" and everything in it? This cannot be undone.'))return;
+    go(async()=>{
+      await db.from('care_notes').delete().eq('profile_id',S.pid).eq('tab_code',acct);
+      const {error}=await db.from('tabs').delete().eq('id',A.id);if(error)throw error;acct=null;});};
+  document.querySelectorAll('[data-careadd]').forEach(b=>b.onclick=()=>{
+    careAdd=careAdd===b.dataset.careadd?null:b.dataset.careadd; careOpen=null; render();});
+  document.querySelectorAll('[data-care]').forEach(b=>b.onclick=()=>{
+    careOpen=careOpen===b.dataset.care?null:b.dataset.care; careAdd=null; render();});
+  document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>careAct(b.dataset.a,b.dataset));
+}
+function careAct(a,ds){
+  if(a==='carecancel'){ careAdd=null; return render(); }
+  if(a==='careclose'){ careOpen=null; careAdd=null; return render(); }
+  if(a==='careedit') return go(async()=>{
+    const n=S.care.find(z=>z.id===ds.id);
+    if(careShow[ds.id]===undefined && n.body_ct)
+      careShow[ds.id]=await decSecret(n.body_ct,n.body_iv,acct)||'';
+    careAdd='edit:'+ds.id;});
+  if(a==='careshow') return go(async()=>{
+    const n=S.care.find(z=>z.id===ds.id);
+    careShow[ds.id]= n.body_ct ? (await decSecret(n.body_ct,n.body_iv,acct)||'(could not open this)') : '';
+    setTimeout(()=>{ if(careShow[ds.id]!==undefined){ delete careShow[ds.id]; render(); } },120000);});
+  if(a==='carehide'){ delete careShow[ds.id]; return render(); }
+  if(a==='caredel') return go(async()=>{
+    if(!confirm('Remove this entry?')) return;
+    const {error}=await db.from('care_notes').delete().eq('id',ds.id);
+    if(error) throw error; careOpen=null; await careLoad();});
+  if(a==='caresave') return go(async()=>{
+    const t=$('cn-t').value.trim(), b=$('cn-b').value;
+    if(!t) throw new Error('Give it a heading.');
+    if(!V.open) throw new Error('Unlock the vault first.');
+    const enc=b ? await encSecret(b,acct) : {ct:null,iv:null};
+    const row={profile_id:S.pid, tab_code:acct, section:ds.sec, title:t,
+      body_ct:enc.ct, body_iv:enc.iv};
+    const {error}= ds.id ? await db.from('care_notes').update(row).eq('id',ds.id)
+                         : await db.from('care_notes').insert(row);
+    if(error) throw error;
+    careAdd=null; if(ds.id) delete careShow[ds.id];
+    await careLoad(); toast('Saved and encrypted.');});
+}
+
+/* ======================= THE GUIDE ======================= */
+const HELP=[
+['start','Getting started',`
+<h3>Getting started</h3>
+<p class="lede">Five minutes to a budget that tells you something.</p>
+<p>A new household opens with two tabs and nine bills named <b>Example &mdash; something</b>.
+They are there to show the shape of it. Nothing in them is real.</p>
+<h4>Turn the examples into your bills</h4>
+<ol>
+  <li>Open a bill's <b>&ctdot;</b> menu and choose <b>Edit bill</b>.</li>
+  <li>Change the name, the amount and the day it is due.</li>
+  <li>Save. The <b>example</b> tag drops off by itself.</li>
+</ol>
+<p>Or clear the lot with the button in the gold banner and add your own with <b>+ Add bill</b>.</p>
+<h4>Tabs</h4>
+<p>Tabs separate money that does not mix. Most households want one for the joint bills
+and one for personal. Add more under <b>Add or hide tabs</b>, rename them, or hide the ones
+you do not use.</p>
+<div class="warn">Nothing is ever lost by experimenting. Removing a bill archives it rather
+than deleting it, and you can always add it again.</div>`],
+
+['pay','Recording a payment',`
+<h3>Recording a payment</h3>
+<p class="lede">Three columns, one of which you type in.</p>
+<p><b>Last</b> is the month before, locked, for reference. <b>Current</b> is the month you are
+working. <b>Next</b> is for anything you pay early.</p>
+<h4>Typing the amount</h4>
+<p>Digits fill in from the right and the decimal looks after itself, the way a card machine
+works. <span class="kbd">195083</span> becomes <b>$1,950.83</b>. No dollar sign, no decimal
+point, no commas.</p>
+<h4>What the statuses mean</h4>
+<ul>
+  <li><b>Not paid</b> &mdash; past the due day with nothing recorded</li>
+  <li><b>Due now</b> &mdash; lands within seven days</li>
+  <li><b>Scheduled</b> &mdash; further out</li>
+  <li><b>Part paid</b> &mdash; some of a split is done</li>
+  <li><b>Paid ahead</b> &mdash; recorded in next month's column</li>
+</ul>
+<h4>Quick ways to mark one</h4>
+<p>The <b>&ctdot;</b> menu has <b>Mark paid in full</b>, <b>Mark paid at $0</b> for a month a bill
+did not arrive, and <b>Clear this month</b> to undo.</p>`],
+
+['split','Splitting a bill',`
+<h3>Splitting a bill</h3>
+<p class="lede">For when one bill gets paid in two goes.</p>
+<p><b>&ctdot;</b> &rarr; <b>Split into parts</b> cuts the bill in half. Change either amount,
+add more parts, and tick each one as it clears.</p>
+<p>The row then reads <b>1/2 parts</b> and the status becomes <b>Part paid</b> until they are
+all ticked. The Current column shows the total so far and stops being typeable &mdash;
+the parts are the record.</p>
+<p><b>Remove split</b> puts it back to a single amount.</p>
+<div class="warn">A split only applies to the month you set it in. Next month the bill is whole
+again, which is usually what you want.</div>`],
+
+['arrange','Payment arrangements',`
+<h3>Payment arrangements</h3>
+<p class="lede">When a creditor agrees to less for a while.</p>
+<p>In the <b>&ctdot;</b> menu, set the amount per month, when it starts, and how many months it
+runs. The budget column shows the agreed figure with <b>was $X</b> underneath, and the row
+carries an <b>arrangement</b> tag.</p>
+<p>It expires on its own at the end of the term and the bill goes back to its full amount.</p>
+<h4>The note field</h4>
+<p>Use it. Write who you spoke to and what was agreed. In four months you will not remember,
+and a creditor who denies the arrangement is a different conversation when you have a name
+and a date.</p>
+<div class="warn">Get arrangements in writing from the creditor as well. This records what you
+agreed; it is not evidence of it.</div>`],
+
+['plans','BNPL and instalment plans',`
+<h3>BNPL and instalment plans</h3>
+<p class="lede">One row per provider, the individual loans underneath.</p>
+<p>Affirm, Klarna and Cash App each get one row. Open the <b>&ctdot;</b> menu and the plans sit
+inside &mdash; one per purchase, each with its own amount, rhythm and length.</p>
+<h4>The two shapes</h4>
+<ul>
+  <li><b>Repeats</b> &mdash; every N months, weeks or days from a next-payment date. Set it to
+    every 2 weeks and a month with three paydays counts three.</li>
+  <li><b>One set date</b> &mdash; a single payment on a specific day, the way Cash App lists them.</li>
+</ul>
+<h4>Paying them</h4>
+<p>Each plan has its own <b>Pay</b> button. It records that payment and moves a repeating plan
+on to its next date. The parent row adds them all up and cannot be typed into.</p>
+<h4>How many payments</h4>
+<p>Fill this in. The row then shows <b>3 of 6 paid</b> and <b>$614 still to run</b>, the plan
+closes itself when the last one lands, and you can see which debt falls off next.</p>
+<h4>Loading a schedule</h4>
+<p><b>Paste a schedule</b> takes the payment list straight from the provider. Copy the text and
+paste it, or snip the screen with <span class="kbd">Win+Shift+S</span> and paste the picture.
+Check the preview before adding &mdash; reading a picture is never perfect.</p>`],
+
+['annual','Annual charges',`
+<h3>Annual charges</h3>
+<p class="lede">The ones that arrive once and hurt.</p>
+<p>Licence renewals, tags, insurance in full, tax software. They live on the <b>Annual</b> tab
+rather than cluttering twelve months of a bill list.</p>
+<p>Each one shows a <b>set aside per month</b> figure &mdash; the amount to hold back so the charge
+is already covered when it lands. The tile at the top totals it.</p>
+<p><b>Heaviest month</b> tells you where the year is lumpy. Plan around that one.</p>
+<p>Any monthly bill can become annual: <b>&ctdot;</b> &rarr; <b>Move to Annual</b>. The reverse is
+on the Annual tab.</p>`],
+
+['tabs','Tabs and projects',`
+<h3>Tabs and projects</h3>
+<p class="lede">A tab is any pot of money you want kept separate.</p>
+<p>Start with accounts &mdash; one per bank account that bills come out of. Then add projects:
+a holiday, Christmas, a remodel, a campaign.</p>
+<h4>Making one</h4>
+<p>Menu &rarr; <b>Add or hide tabs</b> &rarr; <b>New tab</b>. It behaves like any other: add bills,
+split them, set arrangements, share it.</p>
+<h4>Keeping it out of the totals</h4>
+<p>A project counts toward your monthly obligations by default. If a Christmas fund should not
+inflate what you owe each month, hide it with <b>Choose what shows</b>. It stays fully usable on
+its own tab.</p>`],
+
+['house','Households and sharing',`
+<h3>Households and sharing</h3>
+<p class="lede">Several people, one set of books &mdash; or several.</p>
+<p>A household is a set of tabs and bills with people attached. You own yours. Anyone who signs
+up gets their own.</p>
+<h4>Two ways to let someone in</h4>
+<ul>
+  <li><b>Invite someone</b> (Household panel) &mdash; the whole thing, every tab.</li>
+  <li><b>Share this tab</b> (beside a tab's title) &mdash; that tab only. They see nothing else,
+    and the database enforces it.</li>
+</ul>
+<p>They need an account here first. They sign in once, then your invitation works.</p>
+<h4>Growing families</h4>
+<p>Share the Family tab with a son or daughter and they see the household bills they help with.
+When they set up on their own, they hit <b>Start a new household</b> &mdash; it opens empty, with
+its own examples, nothing copied from yours. They can stay in yours as well, or <b>Leave</b>.</p>
+<h4>Handing it over</h4>
+<p><b>Hand over</b> makes a member the owner and keeps you in it. For when a parent's finances
+pass to a child.</p>`],
+
+['vault','Logins and passwords',`
+<h3>Logins and passwords</h3>
+<p class="lede">Encrypted on your device, never readable by the server.</p>
+<p>Each bill can hold the creditor's website, your username, the last four of the account,
+their phone number, who handles it and whether it is on autopay. None of that is secret on
+its own, so it is stored plainly and is instantly useful.</p>
+<p>The password and PIN are different. They are encrypted in your browser before anything is
+sent, with a key only your passphrase can unlock.</p>
+<h4>Setting it up</h4>
+<p>Menu &rarr; <b>Logins</b> &rarr; choose a vault passphrase. Make it different from your sign-in
+password.</p>
+<div class="warn">Nobody can reset that passphrase &mdash; not me, not Supabase. That is what makes
+it safe, and it means losing it loses the passwords. Write it down somewhere physical.</div>
+<h4>Sharing them</h4>
+<p>Share a tab with someone, they set up their own vault, then <b>Give access</b> appears next to
+their name. Their copy of the key is wrapped for them specifically. You never learn their
+passphrase and they never learn yours.</p>
+<h4>Using one</h4>
+<p><b>Pay this</b> opens the creditor's site and copies your username. Come back, tap
+<b>Copy password</b>, paste. A shown password hides after a minute; the clipboard clears after
+thirty seconds.</p>
+<p>A browser cannot type into another website &mdash; only an extension can. For accounts you touch
+weekly, a password manager will always be quicker. This is for the ones you use twice a year,
+and for letting someone else in without handing over everything.</p>`],
+
+['alerts','Email and notifications',`
+<h3>Email and notifications</h3>
+<p class="lede">Told before it matters, not after.</p>
+<h4>Payday email</h4>
+<p>Two schedules, independently switchable: every two weeks, and a set number of days before
+month end. Each email carries what is unpaid and what falls due in the next fortnight, with
+totals. Change where it goes in the same panel.</p>
+<h4>Phone notifications</h4>
+<p>Per device. Turn them on where you want them and leave them off elsewhere. You choose which
+events reach you:</p>
+<ul>
+  <li>A bill coming due, within however many days you set</li>
+  <li>A bill that went unpaid, the morning after</li>
+  <li>Anything over an amount you pick</li>
+  <li>The payday summary</li>
+</ul>
+<p>Quiet hours stop anything arriving overnight. Nothing repeats &mdash; each bill tells you once.</p>
+<div class="warn">On an iPhone, add the site to your home screen first. Safari only allows
+notifications for installed sites.</div>`],
+
+['care','Care file',`
+<h3>Care file</h3>
+<p class="lede">What someone would need to know if you could not tell them.</p>
+<p>Menu &rarr; <b>Add or hide tabs</b> &rarr; <b>New care file</b>. Name it after the person it is
+about &mdash; yours, a parent's, anyone you look after.</p>
+<p>It has ten sections, already laid out: who it is about, medical, medication, people to call,
+day to day, legal and documents, money and benefits, home and access, wishes, and anything else.
+Add as many entries under each as you need.</p>
+<h4>How it is protected</h4>
+<p>Every entry's details are encrypted on your device before they are sent, with the same key
+system as the stored logins. The server holds unreadable text. Headings stay in the clear so
+you can see what is on file without unlocking.</p>
+<p>Anything you open hides itself again after two minutes.</p>
+<h4>What not to put in it</h4>
+<p>Write <b>where</b> a document is, not what it says. &ldquo;Will &mdash; grey folder, second
+drawer, copy with Hammond &amp; Shaw&rdquo; is exactly as useful as the will itself and cannot be
+stolen. Keep Social Security numbers and full account numbers out.</p>
+<h4>Sharing it</h4>
+<p><b>Share this file</b> beside the title, then <b>Give access</b> under Logins once they have
+their own vault passphrase. Share it with the people who would actually need it &mdash; a sibling,
+an executor &mdash; and nobody else. It carries no money and never appears in the budget totals.</p>
+<div class="warn">This is a record, not a legal instrument. A will, a power of attorney and an
+advance directive have to be drawn up and signed properly. Note here where they are; have a
+solicitor or attorney do the rest.</div>`],
+
+['read','Reading the numbers',`
+<h3>Reading the numbers</h3>
+<p class="lede">What to look at, and in what order.</p>
+<h4>The four tiles</h4>
+<p><b>Monthly obligations</b> is what the month costs. <b>Cleared</b> is what has gone out.
+<b>Still owed</b> is what is left &mdash; the one that matters mid-month. <b>Paid ahead</b> counts
+anything you pushed into next month.</p>
+<h4>Sorting that earns its place</h4>
+<p><b>What needs doing</b> puts the overdue at the top and the settled at the bottom.
+<b>Still owed</b> sorts on what remains rather than the budget, so a $250 bill half paid ranks
+below a $150 one untouched.</p>
+<h4>Grouping</h4>
+<p><b>Week of the month</b> is the useful one. It shows where the bills cluster, which tells you
+whether a payday lands before or after a wall of them.</p>
+<h4>Summary</h4>
+<p>Every tab side by side, the twelve-month strip, and a category breakdown with each
+category's share. The strip is clickable &mdash; tap a month to jump there.</p>`],
+];
+
+let helpAt='start';
+function helpOpen(at){
+  helpAt=at||helpAt;
+  let w=$('helpwrap');
+  if(!w){ w=document.createElement('div'); w.id='helpwrap'; document.body.appendChild(w);
+    w.onclick=e=>{ if(e.target===w) helpClose(); }; }
+  w.innerHTML=`<div id="helpbox">
+    <div id="helpnav">${HELP.map(([k,t])=>
+      `<button data-h="${k}" class="${k===helpAt?'on':''}">${t}</button>`).join('')}</div>
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+      <div id="helptop"><span class="dtitle">How this works</span><span class="spacer"></span>
+        <span class="hint">Build ${BUILD}</span>
+        <button id="helpx" aria-label="Close">&times;</button></div>
+      <div id="helpbody">${(HELP.find(x=>x[0]===helpAt)||HELP[0])[2]}</div></div></div>`;
+  $('helpx').onclick=helpClose;
+  w.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>helpOpen(b.dataset.h));
+  $('helpbody').scrollTop=0;
+}
+function helpClose(){ const w=$('helpwrap'); if(w) w.remove(); }
+addEventListener('keydown',e=>{ if(e.key==='Escape') helpClose(); });
 
 /* ================= CHROME ================= */
 function nextSends(d){
@@ -2134,6 +2712,52 @@ function renderNotify(){
     }catch(e){ toast('Could not show a notification: '+e.message,true); }};
 }
 
+async function renderMembers(){
+  const box=$('members'); if(!box) return;
+  const {data,error}=await db.rpc('household_members',{p_id:S.pid});
+  if(error){ box.innerHTML='<p class="hint">Could not read who is in this household.</p>'; return; }
+  const people=Array.isArray(data)?data:[];
+  const mine=S.prof.owner_id===user.id;
+  box.innerHTML=
+    `<div class="dlab" style="margin:0 0 6px">Who is in ${esc(S.prof.name)}</div>`
+    + people.map(p=>`<div class="mem">
+        <span class="me">${esc(p.email)}${p.is_me?' <span class="role">you</span>':''}</span>
+        <span class="role ${p.role==='owner'?'owner':''}">${
+          p.role==='owner'?'owner':p.role==='member'?'everything':esc(p.tabs||'some tabs')}</span>
+        ${mine&&!p.is_me?`<button data-rm="${p.user_id}" class="danger">Remove</button>`:''}
+        ${mine&&!p.is_me&&p.role==='member'?`<button data-hand="${p.user_id}">Hand over</button>`:''}
+      </div>`).join('')
+    + `<div class="row-flex" style="margin-top:10px">
+        ${mine?'<button id="m-invite" class="mini">Invite someone</button>':''}
+        ${mine?'':'<button id="m-leave" class="mini danger">Leave this household</button>'}
+      </div>
+      <p class="hint" style="margin:8px 0 0">${mine
+        ? 'Invite gives the whole household. To share just one tab, use Share this tab on that tab.'
+        : 'You were invited here. Your own household stays separate.'}</p>`;
+  const inv=$('m-invite');
+  if(inv) inv.onclick=()=>{
+    const em=prompt('Email address of the person to invite.\nThey need an account here already.');
+    if(!em||!em.trim()) return;
+    go(async()=>{const {error}=await db.rpc('share_profile',{p_id:S.pid,p_email:em.trim()});
+      if(error) throw error; await loadProfiles(); toast(em.trim()+' is in '+S.prof.name);});};
+  const lv=$('m-leave');
+  if(lv) lv.onclick=()=>{
+    if(!confirm('Leave "'+S.prof.name+'"? You keep your own household.')) return;
+    go(async()=>{const {error}=await db.rpc('leave_household',{p_id:S.pid});
+      if(error) throw error; await loadProfiles(); S.pid=S.profiles[0].id; acct=null;});};
+  document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
+    if(!confirm('Remove them from this household?')) return;
+    go(async()=>{
+      await db.rpc('unshare_profile',{p_id:S.pid,p_user:b.dataset.rm});
+      await db.from('tab_shares').delete().eq('profile_id',S.pid).eq('user_id',b.dataset.rm);
+      await db.from('vault_keys').delete().eq('profile_id',S.pid).eq('user_id',b.dataset.rm);
+      await loadProfiles();});});
+  document.querySelectorAll('[data-hand]').forEach(b=>b.onclick=()=>{
+    if(!confirm('Hand "'+S.prof.name+'" over to them? You stay in it, but they take charge.')) return;
+    go(async()=>{const {error}=await db.rpc('hand_over_household',{p_id:S.pid,p_to:b.dataset.hand});
+      if(error) throw error; await loadProfiles();});});
+}
+
 function renderDigest(){
   const d=S.digest, box=$('digest');
   if(!d){ box.innerHTML='<button class="mini" id="dgon">Turn on payday emails</button>';
@@ -2165,16 +2789,18 @@ function renderDigest(){
     if(error) throw error; toast('Payday emails go to '+to);});
 }
 
+const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
 function render(){
   const vis=TABS().filter(t=>!hidden(t.k));
   if(!vis.some(t=>t.k===acct)) acct=(vis[0]||{k:'sum'}).k;
   $('hsub').textContent=MN[cur.getMonth()]+' '+cur.getFullYear();
   $('pm').value=cur.getMonth(); $('py').value=cur.getFullYear();
   $('prof').innerHTML=S.profiles.map(p=>
-    `<option value="${p.id}" ${p.id===S.pid?'selected':''}>${esc(p.name)}${p.owner_id!==user.id?' (shared)':''}</option>`).join('');
+    `<option value="${p.id}" ${p.id===S.pid?'selected':''}>${esc(p.name)}${
+      p.owner_id!==user.id?' \u2014 shared with you':''}</option>`).join('');
   $('dtabs').innerHTML=vis.map(t=>{
     let n='';
-    if(t.k!=='ann'&&t.k!=='sum') n=money0(figures(cur,t.k).owed);
+    if(t.k!=='ann'&&t.k!=='sum'&&acctOf(t.k).kind!=='care') n=money0(figures(cur,t.k).owed);
     else if(t.k==='ann'){const Y=String(cur.getFullYear());
       n=money0(annuals().filter(a=>!getPay(a,Y)).reduce((s,a)=>s+ +a.amount,0));}
     return `<button class="dtab ${t.k===acct?'on':''}" data-a="${t.k}">
@@ -2197,6 +2823,8 @@ function render(){
   $('sb').innerHTML=sopts.map(([v,t])=>
     `<option value="${v}" ${v===srt?'selected':''}>Sort by ${t.toLowerCase()}</option>`).join('');
   $('sb').hidden = acct==='sum';
+  if($('sf').value!==sf) $('sf').value=sf;      // keep the control in step with the state
+  if($('q').value!==q && document.activeElement!==$('q')) $('q').value=q;
   $('addb').textContent=acct==='ann'?'+ Add annual charge':'+ Add bill';
   $('addb').hidden=acct==='sum';
   const box=$('tabcfgbox'); box.hidden=!cfg;
@@ -2209,12 +2837,17 @@ function render(){
       const {error}=await db.from('profiles').update({hidden_tabs:h}).eq('id',S.pid);
       if(error)throw error; await loadProfiles(); }));
     $('cfgdone').onclick=()=>{cfg=false;render();};}
+  renderMembers();
   renderVault();
   renderNotify();
   renderDigest();
   sectionSummaries();
   paintSections();
-  if(acct==='sum') renderSummary(); else if(acct==='ann') renderAnnual(); else renderAccount();
+  if(acct==='sum') renderSummary();
+  else if(acct==='ann') renderAnnual();
+  else if(acctOf(acct).kind==='care'){ renderCare(); careLoad().then(()=>{ if(acctOf(acct).kind==='care') renderCare(); }); }
+  else renderAccount();
+  saveView();
 }
 let openSec=null;
 function paintSections(){
@@ -2264,6 +2897,15 @@ $('gb').onchange=e=>{grp=e.target.value;shut.clear();render();};
 $('sb').onchange=e=>{srt=e.target.value;render();};
 $('addb').onclick=()=>{adding=!adding;drawer=null;render();};
 $('tabcfg').onclick=()=>{cfg=!cfg;render();};
+on('helpopen',()=>{closeMenu();helpOpen();});
+on('carenew',()=>{
+  const n=prompt('Whose care file is this?\n\ne.g. "Mum" or "Dad\u2019s file"\n\n'
+    +'Everything in it is encrypted. Share it only with the people who would need it.');
+  if(!n||!n.trim())return;
+  closeMenu();
+  go(async()=>{const {data,error}=await db.rpc('create_care_file',{p_id:S.pid,p_name:n.trim()});
+    if(error) throw error; acct=data; S.care=[];
+    toast('Care file made. Unlock the vault to start filling it in.');});});
 $('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side business, anything');
   if(!n||!n.trim())return;
   const cols=['#5B6B7F','#8C5E3C','#3F7A8C','#7A3C5E','#4F7A3C','#6B4FA8'];
@@ -2273,25 +2915,25 @@ $('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side 
       institution:'Project',color:cols[S.tabs.length%cols.length],kind:'project',sort:S.tabs.length});
     if(error)throw error; acct=code;});};
 $('prof').onchange=e=>{S.pid=e.target.value;drawer=null;closeMenu();
-  go(async()=>{});};
-$('pnew').onclick=()=>{const n=prompt('Name this profile');if(!n||!n.trim())return;
-  go(async()=>{const {data,error}=await db.rpc('create_profile',{p_name:n.trim(),p_seed:true});
-    if(error)throw error; await loadProfiles(); S.pid=data; acct=null;});};
-$('pren').onclick=()=>{const n=prompt('Rename profile',S.prof.name);if(!n||!n.trim())return;
+  go(async()=>{ applyView(); });};
+$('pnew').onclick=()=>{
+  const n=prompt('Name the new household\n\ne.g. "Daniel & Maya" or "Mum\u2019s bills"\n\n'
+    +'It starts empty \u2014 four tabs, no bills. Use Duplicate instead if you want a copy of this one.');
+  if(!n||!n.trim())return;
+  go(async()=>{const {data,error}=await db.rpc('create_household',{p_name:n.trim()});
+    if(error)throw error; await loadProfiles(); S.pid=data; acct=null;
+    toast(n.trim()+' is ready \u2014 add its bills with + Add bill.');});};
+$('pren').onclick=()=>{const n=prompt('Rename this household',S.prof.name);if(!n||!n.trim())return;
   go(async()=>{const {error}=await db.from('profiles').update({name:n.trim()}).eq('id',S.pid);
     if(error)throw error; await loadProfiles();});};
 $('pdup').onclick=()=>{const n=prompt('Name the copy',S.prof.name+' copy');if(!n||!n.trim())return;
   go(async()=>{const {data,error}=await db.rpc('duplicate_profile',{p_id:S.pid,p_name:n.trim()});
     if(error)throw error; await loadProfiles(); S.pid=data;});};
-$('pshare').onclick=()=>{
-  const em=prompt('Email address of the family member to invite.\nThey need an account here already.');
-  if(!em||!em.trim())return;
-  go(async()=>{const {error}=await db.rpc('share_profile',{p_id:S.pid,p_email:em.trim()});
-    if(error)throw error; await loadProfiles(); toast(em.trim()+' can now open "'+S.prof.name+'"');});};
 $('pdel').onclick=()=>{
-  if(S.profiles.length<2) return toast('Keep at least one profile.',true);
-  if(S.prof.owner_id!==user.id) return toast('Only the owner can delete that profile.',true);
-  if(!confirm('Delete "'+S.prof.name+'" and everything recorded in it?'))return;
+  if(S.profiles.length<2) return toast('Keep at least one household.',true);
+  if(S.prof.owner_id!==user.id)
+    return toast('You do not own that household \u2014 use Leave instead.',true);
+  if(!confirm('Delete "'+S.prof.name+'" and everything recorded in it? Everyone in it loses it too.'))return;
   go(async()=>{const {error}=await db.from('profiles').delete().eq('id',S.pid);
     if(error)throw error; await loadProfiles(); S.pid=S.profiles[0].id; acct=null;});};
 
