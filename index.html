@@ -2409,7 +2409,10 @@ const HORIZONS=[['pay','until my next payday'],[7,'next 7 days'],[14,'next 14 da
 // everything landing in the window, from every tab, in one list
 function comingUp(){
   const out=[], today=TODAY, end=windowEnd();
-  const months=[shift(cur,-1),cur,shift(cur,1),shift(cur,2)]
+  // The window runs from today to payday, so the months have to be built
+  // around today — not around whichever month happens to be on screen.
+  const base=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
+  const months=[shift(base,-1),base,shift(base,1),shift(base,2)]
     .filter((m,i,a)=>a.findIndex(x=>mk(x)===mk(m))===i);
   const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
 
@@ -2458,7 +2461,7 @@ function comingUp(){
 
   // anything already past its day and still unrecorded
   vis.forEach(A=>{
-    [shift(cur,-1),cur].forEach(m=>{
+    [shift(base,-1),base].forEach(m=>{
       monthly(A.code).forEach(b=>{
         if((plansOf(b)||[]).length) return;
         const when=dueDate(b,m); if(when>=today) return;
