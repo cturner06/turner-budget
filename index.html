@@ -265,6 +265,10 @@ td.name{min-width:0}
 tbody tr:hover td{background:rgba(255,255,255,.028)}
 .r{text-align:right}.c{text-align:center}
 .bn{font-weight:500;color:var(--ink);overflow-wrap:break-word}
+button.golink{border:0;background:none;color:var(--gold-deep);font-size:13px;line-height:1;
+  padding:2px 5px;border-radius:5px;vertical-align:1px;opacity:.65;transition:.15s}
+button.golink:hover{background:var(--gold-wash);color:var(--gold);opacity:1}
+tr:hover button.golink{opacity:1}
 .cat{font-size:12px;color:var(--ash);white-space:normal;overflow-wrap:anywhere}
 td.lock{background:var(--lock);color:var(--mute);font-family:'IBM Plex Mono',monospace;
   font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -294,6 +298,9 @@ tr.grp .gname{display:flex;align-items:center;gap:9px}
 tr.grp .chev{display:inline-block;width:9px;color:var(--gold-deep);transition:transform .15s}
 tr.grp.shut .chev{transform:rotate(-90deg)}
 tr.grp .gcount{color:var(--mute);font-weight:400;font-size:12.5px}
+tr.grp.paidgrp td{background:rgba(79,168,131,.09);border-top:1px solid rgba(79,168,131,.3);color:var(--green)}
+tr.grp.paidgrp:hover td{background:rgba(79,168,131,.14)}
+tr.grp.paidgrp .chev{color:var(--green)}
 tr.grp .gsum{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 .var{font-size:11.5px;color:var(--ash);font-family:'IBM Plex Mono',monospace}
 .var.up{color:var(--red)}.var.dn{color:var(--green)}
@@ -724,6 +731,12 @@ const lastDay=m=>new Date(m.getFullYear(),m.getMonth()+1,0).getDate();
 const shift=(m,n)=>new Date(m.getFullYear(),m.getMonth()+n,1);
 const esc=s=>String(s??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
+// the clipboard is missing on plain http and in some embedded browsers
+const copyText=t=>{
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText)
+    return copyText(t); }catch(e){}
+  return Promise.reject(new Error('no clipboard'));
+};
 const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
 
 let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
@@ -813,6 +826,17 @@ function bucket(rows,kind){
     order.sort((a,b)=>o.indexOf(a)-o.indexOf(b));}
   else order.sort((a,b)=>a.localeCompare(b));
   return order.map(k=>[k,m.get(k)]);
+}
+// Everything settled drops here, out of the way but still reachable.
+function paidSection(items,amountOf,render,cols){
+  if(!items.length) return '';
+  const sum=items.reduce((t,x)=>t+amountOf(x),0);
+  const shutIt=!shut.has('__paid_open');
+  return `<tr class="grp paidgrp${shutIt?' shut':''}" data-g="__paid_open">
+      <td colspan="${cols}"><span class="gname"><span class="chev">\u25BE</span>Paid
+        <span class="gcount">${items.length} done</span></span>
+        <span class="gsum">${money(sum)}</span></td></tr>`
+    + (shutIt?'':items.map(render).join(''));
 }
 function groupRow(name,items,budget,cleared,cols){
   const off=shut.has(name);
@@ -1205,7 +1229,13 @@ const monthly=code=>S.bills.filter(b=>!b.is_annual&&b.tab_code===code);
 const annuals=()=>S.bills.filter(b=>b.is_annual).sort((a,b)=>(a.due_month-b.due_month)||a.name.localeCompare(b.name));
 function billsFor(m,code){return monthly(code).map(b=>({b,when:dueDate(b,m)})).sort((x,y)=>x.when-y.when);}
 function status(x,m){const p=per(m),sp=getSplits(x.b,p);
-  if(sp){if(sp.every(z=>z.paid))return'paid';if(sp.some(z=>z.paid))return'part';}
+  const pl=plansOf(x.b);
+  if(pl&&pl.length){
+    // a BNPL row is only paid when every plan due this month is
+    if(allPaid(x.b,p)) return 'paid';
+    if(paidOf(x.b,p)!==null) return 'part';
+  }
+  else if(sp){if(sp.every(z=>z.paid))return'paid';if(sp.some(z=>z.paid))return'part';}
   else if(paidOf(x.b,p)!==null)return'paid';
   if(paidOf(x.b,per(shift(m,1)))!==null)return'ahead';
   if(x.when<TODAY)return'late';
@@ -1237,6 +1267,13 @@ async function clearSplits(b,p){const sp=getSplits(b,p);
 /* ================= ONE ROW, USED EVERYWHERE ================= */
 // The checklist and the account tabs draw the same row from the same data,
 // so a payment recorded in one shows in the other immediately.
+// a one-tap way out to the creditor's site, straight from the row
+function payLink(b){
+  const v=vendorOf(b);
+  if(!v||!v.login_url) return '';
+  return ` <button class="golink noprint" data-pay="${b.id}"
+    title="Open ${esc(v.name)} to pay it">\u2197</button>`;
+}
 function billRow(x,m,opt){
   opt=opt||{};
   const p=per(m), prev=shift(m,-1), nxt=shift(m,1);
@@ -1266,7 +1303,8 @@ function billRow(x,m,opt){
       ${opt.key?`data-rowkey="${esc(opt.key)}"`:''}>
       <td class="c tick noprint"><input type="checkbox" class="donechk" data-done="${x.b.id}|${p}"
         ${done?'checked':''} aria-label="Mark ${esc(x.b.name)} paid"></td>
-      <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${sub}</div></td>
+      <td class="name"><span class="bn">${esc(x.b.name)}</span>${payLink(x.b)}${tags}
+        <div class="cat">${sub}</div></td>
       <td class="c hidesm">${opt.when2||dueLabel(x.b)}</td>
       <td data-l="Status"><span class="tag ${s}">${opt.statusText||LBL[s]}</span></td>
       <td class="r num" data-l="Budget">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
@@ -1484,13 +1522,16 @@ function renderAccount(){
       ${vendNewFields('')}
       <button data-a="savenew">Add it</button><button data-a="cancelnew">Cancel</button></div>
      </div></td></tr>`:'';
-  const body=bucket(sortRows(rows,'acct'),'acct').map(([name,items])=>{
+  const settled=x=>{const v=paidOf(x.b,p); return v!==null&&allPaid(x.b,p);};
+  const live=rows.filter(x=>!settled(x)), cleared2=rows.filter(settled);
+  const body=bucket(sortRows(live,'acct'),'acct').map(([name,items])=>{
     if(name===null) return items.map(rowHTML).join('');
     const gb=items.reduce((t,x)=>t+budgetOf(x.b,cur),0);
     const gc=items.reduce((t,x)=>t+(paidOf(x.b,p)||0),0);
     return groupRow(name,items.length,gb,gc,10)
       + (shut.has(name)?'':items.map(rowHTML).join(''));
-  }).join('');
+  }).join('')
+  + paidSection(cleared2, x=>paidOf(x.b,p)||0, rowHTML, 10);
   $('tbl').innerHTML=`
    <colgroup><col class="c-sel"><col class="c-bill"><col class="c-due"><col class="c-status"><col class="c-money">
      <col class="c-money c-last"><col class="c-cell"><col class="c-cell"><col class="c-sel"><col class="c-act"></colgroup>
@@ -1596,8 +1637,10 @@ function renderAnnual(){
        <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${a.amount}" style="width:110px"></div>
        <button data-a="saveannedit">Save changes</button><button data-a="canceledit">Cancel</button></div></div>`:'';
     const pk='b:'+a.id+':'+Y;
-    return `<tr class="${s}${open?' open':''}${picked.has(pk)?' picked':''}">
-      <td class="name"><span class="bn">${esc(a.name)}</span> <span class="tag annual">annual</span>
+    return `<tr class="${s}${open?' open':''}${picked.has(pk)?' picked':''}" data-row="${a.id}">
+      <td class="c tick noprint"><input type="checkbox" class="donechk" data-done="${a.id}|${Y}"
+        ${rec?'checked':''} aria-label="Mark ${esc(a.name)} paid"></td>
+      <td class="name"><span class="bn">${esc(a.name)}</span>${payLink(a)}
         ${a.shared_from?` <span class="tag shared">from ${esc(a.shared_by)}</span>`:''}
         <div class="cat">${esc(a.category)}</div></td>
       <td data-l="Tab"><span class="bn" style="color:${COL(a.tab_code)}">${esc(acctOf(a.tab_code).name)}</span></td>
@@ -1605,11 +1648,14 @@ function renderAnnual(){
       <td class="r num" data-l="Amount">${money(a.amount)}</td>
       <td class="r num" data-l="Set aside /mo" style="color:var(--mute)">${money(+a.amount/12)}</td>
       <td data-l="Status"><span class="tag ${s}">${s==='paid'?'Paid':s==='late'?'Not paid':s==='due'?'Coming up':'Scheduled'}</span></td>
-      <td class="cell" data-l="Paid ${Y}" style="position:relative"><input class="in" data-b="${a.id}" data-p="${Y}" type="number" step="0.01"
-        value="${rec?rec.amount:''}" placeholder="${(+a.amount).toFixed(2)}" aria-label="${esc(a.name)} paid">
-        <button class="menu noprint" data-m="${a.id}" aria-label="Actions for ${esc(a.name)}"
-         style="position:absolute;right:-30px;top:7px">&#8943;</button></td></tr>`
-     +(open?`<tr class="drawerrow"><td colspan="9" class="drawer"><div class="dr"><div class="acts">
+      <td class="cell" data-l="Paid ${Y}"><input class="in" data-b="${a.id}" data-p="${Y}"
+        type="text" inputmode="decimal"
+        value="${rec?money(rec.amount):''}" placeholder="${money(a.amount)}" aria-label="${esc(a.name)} paid"></td>
+      <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
+        ${picked.has(pk)?'checked':''} aria-label="Select ${esc(a.name)}"></td>
+      <td class="act noprint"><button class="menu" data-m="${a.id}"
+        aria-label="Actions for ${esc(a.name)}">&#8943;</button></td></tr>`
+     +(open?`<tr class="drawerrow"><td colspan="10" class="drawer"><div class="dr"><div class="acts">
         <button data-a="edit">Edit charge</button><button data-a="annfull">Mark paid in full</button>
         <button data-a="annzero">Mark paid at $0</button><button data-a="annclear">Clear</button>${share}
         <button data-a="remove" class="danger">Remove</button>
@@ -1630,15 +1676,15 @@ function renderAnnual(){
     return groupRow(name,items.length,gb,gc,10)+(shut.has(name)?'':items.map(annHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
-   <colgroup><col class="c-bill"><col class="c-tab"><col class="c-due"><col class="c-money">
+   <colgroup><col class="c-sel"><col class="c-bill"><col class="c-tab"><col class="c-due"><col class="c-money">
      <col class="c-money"><col class="c-status"><col class="c-cell"><col class="c-sel"><col class="c-act"></colgroup>
-   <thead><tr><th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
+   <thead><tr><th class="c noprint">Paid</th><th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
     <th class="r">Set aside /mo</th><th>Status</th><th class="r mo">Paid<small>${Y}</small></th>
     <th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
       aria-label="Select everything shown"></th>
     <th class="c noprint" style="width:46px">Edit</th></tr></thead>
    <tbody>${addRow}${body||'<tr><td colspan="10" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
-   <tfoot><tr><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
+   <tfoot><tr><td class="noprint"></td><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
     <td class="r">${money(tb/12)}</td><td></td><td class="r">${money(tp)}</td>
     <td class="noprint"></td><td class="noprint"></td></tr></tfoot>`;
   wire(); $('msg').innerHTML='';
@@ -1745,6 +1791,20 @@ function renderSummary(){
 /* ================= WIRE ================= */
 function wire(){
   wireCat('ed-c'); wireCat('nb-c');
+  document.querySelectorAll('[data-pay]').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    const b=S.bills.find(z=>z.id===btn.dataset.pay); if(!b) return;
+    const v=vendorOf(b); if(!v||!v.login_url) return;
+    window.open(v.login_url,'_blank','noopener');
+    if(v.username) copyText(v.username)
+      .then(()=>toast('Opened '+v.name+' \u2014 username copied'))
+      .catch(()=>toast('Opened '+v.name));
+    else toast('Opened '+v.name);
+    if(v.secret_ct && V.open) decSecret(v.secret_ct,v.secret_iv,v.key_tab||VKEY).then(out=>{
+      if(out){ vendShow[v.id]=out; drawer=b.id;
+        setTimeout(()=>{ if(vendShow[v.id]){ delete vendShow[v.id]; render(); } },60000);
+        render(); }});
+  });
   [['nb-v','nb-vnew'],['bv-v','bv-new']].forEach(([sel,box])=>{
     const e=$(sel), x=$(box); if(!e||!x) return;
     const sync=()=>{ x.hidden = e.value!=='__new';
@@ -1948,7 +2008,7 @@ function act(a,id,to){
   if(a==='paythis'){
     const c=S.creds.find(z=>z.bill_id===b.id); if(!c) return;
     window.open(c.login_url,'_blank','noopener');
-    if(c.username) navigator.clipboard.writeText(c.username)
+    if(c.username) copyText(c.username)
       .then(()=>toast('Username copied \u2014 paste it, then tap Copy password'))
       .catch(()=>toast('Site opened. Copy the username from here.'));
     else toast('Site opened.');
@@ -2446,17 +2506,18 @@ function renderNext(){
        statusText:{paid:'Paid',late:'Past due',due:'Due now',sched:'Coming up'}[st]});
   };
   const body=order.map(k=>{
-    const items=buckets.get(k);
+    const items=(buckets.get(k)||[]).filter(x=>!x.paid);
+    if(!items.length) return '';
     if(k===null) return items.map(line).join('');
     const sum=items.reduce((s,x)=>s+Math.max(0,x.amount),0);
-    const done=items.filter(x=>x.paid).length;
     const off=shut.has(k);
     return `<tr class="grp${off?' shut':''}" data-g="${esc(k)}">
         <td colspan="10"><span class="gname"><span class="chev">\u25BE</span>${esc(k)}
-          <span class="gcount">${items.length} ${items.length===1?'item':'items'}${done?' \u00b7 '+done+' done':''}</span></span>
+          <span class="gcount">${items.length} ${items.length===1?'item':'items'}</span></span>
           <span class="gsum">${money(sum)}</span></td></tr>`
       + (off?'':items.map(line).join(''));
-  }).join('');
+  }).join('')
+  + paidSection(sorted.filter(x=>x.paid), x=>x.amount, line, 10);
 
   $('tbl').innerHTML=`
    <colgroup><col class="c-sel"><col class="c-bill"><col class="c-due"><col class="c-status"><col class="c-money">
@@ -2660,7 +2721,7 @@ function vendAct(a,id){
   if(a==='edit'){ vendAdd='edit:'+id; vendOpen=id; return render(); }
   if(a==='open'){
     window.open(v.login_url,'_blank','noopener');
-    if(v.username) navigator.clipboard.writeText(v.username)
+    if(v.username) copyText(v.username)
       .then(()=>toast('Username copied \u2014 paste it, then Copy password')).catch(()=>{});
     if(v.secret_ct&&V.open) decSecret(v.secret_ct,v.secret_iv,v.key_tab||VKEY).then(out=>{
       if(out){ vendShow[id]=out; render();
@@ -2674,9 +2735,9 @@ function vendAct(a,id){
     setTimeout(()=>{ if(vendShow[id]){ delete vendShow[id]; render(); } },60000);});
   if(a==='hide'){ delete vendShow[id]; return render(); }
   if(a==='copy'){ const s2=vendShow[id];
-    if(s2&&s2.password) navigator.clipboard.writeText(s2.password)
+    if(s2&&s2.password) copyText(s2.password)
       .then(()=>{toast('Copied. Clipboard clears in 30 seconds.');
-        setTimeout(()=>navigator.clipboard.writeText('').catch(()=>{}),30000);})
+        setTimeout(()=>copyText('').catch(()=>{}),30000);})
       .catch(()=>toast('Could not reach the clipboard.',true));
     return; }
   if(a==='del') return go(async()=>{
