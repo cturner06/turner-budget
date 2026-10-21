@@ -1943,9 +1943,34 @@ function wire(){
     c.onchange=()=>{
       const [id,p]=c.dataset.done.split('|');
       const b=S.bills.find(z=>z.id===id); if(!b) return;
-      const m=monthOf(p);
-      go(async()=>{ await clearSplits(b,p);
-        await setPay(b,p, c.checked ? (b.is_annual? +b.amount : budgetOf(b,m)) : null); });};});
+      const m=monthOf(p), on=c.checked;
+      go(async()=>{
+        const pl=plansOf(b);
+        if(pl&&pl.length){
+          // a BNPL row is the sum of its plans, so the tick has to move those
+          for(const z of pl){
+            const dueN=planHits(z,m); if(!dueN) continue;
+            const got=planPaysIn(z,p);
+            if(on){
+              for(let i=got.length;i<dueN;i++){
+                const {error}=await db.from('plan_payments').insert({profile_id:S.pid,
+                  bill_id:b.id, plan_id:z.id, amount:+z.amount,
+                  paid_on:new Date().toISOString().slice(0,10)});
+                if(error) throw error;
+              }
+            } else {
+              for(const row of got){
+                const {error}=await db.from('plan_payments').delete().eq('id',row.id);
+                if(error) throw error;
+              }
+              await db.from('plans').update({done:false}).eq('id',z.id);
+            }
+          }
+          return;
+        }
+        await clearSplits(b,p);
+        await setPay(b,p, on ? (b.is_annual? +b.amount : budgetOf(b,m)) : null);
+      });};});
   document.querySelectorAll('.nxchk').forEach(c=>{
     c.onclick=e=>e.stopPropagation();
     c.onchange=()=>tick(c.dataset.k,c.checked);});
@@ -2275,6 +2300,23 @@ function bulk(a){
         continue;
       }
       if(a==='bulkdel'){ await db.from('bills').update({archived:true}).eq('id',x.b.id); continue; }
+      const bpl=plansOf(x.b);
+      if(bpl&&bpl.length&&(a==='bulkpay'||a==='bulkclear')){
+        const bm=/^\d{4}-\d{2}$/.test(x.p)?monthOf(x.p):cur;
+        for(const z of bpl){
+          const dueN=planHits(z,bm); if(!dueN) continue;
+          const got=planPaysIn(z,x.p);
+          if(a==='bulkpay'){
+            for(let i=got.length;i<dueN;i++)
+              await db.from('plan_payments').insert({profile_id:S.pid,bill_id:x.b.id,
+                plan_id:z.id, amount:+z.amount, paid_on:new Date().toISOString().slice(0,10)});
+          } else {
+            for(const row of got) await db.from('plan_payments').delete().eq('id',row.id);
+            await db.from('plans').update({done:false}).eq('id',z.id);
+          }
+        }
+        continue;
+      }
       await clearSplits(x.b,x.p);
       if(a==='bulkpay'){
         const m=/^\d{4}-\d{2}$/.test(x.p)?new Date(+x.p.slice(0,4),+x.p.slice(5,7)-1,1):cur;
