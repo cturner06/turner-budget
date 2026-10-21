@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en" data-theme="dark"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Turner Budget</title>
 <meta name="theme-color" content="#0A0A0B">
@@ -160,6 +160,7 @@ select option{background:var(--coal);color:var(--ink)}
   background:var(--glass);border:1px solid transparent;color:var(--ink2)}
 .dtab:hover{border-color:var(--edge-soft);color:var(--ink)}
 .dtab.on{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;font-weight:600}
+#themepick button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold);background:var(--gold-wash)}
 .dtab .d{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .dtab .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;opacity:.75}
 .mem{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:13.5px;
@@ -475,6 +476,67 @@ tr.picked td{background:rgba(207,181,59,.1)!important}
 #toast.on{opacity:1}
 #toast.bad{color:#F0978F;border-color:rgba(224,102,92,.4)}
 
+
+/* ---------- light ---------- */
+html[data-theme="light"]{
+  --black:#FFFFFF; --obsidian:#F7F5F0; --coal:#FFFFFF;
+  --gold:#8A6F1C; --gold-deep:#B99A2E; --gold-wash:rgba(185,154,46,.14);
+  --goldw:rgba(185,154,46,.16);
+  --ink:#1B2430; --ink2:#44505F; --mute:#6B7684; --ash:#8C97A4;
+  --glass:rgba(255,255,255,.72); --glass-2:rgba(255,255,255,.92);
+  --edge:rgba(138,111,28,.3); --edge-soft:rgba(27,36,48,.14);
+  --rule:rgba(27,36,48,.16); --rule2:rgba(27,36,48,.09);
+  --lock:rgba(27,36,48,.035);
+  --green:#1E7A54; --greenw:rgba(30,122,84,.14);
+  --red:#B3261E;   --redw:rgba(179,38,30,.1);
+  --p:#2E5E8C; --f:#6B4BA8; --b:#0F7A6C; --v:#9A5A2E;
+  color-scheme:light;
+}
+html[data-theme="light"] body:before{
+  background:
+    radial-gradient(900px 620px at 12% -8%,  rgba(207,181,59,.22), transparent 62%),
+    radial-gradient(760px 560px at 92% 8%,   rgba(90,120,170,.14), transparent 60%),
+    radial-gradient(1100px 800px at 50% 115%,rgba(207,181,59,.12), transparent 65%),
+    #F7F5F0;
+}
+html[data-theme="light"] header{background:rgba(247,245,240,.82)}
+html[data-theme="light"] .tab.on,
+html[data-theme="light"] .dtab.on,
+html[data-theme="light"] #gate .prim,
+html[data-theme="light"] button.pay,
+html[data-theme="light"] #calc-keys button.eq,
+html[data-theme="light"] .plan button.pay,
+html[data-theme="light"] .cred button.pay{
+  background:linear-gradient(180deg,#C9A227,#A8871C);color:#FFFBEF}
+html[data-theme="light"] tfoot td{background:rgba(185,154,46,.16);color:#6E5812}
+html[data-theme="light"] .tag.late{background:rgba(179,38,30,.16);color:#8E1C16}
+html[data-theme="light"] .tag.paid,
+html[data-theme="light"] .tag.shared{background:rgba(30,122,84,.14);color:#156242}
+html[data-theme="light"] .tag.due,
+html[data-theme="light"] .tag.part,
+html[data-theme="light"] .tag.annual{background:rgba(185,154,46,.2);color:#6E5812}
+html[data-theme="light"] .tag.ahead,
+html[data-theme="light"] .tag.split{background:rgba(46,94,140,.14);color:#214866}
+html[data-theme="light"] .tag.arr{background:rgba(107,75,168,.14);color:#4C3579}
+html[data-theme="light"] .tag.sched,
+html[data-theme="light"] .tag.zero{background:rgba(27,36,48,.08);color:#44505F}
+html[data-theme="light"] tr.late td{background:rgba(179,38,30,.07)}
+html[data-theme="light"] tr.late:hover td{background:rgba(179,38,30,.11)}
+html[data-theme="light"] #drawer{
+  background:linear-gradient(160deg,rgba(255,255,255,.98),rgba(247,245,240,.99))}
+html[data-theme="light"] #toast{background:#1B2430;color:#F2E6BE}
+html[data-theme="light"] #selbar{background:rgba(255,255,255,.96)}
+html[data-theme="light"] #impbox,html[data-theme="light"] #helpbox,
+html[data-theme="light"] #calcbox,html[data-theme="light"] #gate .box{
+  background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
+html[data-theme="light"] #burger span{background:#8A6F1C}
+html[data-theme="light"] .cred code{background:rgba(27,36,48,.06)}
+html[data-theme="light"] td.drawer{background:rgba(27,36,48,.035)}
+html[data-theme="light"] .dr{background:transparent}
+html[data-theme="light"] #helpbody .kbd,
+html[data-theme="light"] #diag{background:rgba(27,36,48,.05)}
+html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{
   body:before{display:none} body{background:#fff;color:#000}
@@ -485,68 +547,130 @@ tr.picked td{background:rgba(207,181,59,.1)!important}
 }
 
 /* ---------- phone ---------- */
-@media(max-width:1120px){
-  th.mo.lastcol,td.lock{display:none;}     /* reference column goes first */
-  col.c-last{width:0}
-}
-@media(max-width:940px){
-  th.c.hidesm,td.c.hidesm{display:none}
-}
 @media(max-width:760px){
  :root{padding-top:env(safe-area-inset-top,0px)}
- .wrap{padding:0 13px}
+ .wrap{padding:0 12px}
  h1{font-size:17px}
  header{padding-top:env(safe-area-inset-top,0px)}
- .hrow{gap:11px;padding:12px 0}
- .curtab{display:none}
- .tiles,.sgrid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
- .tile{padding:12px 13px}.tile .v{font-size:20px}
- .ptop{padding:12px 13px;gap:8px}
- .ptop h2{font-size:14px;width:100%}
- #q{flex:1 1 110px;min-width:0}
+ .hrow{gap:10px;padding:11px 0}
+ .hstats,.who{display:none}
 
- /* two lines: the bill, then everything about it */
+ /* the four nav cards swipe sideways instead of eating the screen */
+ #navtiles .tiles{display:flex;overflow-x:auto;gap:8px;margin-bottom:12px;
+   scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:2px}
+ #navtiles .tiles::-webkit-scrollbar{display:none}
+ #navtiles .tile{flex:0 0 56%;scroll-snap-align:start;padding:10px 12px}
+ #navtiles .tile .l{min-height:auto;margin-bottom:4px;font-size:11.5px}
+ #navtiles .tile .two{gap:6px;margin-top:3px}
+ #navtiles .tile .two .big{font-size:18px}
+ #navtiles .tile .two .lateamt{font-size:11.5px}
+ #navtiles .tile .sm{font-size:10.5px;margin-top:4px}
+ #navtiles .tile .prog{margin-top:6px;height:3px}
+
+ /* the detail cards below stay two across */
+ .tiles,.sgrid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+ .tile{padding:11px 12px}
+ .tile .l{min-height:auto;margin-bottom:5px;font-size:12px}
+ .tile .v{font-size:19px}
+
+ /* the banner should not take a quarter of the screen */
+ .note{padding:10px 13px;font-size:12.5px;margin-bottom:12px}
+
+ /* the control bar, two per line */
+ .ptop{padding:10px 12px;gap:6px}
+ .ptop h2{width:100%;font-size:14px;margin:0}
+ .ptop h2 .hint{display:block;font-size:11.5px;margin-top:2px}
+ .ptop select{flex:1 1 calc(50% - 4px);max-width:none;min-width:0}
+ .ptop #q{flex:1 1 100%;width:auto}
+ .ptop .mini,.ptop button{flex:0 0 auto}
+ .ptop .nrow{flex:1 1 100%}
+
+ /* every row becomes a card: name on top, the rest underneath */
  #tbl,#tbl tbody,#tbl tr,#tbl td{display:block;width:100%}
- #tbl thead,#tbl tfoot{display:none}
+ #tbl thead,#tbl tfoot,#tbl colgroup{display:none}
  #tbl td.hidesm,#tbl td.lock,#tbl td.cell.next{display:none}
+
  #tbl tbody tr{
-   display:flex;flex-wrap:wrap;align-items:center;gap:9px;position:relative;
+   display:grid;
+   grid-template-columns:26px minmax(0,1fr) auto;
+   align-items:center;
+   column-gap:9px;row-gap:7px;
    border:1px solid var(--edge-soft);border-radius:11px;margin:0 0 9px;
-   padding:12px 46px 12px 14px;background:var(--glass);
+   padding:12px 13px;background:var(--glass);
    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
  #tbl tbody tr:hover td{background:none}
- #tbl tbody tr.late{background:rgba(224,102,92,.1);border-color:rgba(224,102,92,.26)}
- #tbl tbody tr.open{background:rgba(207,181,59,.07)}
- #tbl td{border:0;height:auto;padding:0;text-align:left!important;width:auto}
+ #tbl tbody tr.late{background:var(--redw);border-color:rgba(224,102,92,.3)}
+ #tbl tbody tr.open{background:var(--gold-wash);border-color:var(--edge)}
+ #tbl tbody tr.picked{background:var(--gold-wash)}
+ #tbl td{border:0;height:auto;padding:0;text-align:left!important;width:auto;min-width:0}
  #tbl td[data-l]:before,#tbl td.cell:before{content:none}
- #tbl td.name{flex:1 0 100%;padding:0}
- #tbl td.name .bn{font-size:16px;line-height:1.35}
- #tbl td.name .cat{display:none}
- #tbl td[data-l="Status"]{flex:0 0 auto}
- #tbl td.r.num{flex:0 0 auto;font-size:13.5px;color:var(--mute)}
+
+ #tbl td.tick{grid-column:1;grid-row:1;justify-self:center}
+ #tbl td.name{grid-column:2;grid-row:1;padding:0}
+ #tbl td.name .bn{font-size:15.5px;line-height:1.3}
+ #tbl td.name .cat{display:block;font-size:11.5px;margin-top:2px}
+ #tbl td.act{grid-column:3;grid-row:1;justify-self:end;width:auto}
+ #tbl td[data-l="Status"]{grid-column:1 / 3;grid-row:2;justify-self:start}
+ #tbl td.r.num{grid-column:3;grid-row:2;justify-self:end;
+   font-size:13.5px;color:var(--mute);white-space:nowrap}
  #tbl td.r.num .var{display:none}
- #tbl td.cell{flex:1 1 120px;min-width:120px;margin-left:auto}
- #tbl td.cell input{height:40px;font-size:16px;border:1px solid var(--edge-soft);
-   border-radius:8px;background:rgba(255,255,255,.05);padding:0 11px;text-align:right}
- #tbl td.act{position:absolute;right:8px;top:10px;width:auto;padding:0;border:0}
- #tbl .menu{font-size:21px;padding:4px 9px;border-color:var(--edge-soft)}
- #tbl tr.grp{display:flex;border:0;border-radius:0;margin:14px 0 8px;padding:0;
+ #tbl td.cell{grid-column:1 / 3;grid-row:3}
+ #tbl td.sel{grid-column:3;grid-row:3;justify-self:end;width:auto;border:0;padding:0}
+ #tbl td.cell input,#tbl td.cell .splitsum{
+   height:42px;font-size:16px;border:1px solid var(--edge-soft);
+   border-radius:8px;background:rgba(255,255,255,.05);padding:0 12px;
+   text-align:right;line-height:40px;width:100%;margin:0}
+ #tbl .menu{font-size:21px;padding:5px 11px;border-color:var(--edge-soft)}
+ .donechk,.nxchk{width:19px;height:19px}
+ .selchk{width:18px;height:18px;opacity:1}
+
+ /* group and paid bars span the whole card width */
+ #tbl tr.grp{display:block;border:0;border-radius:0;margin:14px 0 8px;padding:0;
    background:none;backdrop-filter:none}
  #tbl tr.grp td{display:flex;justify-content:space-between;align-items:center;width:100%;
-   padding:9px 12px;border-radius:8px;background:rgba(207,181,59,.1);border:1px solid var(--edge)}
+   padding:10px 12px;border-radius:9px;background:var(--gold-wash);border:1px solid var(--edge)}
+ #tbl tr.grp.paidgrp td{background:var(--greenw);border-color:rgba(79,168,131,.35)}
  #tbl tr.drawerrow{display:block;border:0;padding:0;background:none;backdrop-filter:none;margin:0 0 9px}
  #tbl td.drawer{background:none;padding:0}
- .dr{border:1px solid var(--edge-soft);border-radius:11px;background:rgba(0,0,0,.34);padding:14px}
- .form input,.form select{font-size:16px}
- .form>div{flex:1 1 132px}
- .acts button{flex:1 1 auto}
- .strip{grid-template-columns:62px repeat(12,minmax(22px,1fr));gap:2px}
- .strip .lb{font-size:11px}.cellm{font-size:9px;height:28px}
- #sumview table{font-size:13px}
- #toast{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
- main{padding:18px 0 calc(56px + env(safe-area-inset-bottom,0px))}
+
+ .dr{border:1px solid var(--edge-soft);border-radius:11px;background:rgba(0,0,0,.3);padding:13px}
+ .form input,.form select,.form textarea{font-size:16px}
+ .form>div{flex:1 1 100%}
+ .acts{gap:7px}
+ .acts button{flex:1 1 auto;font-size:13px}
+ .splitline,.plan{flex-wrap:wrap}
+ .plan .pname{flex:1 1 100%}
+ .cred .crow{gap:7px}
+ .cred .crow button{flex:1 1 auto}
+
+ .strip{grid-template-columns:58px repeat(12,minmax(20px,1fr));gap:2px}
+ .strip .lb{font-size:10.5px}.cellm{font-size:8.5px;height:26px}
+ #sumview table{font-size:12.5px}
+ #sumview .ptop h2{font-size:13.5px}
+
+ /* the selection bar and the sheets */
+ .selinner{padding:10px 12px;gap:7px}
+ .seltotal{font-size:17px}
+ #selbar button{font-size:12.5px;padding:7px 11px}
+ #sel-acts{flex:1 1 100%;order:3}
+ #impbox,#helpbox{max-height:92vh}
+ #helpbox{flex-direction:column;height:92vh}
+ #helpnav{width:100%;max-height:120px;border-right:0;border-bottom:1px solid var(--rule2);
+   display:flex;gap:6px;overflow-x:auto;padding:10px}
+ #helpnav button{width:auto;white-space:nowrap;padding:7px 12px}
+ #helpbody{padding:18px 16px}
+ #calcbox{width:100%;max-width:320px}
+ #calc-keys button{padding:15px 0}
+
+ #toast{bottom:calc(16px + env(safe-area-inset-bottom,0px));left:12px;right:12px;
+   transform:none;text-align:center}
+ main{padding:16px 0 calc(130px + env(safe-area-inset-bottom,0px))}
  #gate .box{padding:26px 22px}
  #gate input{font-size:16px}
+}
+@media(max-width:360px){
+ .tiles,.sgrid{grid-template-columns:1fr}
+ #navtiles .tile{flex:0 0 72%}
 }
 </style></head><body>
 <div id="boot">Loading…</div>
@@ -648,6 +772,13 @@ window.addEventListener('unhandledrejection',function(e){
    <p class="hint" style="margin:0 0 10px">Short answers to the things people ask first.</p>
    <button id="helpopen" class="mini">Open the guide</button></div>
 
+  <button class="dhead" data-sec="look">Light or dark<span class="dval" id="vlook"></span></button>
+  <div class="dpanel" data-p="look">
+   <div class="row-flex" id="themepick">
+    <button class="mini" data-theme-set="light">Light</button>
+    <button class="mini" data-theme-set="dark">Dark</button>
+    <button class="mini" data-theme-set="system">Match my device</button></div></div>
+
   <button class="dhead" data-sec="account">Your account<span class="dval" id="vacct"></span></button>
   <div class="dpanel" data-p="account">
    <div class="who" id="who" style="margin-bottom:11px"></div>
@@ -725,7 +856,6 @@ const TODAY=new Date();TODAY.setHours(0,0,0,0);
 const mk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 const lbl=d=>MN[d.getMonth()]+' '+String(d.getFullYear()).slice(2);
 const money=n=>(n<0?'-':'')+'$'+Math.abs(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const unmoney=v=>{const t=String(v).replace(/[^0-9.\-]/g,'');return t===''||t==='-'?null:+t;};
 const money0=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(+n)).toLocaleString('en-US');
 const lastDay=m=>new Date(m.getFullYear(),m.getMonth()+1,0).getDate();
 const shift=(m,n)=>new Date(m.getFullYear(),m.getMonth()+n,1);
@@ -1100,8 +1230,6 @@ async function loadProfile(){
     db.from('plans').select('*').eq('profile_id',S.pid).eq('done',false).order('created_at'),
     db.from('plan_payments').select('*').eq('profile_id',S.pid),
     db.from('digest_settings').select('*').eq('profile_id',S.pid)]);
-  const cr=await db.from('credentials').select('*').eq('profile_id',S.pid).order('creditor');
-  S.creds=cr.data||[];
   await vendLoad();
   const ts=await db.from('tab_shares').select('*').eq('profile_id',S.pid);
   S.shares=ts.data||[];
@@ -1607,8 +1735,6 @@ function renderAnnual(){
   const paid=list.filter(a=>getPay(a,Y));
   const paidAmt=list.reduce((s,a)=>s+(getPay(a,Y)?+getPay(a,Y).amount:0),0);
   const pct=list.length?Math.round(paid.length/list.length*100):0;
-  const by={};list.forEach(a=>by[a.due_month]=(by[a.due_month]||0)+ +a.amount);
-  const hv=Object.keys(by).sort((x,y)=>by[y]-by[x])[0];
   $('tiles').innerHTML=''; $('tiles').hidden=true;
   $('hstats').innerHTML=`<span>Annual <b>${money0(tot)}</b></span>`
     +`<span class="ok">Paid <b>${money0(paidAmt)}</b></span>`;
@@ -2005,18 +2131,6 @@ function act(a,id,to){
     return vendAct({vopen:'open',vshow:'show',vhide:'hide',vcopy:'copy'}[a], v.id);
   }
   if(a==='credcancel'){ credOpen=null; return render(); }
-  if(a==='paythis'){
-    const c=S.creds.find(z=>z.bill_id===b.id); if(!c) return;
-    window.open(c.login_url,'_blank','noopener');
-    if(c.username) copyText(c.username)
-      .then(()=>toast('Username copied \u2014 paste it, then tap Copy password'))
-      .catch(()=>toast('Site opened. Copy the username from here.'));
-    else toast('Site opened.');
-    if(c.secret_ct && V.open){
-      decSecret(c.secret_ct,c.secret_iv,b.tab_code).then(out=>{ if(out){ credShow[b.id]=out; render();
-        setTimeout(()=>{ if(credShow[b.id]){ delete credShow[b.id]; render(); } },60000); }});
-    }
-    return; }
   if(a==='pasteopen'){ pasteFor=pasteFor===b.id?null:b.id; pasted=[]; lastRead=''; showRaw=false; return render(); }
   if(a==='psclear'){ pasted=[]; lastRead=''; showRaw=false; return render(); }
   if(a==='psraw'){ showRaw=!showRaw; return render(); }
@@ -2387,17 +2501,17 @@ function paydayTiles(){
   const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
   const want=['p','f','b'].map(c=>vis.find(a=>a.code===c)).filter(Boolean);
   const three=want.length?want:vis.slice(0,3);
-  // how far through the month each tab is, so the bar means something
+  // how much of this payday's run is cleared, which is what the window is about
+  const was=doneToo; doneToo=true;
+  const everything=comingUp();
+  doneToo=was;
   const progress=codes=>{
-    let budget=0, cleared=0, n=0, done=0;
-    codes.forEach(code=>{
-      billsFor(cur,code).forEach(x=>{
-        const bg=budgetOf(x.b,cur), v=paidOf(x.b,per(cur));
-        budget+=bg; n++;
-        if(v!==null&&allPaid(x.b,per(cur))){ cleared+=v; done++; }
-      });
-    });
-    return {budget,cleared,n,done,pct:budget?Math.min(100,Math.round(cleared/budget*100)):0};
+    const set=everything.filter(x=>x.tab&&codes.includes(x.tab.code));
+    const n=set.length, done=set.filter(x=>x.paid).length;
+    const budget=set.reduce((t,x)=>t+Math.max(0,x.amount),0);
+    const cleared=set.filter(x=>x.paid).reduce((t,x)=>t+Math.max(0,x.amount),0);
+    return {budget,cleared,n,done,left:n-done,
+            pct:n?Math.round(done/n*100):0};
   };
   const face=(key,name,colour,set,on,codes)=>{
     const coming=set.filter(x=>!x.late), late=set.filter(x=>x.late);
@@ -2409,9 +2523,11 @@ function paydayTiles(){
       <div class="two">
         <span class="big" style="color:${c?'var(--ink)':'var(--mute)'}">${money0(c)}</span>
         <span class="lateamt${l?'':' none'}">${l?money0(l)+' past due':'none past due'}</span></div>
-      <div class="prog" title="${money(P.cleared)} of ${money(P.budget)} cleared this month">
+      <div class="prog" title="${money(P.cleared)} of ${money(P.budget)} cleared before payday">
         <i style="width:${P.pct}%;background:${P.pct>=100?'var(--green)':'linear-gradient(90deg,'+colour+'88,'+colour+')'}"></i></div>
-      <div class="sm">${P.done} of ${P.n} paid this month \u00b7 ${P.pct}%</div></button>`;
+      <div class="sm">${P.n ? (P.left
+        ? P.left+' of '+P.n+' still to pay'
+        : 'all '+P.n+' paid') : 'nothing due'}</div></button>`;
   };
   return `<div class="tiles">`
     + three.map(a=>face(a.code,a.name,a.color,
@@ -2576,18 +2692,6 @@ function tick(key,on){
     await clearSplits(b,p);
     await setPay(b,p, on ? (x.kind==='annual'? +b.amount : budgetOf(b,cur)) : null);
   });
-}
-function jumpTo(key){
-  const [kind,id]=key.split(':');
-  const b=S.bills.find(z=>z.id===id)
-    || (kind==='plan'? S.bills.find(z=>(S.plans[z.id]||[]).some(p=>p.id===id)) : null);
-  if(!b) return;
-  acct = b.is_annual ? 'ann' : b.tab_code;
-  drawer=b.id; adding=false; editing=null;
-  render();
-  setTimeout(()=>{const el=document.querySelector('tr.open');
-    if(el&&el.scrollIntoView) try{ el.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){}
-  },60);
 }
 
 /* ======================= VENDOR DIRECTORY ======================= */
@@ -2786,7 +2890,6 @@ const CARE_SECTIONS=[
   'Funeral or cremation, service, burial plot, organ donation, anything they have said they want.'],
  ['other','Anything else', 'Whatever does not fit above.'],
 ];
-const CARE_LABEL=Object.fromEntries(CARE_SECTIONS.map(([k,t])=>[k,t]));
 let careOpen=null, careShow={}, careAdd=null;
 
 async function careLoad(){
@@ -3204,7 +3307,8 @@ async function enablePush(){
   },{onConflict:'endpoint'});
   if(error) throw error;
   if(!S.notify){
-    const r=await db.from('notify_prefs').insert({profile_id:S.pid});
+    const off=Math.round(-new Date().getTimezoneOffset()/60);
+    const r=await db.from('notify_prefs').insert({profile_id:S.pid,tz_offset:off});
     if(r.error) throw r.error;
   }
 }
@@ -3218,7 +3322,6 @@ async function disablePush(){
 let credOpen=null, credShow={}, moving=null, drawerM=null, pasteFor=null, pasted=[], lastRead='', showRaw=false;
 
 /* ---- read a BNPL schedule out of pasted text or a screenshot ---- */
-const MONTHS3={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
 function parseSchedule(text){
   // Work on the whole block rather than line by line: OCR often runs the
   // merchant into the payment line, which made the old version miss rows.
@@ -3487,7 +3590,7 @@ function impRows(){
 }
 function preview(){
   const rows=impRows();
-  const known=c=>S.creds.find(z=>z.creditor.toLowerCase().slice(0,12)===c.toLowerCase().slice(0,12));
+  const known=c=>(S.vendors||[]).find(z=>z.name.toLowerCase().slice(0,12)===c.toLowerCase().slice(0,12));
   $('imp-prev').innerHTML=`<table><thead><tr><th>Creditor</th><th>Username</th>
       <th>Password</th><th>Goes to</th></tr></thead><tbody>${
     rows.slice(0,60).map(x=>{const k=known(x.creditor);
@@ -3504,24 +3607,27 @@ async function runImport(){
   if(!rows.length) throw new Error('Nothing matched those columns.');
   let made=0, updated=0;
   for(const x of rows){
-    const hit=S.creds.find(z=>z.creditor.toLowerCase().slice(0,12)===x.creditor.toLowerCase().slice(0,12));
-    const code=hit?hit.tab_code:acct;
-    const row={profile_id:S.pid, tab_code:code, creditor:hit?hit.creditor:x.creditor,
+    const hit=(S.vendors||[]).find(z=>z.name.toLowerCase().slice(0,12)===x.creditor.toLowerCase().slice(0,12));
+    const row={profile_id:S.pid, name:hit?hit.name:x.creditor,
       login_url:x.url||(hit?hit.login_url:null),
       username:x.username||(hit?hit.username:null),
       notes:x.notes||(hit?hit.notes:null)};
     if(x.password){
-      const enc=await encSecret({password:x.password,pin:null},code);
-      row.secret_ct=enc.ct; row.secret_iv=enc.iv;
-    } else if(hit){ row.secret_ct=hit.secret_ct; row.secret_iv=hit.secret_iv; }
-    if(hit){ const {error}=await db.from('credentials').update(row).eq('id',hit.id);
+      const enc=await encSecret({password:x.password,pin:null},VKEY);
+      row.secret_ct=enc.ct; row.secret_iv=enc.iv; row.key_tab=VKEY;
+    } else if(hit){ row.secret_ct=hit.secret_ct; row.secret_iv=hit.secret_iv; row.key_tab=hit.key_tab; }
+    if(hit){ const {error}=await db.from('vendors').update(row).eq('id',hit.id);
       if(error) throw error; updated++; }
-    else { if(!row.bill_id){ const b=S.bills.find(z=>
+    else { const {error}=await db.from('vendors').insert(row);
+      if(error) throw error; made++;
+      // attach it to a bill of the same name, if there is one
+      const b=S.bills.find(z=>!z.vendor_id &&
         z.name.toLowerCase().slice(0,10)===x.creditor.toLowerCase().slice(0,10));
-        if(b){ row.bill_id=b.id; row.tab_code=b.tab_code; } }
-      const {error}=await db.from('credentials').insert(row);
-      if(error) throw error; made++; }
+      if(b){ const {data}=await db.from('vendors').select('id')
+          .eq('profile_id',S.pid).eq('name',row.name).maybeSingle();
+        if(data) await db.from('bills').update({vendor_id:data.id}).eq('id',b.id); } }
   }
+  await vendLoad();
   const w=$('impwrap'); if(w) w.remove(); IMP=null;
   toast(`${updated} updated, ${made} added. You can delete the spreadsheet.`);
 }
@@ -3620,21 +3726,45 @@ function renderNotify(){
     box.innerHTML=state+'<button class="mini" id="np-on">Turn on for this device</button>';
     $('np-on').onclick=()=>go(async()=>{await enablePush();toast('Notifications on for this device.');});
     return; }
+  const DOW=[[1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri'],[6,'Sat'],[7,'Sun']];
+  const hourPick=(id,val)=>`<select id="${id}">${Array.from({length:24},(_,h)=>
+    `<option value="${h}" ${h===val?'selected':''}>${
+      h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm'}</option>`).join('')}</select>`;
   box.innerHTML=state+`
+    <label class="nrow"><input type="checkbox" id="np-week" ${n.weekly_on?'checked':''}>
+      <span>Weekly note<span class="sub2">what is still owed and what is due</span></span></label>
+    <div class="dfield" style="margin:-2px 0 12px 26px">
+      <div class="row-flex">
+        <select id="np-wd">${DOW.map(([v,t])=>
+          `<option value="${v}" ${v===n.weekly_day?'selected':''}>${t}</option>`).join('')}</select>
+        <span class="hint">at</span>${hourPick('np-wh',n.weekly_hour)}
+        <span class="hint">looking</span>
+        <input type="number" id="np-ws" min="1" max="31" value="${n.weekly_span}" style="width:58px">
+        <span class="hint">days ahead</span></div></div>
+
     <label class="nrow"><input type="checkbox" id="np-due" ${n.due_soon?'checked':''}>
       <span>A bill is coming due<span class="sub2">within
         <input type="number" id="np-lead" min="1" max="14" value="${n.lead_days}"> days</span></span></label>
+    <div class="dfield" style="margin:-2px 0 12px 26px">
+      <div class="row-flex"><span class="hint">tell me at</span>${hourPick('np-dh',n.due_hour)}</div></div>
+
     <label class="nrow"><input type="checkbox" id="np-late" ${n.went_unpaid?'checked':''}>
       <span>A bill went unpaid<span class="sub2">the morning after its due day</span></span></label>
+    <div class="dfield" style="margin:-2px 0 12px 26px">
+      <div class="row-flex"><span class="hint">tell me at</span>${hourPick('np-lh',n.late_hour)}</div></div>
+
     <label class="nrow"><input type="checkbox" id="np-big" ${n.big_charge?'checked':''}>
       <span>Something large lands<span class="sub2">over
         <input type="number" id="np-amt" min="50" step="50" value="${Math.round(n.big_amount)}"></span></span></label>
     <label class="nrow"><input type="checkbox" id="np-pay" ${n.payday?'checked':''}>
       <span>Payday summary<span class="sub2">same days as the email</span></span></label>
-    <div class="dfield" style="margin-top:10px"><label>Quiet outside these hours</label>
-      <div class="row-flex"><input type="number" id="np-q1" min="0" max="23" value="${n.quiet_before}" style="width:62px">
-        <span class="hint">to</span>
-        <input type="number" id="np-q2" min="1" max="23" value="${n.quiet_after}" style="width:62px"></div></div>
+
+    <div class="dfield" style="margin-top:12px"><label>Quiet outside these hours</label>
+      <div class="row-flex">${hourPick('np-q1',n.quiet_before)}
+        <span class="hint">to</span>${hourPick('np-q2',n.quiet_after)}
+        <span class="hint">\u00b7 your clock is UTC</span>
+        <input type="number" id="np-tz" min="-12" max="14" value="${n.tz_offset}" style="width:58px">
+        <span class="hint">hours</span></div></div>
     <div class="row-flex"><button class="mini" id="np-save">Save notifications</button>
       <button class="mini" id="np-test">Send a test</button>
       <button class="mini danger" id="np-off">Turn off here</button></div>`;
@@ -3643,6 +3773,13 @@ function renderNotify(){
       due_soon:$('np-due').checked, lead_days:Math.max(1,Math.min(14,+$('np-lead').value||3)),
       went_unpaid:$('np-late').checked, payday:$('np-pay').checked,
       big_charge:$('np-big').checked, big_amount:Math.max(50,+$('np-amt').value||500),
+      weekly_on:$('np-week').checked,
+      weekly_day:Math.max(1,Math.min(7,+$('np-wd').value||7)),
+      weekly_hour:Math.max(0,Math.min(23,+$('np-wh').value||8)),
+      weekly_span:Math.max(1,Math.min(31,+$('np-ws').value||7)),
+      due_hour:Math.max(0,Math.min(23,+$('np-dh').value||8)),
+      late_hour:Math.max(0,Math.min(23,+$('np-lh').value||9)),
+      tz_offset:Math.max(-12,Math.min(14,+$('np-tz').value||-6)),
       quiet_before:Math.max(0,Math.min(23,+$('np-q1').value||8)),
       quiet_after:Math.max(1,Math.min(23,+$('np-q2').value||21)),
       updated_at:new Date().toISOString()}).eq('profile_id',S.pid);
@@ -3819,11 +3956,36 @@ function sectionSummaries(){
   const hid=(S.prof.hidden_tabs||[]).length;
   $('vtabs').textContent = hid? hid+' hidden' : S.tabs.length+' showing';
   $('vacct').textContent = user.email.split('@')[0];
+  applyTheme();
 }
 document.querySelectorAll('.dhead').forEach(hd=>hd.onclick=()=>{
   openSec = openSec===hd.dataset.sec ? null : hd.dataset.sec;
   paintSections();});
 paintSections();
+
+/* ---- light, dark, or whatever the device says ---- */
+const THEMES={light:'Light',dark:'Dark',system:'Match my device'};
+function themeWanted(){ try{ return localStorage.getItem('tb-theme')||'dark'; }catch(e){ return 'dark'; } }
+function applyTheme(t){
+  const want=t||themeWanted();
+  const sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const actual = want==='system' ? (sysDark?'dark':'light') : want;
+  document.documentElement.setAttribute('data-theme',actual);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', actual==='dark' ? '#0A0A0B' : '#F7F5F0');
+  const lbl=$('vlook'); if(lbl) lbl.textContent=THEMES[want]||'Dark';
+  document.querySelectorAll('[data-theme-set]').forEach(b=>
+    b.setAttribute('aria-pressed', String(b.dataset.themeSet===want)));
+}
+function setTheme(t){ try{ localStorage.setItem('tb-theme',t); }catch(e){} applyTheme(t); }
+applyTheme();
+if(window.matchMedia){
+  const mq=window.matchMedia('(prefers-color-scheme: dark)');
+  const onChange=()=>{ if(themeWanted()==='system') applyTheme('system'); };
+  if(mq.addEventListener) mq.addEventListener('change',onChange);
+  else if(mq.addListener) mq.addListener(onChange);
+}
+document.querySelectorAll('[data-theme-set]').forEach(b=>b.onclick=()=>setTheme(b.dataset.themeSet));
 
 function openMenu(){ $('drawer').hidden=false; $('scrim').hidden=false;
   $('burger').setAttribute('aria-expanded','true'); $('dclose').focus(); }
