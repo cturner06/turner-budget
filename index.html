@@ -201,15 +201,16 @@ main{padding:26px 0 80px}
 .tiles,.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}
 @media(max-width:780px){.tiles,.sgrid{grid-template-columns:repeat(2,1fr)}}
 .tile{
-  padding:15px 18px;border-radius:12px;
+  padding:15px 18px;border-radius:12px;display:flex;flex-direction:column;
   background:linear-gradient(165deg,rgba(255,255,255,.07),rgba(255,255,255,.028));
   border:1px solid var(--edge-soft);
   backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
-.tile .l{font-size:12.5px;color:var(--mute)}
+.tile .l{font-size:12.5px;color:var(--mute);min-height:2.6em;display:flex;align-items:flex-start}
 .tile .v{font:500 25px/1.15 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
   margin-top:7px;letter-spacing:-.02em;color:var(--ink)}
 .tile .c{font-size:12px;color:var(--ash);margin-top:4px}
+.tile .v+.c{margin-top:auto;padding-top:4px}
 .prog{height:4px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:11px}
 .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:3px}
 .panel{
@@ -218,21 +219,31 @@ main{padding:26px 0 80px}
   border:1px solid var(--edge-soft);
   backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-.ptop{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:14px 18px;
-  border-bottom:1px solid var(--rule2)}
+.ptop{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px 18px;
+  border-bottom:1px solid var(--rule2);row-gap:9px}
+.ptop h2{margin-right:4px}
+.ptop select{max-width:150px;font-size:12.5px;padding:6px 24px 6px 9px}
+.ptop #q{width:112px;font-size:12.5px}
+.ptop .mini{font-size:12.5px;padding:5px 10px}
+.ptop .nrow{font-size:12.5px}
 
 /* ---------- ledger ---------- */
-table{width:100%;border-collapse:collapse;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}
+col.c-bill{width:auto}
+col.c-due{width:64px} col.c-status{width:104px} col.c-money{width:104px}
+col.c-cell{width:122px} col.c-sel{width:40px} col.c-act{width:46px}
+col.c-tab{width:130px} col.c-when{width:118px}
 th{text-align:left;font-weight:500;color:var(--mute);font-size:12.5px;
-  padding:11px 12px;border-bottom:1px solid var(--rule);background:transparent}
+  padding:11px 12px;border-bottom:1px solid var(--rule);background:transparent;white-space:nowrap}
+table{table-layout:auto}
 th.mo small{display:block;font-size:11px;color:var(--ash);font-weight:400;margin-top:2px}
 td{padding:7px 12px;border-bottom:1px solid var(--rule2);color:var(--ink2);
   vertical-align:middle;line-height:1.45}
-td:first-child{min-width:190px}
+td.name{min-width:0}
 tbody tr:hover td{background:rgba(255,255,255,.028)}
 .r{text-align:right}.c{text-align:center}
 .bn{font-weight:500;color:var(--ink);overflow-wrap:break-word}
-.cat{font-size:12px;color:var(--ash)}
+.cat{font-size:12px;color:var(--ash);white-space:normal;overflow-wrap:anywhere}
 td.lock{background:var(--lock);color:var(--mute);font-family:'IBM Plex Mono',monospace;
   font-variant-numeric:tabular-nums;white-space:nowrap}
 td.r.num{white-space:nowrap}
@@ -268,7 +279,7 @@ tr.grp .gsum{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-
 .tag{display:inline-block;font:500 11.5px/1 Archivo,sans-serif;padding:5px 9px;border-radius:5px;
   white-space:nowrap;vertical-align:1px;margin:1px 0}
 .bn{display:inline}
-td:first-child .cat{margin-top:3px}
+td.name .cat{margin-top:3px}
 .tag.paid{background:var(--greenw);color:#7FD4AE}
 .tag.late{background:rgba(224,102,92,.22);color:#F0978F;border:1px solid rgba(224,102,92,.3)}
 .tag.due{background:var(--goldw);color:var(--gold)}
@@ -303,9 +314,9 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 .form label{font-size:12px;color:var(--mute);display:block;margin-bottom:4px}
 .form input,.form select{font-size:13.5px;padding:7px 10px}
 .parts{margin-top:12px;border-top:1px solid var(--rule2);padding-top:11px}
-.part{display:flex;gap:10px;align-items:center;font-size:13.5px;padding:5px 0}
-.part .pn{width:80px;color:var(--mute);font-size:12.5px}
-.part input[type=number]{width:108px;text-align:right;font-family:'IBM Plex Mono',monospace}
+.splitline{display:flex;gap:10px;align-items:center;font-size:13.5px;padding:5px 0}
+.splitline .pn{width:80px;color:var(--mute);font-size:12.5px}
+.splitline input[type=number]{width:108px;text-align:right;font-family:'IBM Plex Mono',monospace}
 .cred{border:1px solid var(--edge-soft);border-radius:10px;padding:12px 13px;margin-bottom:9px;
   background:var(--glass)}
 .cred .cname{font-weight:500;color:var(--ink);font-size:14.5px}
@@ -378,7 +389,7 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
   border-color:transparent;font-weight:600;white-space:nowrap}
 .plan button.pay:hover{background:linear-gradient(180deg,#EAD165,#D6BC43);color:#17140A}
 .plan button.danger{color:#F0978F;border-color:rgba(224,102,92,.3);padding:4px 8px}
-.part label{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink2);cursor:pointer}
+.splitline label{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink2);cursor:pointer}
 .strip{display:grid;grid-template-columns:120px repeat(12,1fr);gap:3px;align-items:center;font-size:12px}
 .strip .lb{font-size:13px;color:var(--ink2)}
 .strip .hd2{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ash);text-align:center}
@@ -400,7 +411,11 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 #selbar button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;
   border-color:transparent;font-weight:600}
 .selchk{width:16px;height:16px;accent-color:#CFB53B;cursor:pointer}
-td.sel,th.sel{width:38px;text-align:center;padding-left:14px}
+td.sel,th.sel{width:40px;text-align:center;padding:0 4px}
+td.sel{border-left:1px solid var(--rule2)}
+th.sel{border-left:1px solid var(--rule2)}
+.selchk{opacity:.5;transition:opacity .15s}
+tr:hover .selchk,.selchk:checked,th .selchk{opacity:1}
 tr.picked td{background:rgba(207,181,59,.1)!important}
 #calcwrap{position:fixed;inset:0;z-index:74;display:flex;align-items:center;justify-content:center;
   padding:20px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
@@ -440,8 +455,8 @@ tr.picked td{background:rgba(207,181,59,.1)!important}
 
 /* ---------- phone ---------- */
 @media(max-width:1120px){
-  th.mo.lastcol,td.lock{display:none}      /* reference column goes first */
-  td:first-child{min-width:150px}
+  th.mo.lastcol,td.lock{display:none;}     /* reference column goes first */
+  col.c-last{width:0}
 }
 @media(max-width:940px){
   th.c.hidesm,td.c.hidesm{display:none}
@@ -649,7 +664,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v53 \u00b7 last business day';
+const BUILD='v57 \u00b7 tidy header';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1222,7 +1237,7 @@ function drawerHTML(x,m){
      <p class="hint" style="margin:7px 0 0">Applies to every month. Amounts already recorded stay as recorded.
        To put it on another tab, use <b>Move</b>.</p></div>`:'';
   const parts=sp?`<div class="parts"><h4>Split — ${sp.length} parts</h4>
-    ${sp.map((z,i)=>`<div class="part"><span class="pn">Part ${i+1}</span>
+    ${sp.map((z,i)=>`<div class="splitline"><span class="pn">Part ${i+1}</span>
       <input type="number" step="0.01" data-sp="${z.id}" value="${z.amount}" aria-label="Part ${i+1} amount">
       <label><input type="checkbox" data-spp="${z.id}" ${z.paid?'checked':''}> paid</label></div>`).join('')}
     <div class="acts" style="margin-top:8px"><button data-a="unsplit">Remove split</button>
@@ -1372,16 +1387,14 @@ function renderAccount(){
     const open=drawer===x.b.id;
     const pk=pickKey(x.b,p);
     return `<tr class="${s}${open?' open':''}${picked.has(pk)?' picked':''}" data-row="${x.b.id}">
-      <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
-        ${picked.has(pk)?'checked':''} aria-label="Select ${esc(x.b.name)}"></td>
       <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${(()=>{
         const R=planRollup(x.b,cur);
         if(!R) return esc(x.b.category);
         const bits=[esc(x.b.category)];
         bits.push(R.paidN+' of '+R.dueN+' paid this month');
-        if(R.known===R.n && R.want) bits.push(R.made+' of '+R.want+' payments overall');
-        else if(R.made) bits.push(R.made+' payments made');
-        if(R.owing>0) bits.push(money0(R.owing)+' still to run');
+        if(R.known===R.n && R.want) bits.push(R.made+' of '+R.want+' overall');
+        else if(R.made) bits.push(R.made+' made');
+        if(R.owing>0) bits.push(money0(R.owing)+' to run');
         return bits.join(' \u00b7 ');
       })()}</div></td>
       <td class="c hidesm">${dueLabel(x.b)}</td>
@@ -1394,6 +1407,8 @@ function renderAccount(){
       <td class="cell next" data-l="${lbl(nxt)} \u00b7 early"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
         type="text" inputmode="decimal" value="${N!==null?money(N):''}" placeholder="\u2014"
         aria-label="${esc(x.b.name)} next month"></td>
+      <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
+        ${picked.has(pk)?'checked':''} aria-label="Select ${esc(x.b.name)}"></td>
       <td class="act noprint"><button class="menu" data-m="${x.b.id}"
         aria-label="Actions for ${esc(x.b.name)}" title="Edit, split, arrangement">&#8943;</button></td></tr>`
      +(open?`<tr class="drawerrow"><td colspan="9" class="drawer">${drawerHTML(x,cur)}</td></tr>`:'');
@@ -1413,20 +1428,22 @@ function renderAccount(){
       + (shut.has(name)?'':items.map(rowHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
-   <thead><tr><th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
-      aria-label="Select everything shown"></th>
-    <th>Bill</th><th class="c hidesm">Due</th><th>Status</th><th class="r">Budget</th>
+   <colgroup><col class="c-bill"><col class="c-due"><col class="c-status"><col class="c-money">
+     <col class="c-money c-last"><col class="c-cell"><col class="c-cell"><col class="c-sel"><col class="c-act"></colgroup>
+   <thead><tr><th>Bill</th><th class="c hidesm">Due</th><th>Status</th><th class="r">Budget</th>
     <th class="r mo lastcol">Last<small>${lbl(prev)} \u00b7 locked</small></th>
     <th class="r mo">Current<small>${lbl(cur)}</small></th>
     <th class="r mo">Next<small>${lbl(nxt)} \u00b7 early</small></th>
+    <th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
+      aria-label="Select everything shown"></th>
     <th class="c noprint" style="width:46px">Edit</th></tr></thead>
    <tbody>${addRow}${body||`<tr><td colspan="9" class="hint" style="padding:20px">${
      all.length?'Nothing matches that filter.'
      :'No bills on '+esc(A.name)+' yet. Add the first one with <b>+ Add bill</b> above.'}</td></tr>`}</tbody>
-   <tfoot><tr><td class="noprint"></td><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
+   <tfoot><tr><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
     <td class="r">${money(tb)}</td><td class="r" style="opacity:.6">${money(tl)}</td>
     <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td>
-    <td class="noprint"></td></tr></tfoot>`;
+    <td class="noprint"></td><td class="noprint"></td></tr></tfoot>`;
   wire();
   const sh=$('tabshare'); if(sh) sh.onclick=()=>{shareOpen=!shareOpen;render();};
   const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this tab',A.name);if(!n)return;
@@ -1522,8 +1539,6 @@ function renderAnnual(){
        <button data-a="saveannedit">Save changes</button><button data-a="canceledit">Cancel</button></div></div>`:'';
     const pk='b:'+a.id+':'+Y;
     return `<tr class="${s}${open?' open':''}${picked.has(pk)?' picked':''}">
-      <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
-        ${picked.has(pk)?'checked':''} aria-label="Select ${esc(a.name)}"></td>
       <td class="name"><span class="bn">${esc(a.name)}</span> <span class="tag annual">annual</span>
         ${a.shared_from?` <span class="tag shared">from ${esc(a.shared_by)}</span>`:''}
         <div class="cat">${esc(a.category)}</div></td>
@@ -1557,15 +1572,17 @@ function renderAnnual(){
     return groupRow(name,items.length,gb,gc,9)+(shut.has(name)?'':items.map(annHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
-   <thead><tr><th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
-      aria-label="Select everything shown"></th>
-    <th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
+   <colgroup><col class="c-bill"><col class="c-tab"><col class="c-due"><col class="c-money">
+     <col class="c-money"><col class="c-status"><col class="c-cell"><col class="c-sel"><col class="c-act"></colgroup>
+   <thead><tr><th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
     <th class="r">Set aside /mo</th><th>Status</th><th class="r mo">Paid<small>${Y}</small></th>
+    <th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
+      aria-label="Select everything shown"></th>
     <th class="c noprint" style="width:46px">Edit</th></tr></thead>
    <tbody>${addRow}${body||'<tr><td colspan="9" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
-   <tfoot><tr><td class="noprint"></td><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
+   <tfoot><tr><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
     <td class="r">${money(tb/12)}</td><td></td><td class="r">${money(tp)}</td>
-    <td class="noprint"></td></tr></tfoot>`;
+    <td class="noprint"></td><td class="noprint"></td></tr></tfoot>`;
   wire(); $('msg').innerHTML='';
 }
 
@@ -2281,18 +2298,19 @@ function renderNext(){
     return `<tr class="${s}${x.paid?' paid':''}">
       <td class="c" style="width:42px"><input type="checkbox" class="nxchk" data-k="${x.key}"
         ${x.paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
-      <td class="sel noprint"><input type="checkbox" class="selchk"
-        data-pick="${x.kind==='plan'?'plan:'+x.plan.id+':'+x.period:'b:'+x.bill.id+':'+x.period}"
-        ${picked.has(x.kind==='plan'?'plan:'+x.plan.id+':'+x.period:'b:'+x.bill.id+':'+x.period)?'checked':''}
-        aria-label="Select ${esc(x.name)}"></td>
+
       <td><span class="bn" style="${x.paid?'text-decoration:line-through;color:var(--mute)':''}">${esc(x.name)}</span>
         ${x.kind==='plan'?' <span class="tag split">plan</span>':''}
         ${x.kind==='annual'?' <span class="tag annual">annual</span>':''}
         <div class="cat">${esc(x.bill.category||'')}${x.bill.category?' \u00b7 ':''}<span style="color:${x.tab.color}">${esc(x.tab.name)}</span></div></td>
-      <td class="c hidesm"><span class="bn" style="font-weight:400">${x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
-        <div class="cat">${when}</div></td>
+      <td class="c"><span class="bn" style="font-weight:400">${x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+        <div class="cat" style="white-space:nowrap">${when}</div></td>
       <td><span class="tag ${s}">${s==='paid'?'Done':s==='late'?'Past due':s==='due'?'Due now':'Coming up'}</span></td>
       <td class="r num">${money(Math.max(0,x.amount))}</td>
+      <td class="sel noprint"><input type="checkbox" class="selchk"
+        data-pick="${x.kind==='plan'?'plan:'+x.plan.id+':'+x.period:'b:'+x.bill.id+':'+x.period}"
+        ${picked.has(x.kind==='plan'?'plan:'+x.plan.id+':'+x.period:'b:'+x.bill.id+':'+x.period)?'checked':''}
+        aria-label="Select ${esc(x.name)}"></td>
       <td class="act noprint"><button class="menu" data-nxmenu="${x.key}"
         title="Edit, split, move, logins">&ctdot;</button></td></tr>`
       + (drawer===x.bill.id && drawerKey===x.key
@@ -2325,11 +2343,11 @@ function renderNext(){
   }).join('');
 
   $('tbl').innerHTML=`
-   <thead><tr><th class="c" style="width:42px">Paid</th>
-     <th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
-       aria-label="Select everything shown"></th><th>What</th>
+   <colgroup><col class="c-sel"><col class="c-bill"><col class="c-when"><col class="c-status">
+     <col class="c-money"><col class="c-sel"><col class="c-act"></colgroup>
+   <thead><tr><th class="c">Paid</th><th>What</th>
      <th class="c hidesm">When</th><th>Status</th><th class="r">Amount</th>
-     <th class="c noprint" style="width:46px">Go</th></tr></thead>
+     <th class="c noprint">Edit</th></tr></thead>
    <tbody>${body||`<tr><td colspan="6" class="hint" style="padding:22px">${
      rows.length?'Nothing matches that filter.'
      :'Nothing due '+windowLabel()+'.'}</td></tr>`}</tbody>
