@@ -591,7 +591,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v47 \u00b7 care file';
+const BUILD='v48 \u00b7 what is coming';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1004,7 +1004,8 @@ async function loadProfile(){
 const acctOf=c=>S.tabs.find(a=>a.code===c)||{code:c,name:c,institution:'',color:'#5B6B7F'};
 const COL=c=>acctOf(c).color||'#5B6B7F';
 const hidden=k=>(S.prof.hidden_tabs||[]).includes(k);
-const TABS=()=>S.tabs.map(a=>({k:a.code,n:a.name,c:a.color}))
+const TABS=()=>[{k:'next',n:'What is coming',c:'#C9A227'}]
+  .concat(S.tabs.map(a=>({k:a.code,n:a.name,c:a.color})))
   .concat([{k:'ann',n:'Annual'},{k:'sum',n:'Summary'}]);
 function dueDate(b,m){
   let day=b.due_day;
@@ -1819,6 +1820,245 @@ function act(a,id,to){
     const {error}=await db.from('arrangements').upsert(row,{onConflict:'bill_id'});if(error)throw error;});
   if(a==='delarr') return go(async()=>{
     const {error}=await db.from('arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
+}
+
+/* ======================= WHAT'S COMING ======================= */
+let horizon=14, doneToo=false;
+const HORIZONS=[[7,'next 7 days'],[14,'next 14 days'],[30,'next 30 days'],[45,'next 45 days']];
+
+// everything landing in the window, from every tab, in one list
+function comingUp(){
+  const out=[], today=TODAY, end=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+horizon);
+  const months=[shift(cur,-1),cur,shift(cur,1),shift(cur,2)]
+    .filter((m,i,a)=>a.findIndex(x=>mk(x)===mk(m))===i);
+  const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
+
+  vis.forEach(A=>{
+    months.forEach(m=>{
+      monthly(A.code).forEach(b=>{
+        const pl=plansOf(b);
+        if(pl&&pl.length){
+          // a BNPL row is paid plan by plan, so list the plans
+          pl.forEach(z=>{
+            const hits=planHits(z,m); if(!hits) return;
+            const when = z.kind==='dated' && z.due_date ? new Date(z.due_date+'T00:00:00')
+              : z.next_due ? new Date(z.next_due+'T00:00:00')
+              : dueDate(b,m);
+            if(when<today||when>end) return;
+            const paid=planPaysIn(z,per(m)).length>=hits;
+            if(paid&&!doneToo) return;
+            out.push({key:'plan:'+z.id+':'+per(m), kind:'plan', bill:b, plan:z, tab:A,
+              when, amount:+z.amount, period:per(m), paid,
+              name:b.name.replace(/ \(.*/,'')+' \u2014 '+z.name});
+          });
+          return;
+        }
+        const when=dueDate(b,m);
+        if(when<today||when>end) return;
+        const p=per(m), v=paidOf(b,p), paid=v!==null&&allPaid(b,p);
+        if(paid&&!doneToo) return;
+        out.push({key:'bill:'+b.id+':'+p, kind:'bill', bill:b, tab:A, when,
+          amount:budgetOf(b,m)-(v||0), period:p, paid, name:b.name});
+      });
+    });
+  });
+
+  // annual charges land once a year
+  annuals().forEach(a=>{
+    if(hidden(a.tab_code)) return;
+    [cur.getFullYear(),cur.getFullYear()+1].forEach(Y=>{
+      const when=new Date(Y,a.due_month-1,Math.min(a.due_day||15,lastDay(new Date(Y,a.due_month-1,1))));
+      if(when<today||when>end) return;
+      const rec=getPay(a,String(Y)), paid=!!rec;
+      if(paid&&!doneToo) return;
+      out.push({key:'ann:'+a.id+':'+Y, kind:'annual', bill:a, tab:acctOf(a.tab_code), when,
+        amount:+a.amount-(rec?+rec.amount:0), period:String(Y), paid, name:a.name});
+    });
+  });
+
+  // anything already past its day and still unrecorded
+  vis.forEach(A=>{
+    [shift(cur,-1),cur].forEach(m=>{
+      monthly(A.code).forEach(b=>{
+        if((plansOf(b)||[]).length) return;
+        const when=dueDate(b,m); if(when>=today) return;
+        const p=per(m), v=paidOf(b,p); if(v!==null&&allPaid(b,p)) return;
+        if(out.some(x=>x.key==='bill:'+b.id+':'+p)) return;
+        out.push({key:'bill:'+b.id+':'+p, kind:'bill', bill:b, tab:A, when,
+          amount:budgetOf(b,m)-(v||0), period:p, paid:false, late:true, name:b.name});
+      });
+    });
+  });
+
+  // nothing with no money attached: a bill at $0 is not a thing to tick off
+  const seen=new Set();
+  return out.filter(x=>x.amount>0.004||x.paid)
+            .filter(x=>seen.has(x.key)?false:(seen.add(x.key),true))
+            .sort((a,b)=>a.when-b.when);
+}
+
+const NEXT_GROUPS=[['none','No grouping'],['tab','Tab'],['week','Week'],
+                   ['cat','Category'],['status','Status']];
+const NEXT_SORTS=[['due','Due date'],['high','Amount, highest first'],
+                  ['low','Amount, lowest first'],['name','Name A\u2013Z'],['tab','Tab']];
+const weekLabel=d=>{
+  const days=Math.round((d-TODAY)/864e5);
+  if(days<0) return 'Already past';
+  if(days===0) return 'Today';
+  if(days<=7) return 'This week';
+  if(days<=14) return 'Next week';
+  if(days<=21) return 'In two weeks';
+  return 'Later';
+};
+const nextStatus=x=>x.paid?'paid':x.late?'late':(x.when-TODAY)/864e5<=2?'due':'sched';
+
+function renderNext(){
+  $('sumview').hidden=true; $('tiles').hidden=false;
+  document.querySelector('.panel').hidden=false; $('foothint').hidden=true;
+  $('addb').hidden=true; $('gb').hidden=false; $('sb').hidden=false; $('sf').hidden=false;
+
+  let rows=comingUp();
+  if(q) rows=rows.filter(x=>(x.name+' '+x.tab.name+' '+(x.bill.category||'')).toLowerCase().includes(q));
+  if(sf) rows=rows.filter(x=>nextStatus(x)===sf);
+
+  const total=rows.reduce((s,x)=>s+Math.max(0,x.amount),0);
+  const lateRows=rows.filter(x=>x.late);
+  const weekRows=rows.filter(x=>!x.late&&(x.when-TODAY)/864e5<=7);
+  const paidRows=rows.filter(x=>x.paid);
+  $('tiles').innerHTML=`
+   <div class="tile"><div class="l">Due in the ${esc(HORIZONS.find(h=>h[0]===horizon)[1])}</div>
+     <div class="v">${money0(total)}</div><div class="c">${rows.length} to pay</div></div>
+   <div class="tile"><div class="l">Already past</div>
+     <div class="v" style="color:${lateRows.length?'var(--red)':'var(--mute)'}">${money0(lateRows.reduce((s,x)=>s+x.amount,0))}</div>
+     <div class="c">${lateRows.length} overdue</div></div>
+   <div class="tile"><div class="l">This week</div><div class="v" style="color:var(--gold)">${money0(weekRows.reduce((s,x)=>s+x.amount,0))}</div>
+     <div class="c">${weekRows.length} within 7 days</div></div>
+   <div class="tile"><div class="l">Ticked off</div><div class="v" style="color:var(--green)">${paidRows.length}</div>
+     <div class="c">${doneToo?'showing':'hidden'}</div></div>`;
+
+  $('ptitle').innerHTML='What is coming '
+    +`<select id="nx-h" class="noprint" style="margin-left:8px;font-size:13px">${
+      HORIZONS.map(([n,t])=>`<option value="${n}" ${n===horizon?'selected':''}>${t}</option>`).join('')}</select>`
+    +`<label class="nrow noprint" style="display:inline-flex;padding:0;margin-left:12px">
+       <input type="checkbox" id="nx-done" ${doneToo?'checked':''}><span>show what is done</span></label>`;
+
+  const groupOf=x=>{
+    if(grp==='tab') return x.tab.name;
+    if(grp==='week') return weekLabel(x.when);
+    if(grp==='cat') return x.bill.category||'Other';
+    if(grp==='status') return {paid:'Done',late:'Already past',due:'Next couple of days',sched:'Coming up'}[nextStatus(x)];
+    return null;
+  };
+  const sorted=rows.slice().sort((a,b)=>
+    srt==='high'? b.amount-a.amount||a.when-b.when :
+    srt==='low' ? a.amount-b.amount||a.when-b.when :
+    srt==='name'? a.name.localeCompare(b.name) :
+    srt==='tab' ? a.tab.name.localeCompare(b.tab.name)||a.when-b.when :
+                  a.when-b.when||a.name.localeCompare(b.name));
+
+  const buckets=new Map();
+  sorted.forEach(x=>{const k=grp==='none'?null:groupOf(x);
+    if(!buckets.has(k)) buckets.set(k,[]); buckets.get(k).push(x);});
+  const order=[...buckets.keys()];
+  if(grp==='week') order.sort((a,b)=>['Already past','Today','This week','Next week','In two weeks','Later'].indexOf(a)
+    -['Already past','Today','This week','Next week','In two weeks','Later'].indexOf(b));
+  else if(grp==='status') order.sort((a,b)=>['Already past','Next couple of days','Coming up','Done'].indexOf(a)
+    -['Already past','Next couple of days','Coming up','Done'].indexOf(b));
+  else if(grp!=='none') order.sort((a,b)=>String(a).localeCompare(String(b)));
+
+  const line=x=>{
+    const s=nextStatus(x);
+    const days=Math.round((x.when-TODAY)/864e5);
+    const when = days<0 ? Math.abs(days)+(Math.abs(days)===1?' day late':' days late')
+      : days===0 ? 'today' : days===1 ? 'tomorrow' : 'in '+days+' days';
+    return `<tr class="${s}${x.paid?' paid':''}">
+      <td class="c" style="width:42px"><input type="checkbox" class="nxchk" data-k="${x.key}"
+        ${x.paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
+      <td><span class="bn" style="${x.paid?'text-decoration:line-through;color:var(--mute)':''}">${esc(x.name)}</span>
+        ${x.kind==='plan'?' <span class="tag split">plan</span>':''}
+        ${x.kind==='annual'?' <span class="tag annual">annual</span>':''}
+        <div class="cat">${esc(x.bill.category||'')}${x.bill.category?' \u00b7 ':''}<span style="color:${x.tab.color}">${esc(x.tab.name)}</span></div></td>
+      <td class="c hidesm"><span class="bn" style="font-weight:400">${x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+        <div class="cat">${when}</div></td>
+      <td><span class="tag ${s}">${s==='paid'?'Done':s==='late'?'Past due':s==='due'?'Due now':'Coming up'}</span></td>
+      <td class="r num">${money(Math.max(0,x.amount))}</td>
+      <td class="act noprint"><button class="menu" data-goto="${x.key}" title="Open it where it lives">&rsaquo;</button></td></tr>`;
+  };
+
+  const body=order.map(k=>{
+    const items=buckets.get(k);
+    if(k===null) return items.map(line).join('');
+    const sum=items.reduce((s,x)=>s+Math.max(0,x.amount),0);
+    const done=items.filter(x=>x.paid).length;
+    const off=shut.has(k);
+    return `<tr class="grp${off?' shut':''}" data-g="${esc(k)}">
+        <td colspan="6"><span class="gname"><span class="chev">\u25BE</span>${esc(k)}
+          <span class="gcount">${items.length} ${items.length===1?'item':'items'}${done?' \u00b7 '+done+' done':''}</span></span>
+          <span class="gsum">${money(sum)}</span></td></tr>`
+      + (off?'':items.map(line).join(''));
+  }).join('');
+
+  $('tbl').innerHTML=`
+   <thead><tr><th class="c" style="width:42px">Paid</th><th>What</th>
+     <th class="c hidesm">When</th><th>Status</th><th class="r">Amount</th>
+     <th class="c noprint" style="width:46px">Go</th></tr></thead>
+   <tbody>${body||`<tr><td colspan="6" class="hint" style="padding:22px">${
+     rows.length?'Nothing matches that filter.'
+     :'Nothing due in the '+HORIZONS.find(h=>h[0]===horizon)[1]+'. '}</td></tr>`}</tbody>
+   <tfoot><tr><td class="lbl" colspan="4">${rows.length} to pay</td>
+     <td class="r">${money(total)}</td><td class="noprint"></td></tr></tfoot>`;
+
+  $('nx-h').onchange=e=>{horizon=+e.target.value;render();};
+  $('nx-done').onchange=e=>{doneToo=e.target.checked;render();};
+  document.querySelectorAll('tr.grp').forEach(r=>r.onclick=e=>{
+    if(e.target.closest('button,input')) return;
+    const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
+  document.querySelectorAll('.nxchk').forEach(c=>c.onchange=()=>tick(c.dataset.k,c.checked));
+  document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>jumpTo(b.dataset.goto));
+  $('msg').innerHTML=lateRows.length?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
+    <b style="color:var(--red)">${lateRows.length} already past</b> \u2014 ${money(lateRows.reduce((s,x)=>s+x.amount,0))} sitting unrecorded.</div>`:'';
+}
+
+// tick the box, record the payment
+function tick(key,on){
+  const x=comingUp().concat(doneToo?[]:[]).find(z=>z.key===key)
+       || (()=>{const was=doneToo; doneToo=true; const r=comingUp().find(z=>z.key===key); doneToo=was; return r;})();
+  if(!x) return render();
+  go(async()=>{
+    if(x.kind==='plan'){
+      if(on){ const {error}=await db.from('plan_payments').insert({profile_id:S.pid,
+          bill_id:x.bill.id, plan_id:x.plan.id, amount:+x.plan.amount,
+          paid_on:new Date().toISOString().slice(0,10)});
+        if(error) throw error;
+        if(x.plan.kind!=='dated'&&x.plan.next_due){
+          const step=(x.plan.every_unit==='week'?7:x.plan.every_unit==='day'?1:0)*(+x.plan.every_n||1);
+          const d=new Date(x.plan.next_due+'T00:00:00');
+          const nd=step?new Date(d.getFullYear(),d.getMonth(),d.getDate()+step)
+                       :new Date(d.getFullYear(),d.getMonth()+(+x.plan.every_n||1),d.getDate());
+          await db.from('plans').update({next_due:nd.toISOString().slice(0,10)}).eq('id',x.plan.id);
+        }
+      } else {
+        const rows=(S.planPays[x.plan.id]||[]).filter(r=>String(r.paid_on).slice(0,7)===x.period);
+        if(rows.length) await db.from('plan_payments').delete().eq('id',rows[rows.length-1].id);
+      }
+      return;
+    }
+    const b=x.bill, p=x.period;
+    await clearSplits(b,p);
+    await setPay(b,p, on ? (x.kind==='annual'? +b.amount : budgetOf(b,cur)) : null);
+  });
+}
+function jumpTo(key){
+  const [kind,id]=key.split(':');
+  const b=S.bills.find(z=>z.id===id)
+    || (kind==='plan'? S.bills.find(z=>(S.plans[z.id]||[]).some(p=>p.id===id)) : null);
+  if(!b) return;
+  acct = b.is_annual ? 'ann' : b.tab_code;
+  drawer=b.id; adding=false; editing=null;
+  render();
+  setTimeout(()=>{const el=document.querySelector('tr.open');
+    if(el&&el.scrollIntoView) try{ el.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){}
+  },60);
 }
 
 /* ======================= CARE FILE ======================= */
@@ -2800,7 +3040,8 @@ function render(){
       p.owner_id!==user.id?' \u2014 shared with you':''}</option>`).join('');
   $('dtabs').innerHTML=vis.map(t=>{
     let n='';
-    if(t.k!=='ann'&&t.k!=='sum'&&acctOf(t.k).kind!=='care') n=money0(figures(cur,t.k).owed);
+    if(t.k==='next'){ const r=comingUp(); n=r.length?String(r.length):''; }
+    else if(t.k!=='ann'&&t.k!=='sum'&&acctOf(t.k).kind!=='care') n=money0(figures(cur,t.k).owed);
     else if(t.k==='ann'){const Y=String(cur.getFullYear());
       n=money0(annuals().filter(a=>!getPay(a,Y)).reduce((s,a)=>s+ +a.amount,0));}
     return `<button class="dtab ${t.k===acct?'on':''}" data-a="${t.k}">
@@ -2813,16 +3054,16 @@ function render(){
     ? (ct.c?`<span class="d" style="background:${ct.c}"></span>`:'')+esc(ct.n)
     : '';
   const kind = acct==='ann'?'ann':'acct';
-  const opts = GROUPS[kind];
+  const opts = acct==='next'?NEXT_GROUPS:GROUPS[kind];
   if(!opts.some(o=>o[0]===grp)) grp='none';
   $('gb').innerHTML=opts.map(([v,t])=>
     `<option value="${v}" ${v===grp?'selected':''}>${v==='none'?t:'Group by '+t.toLowerCase()}</option>`).join('');
-  $('gb').hidden = acct==='sum';
-  const sopts=SORTS[kind];
+  $('gb').hidden = acct==='sum'||acctOf(acct).kind==='care';
+  const sopts=acct==='next'?NEXT_SORTS:SORTS[kind];
   if(!sopts.some(o=>o[0]===srt)) srt='due';
   $('sb').innerHTML=sopts.map(([v,t])=>
     `<option value="${v}" ${v===srt?'selected':''}>Sort by ${t.toLowerCase()}</option>`).join('');
-  $('sb').hidden = acct==='sum';
+  $('sb').hidden = acct==='sum'||acctOf(acct).kind==='care';
   if($('sf').value!==sf) $('sf').value=sf;      // keep the control in step with the state
   if($('q').value!==q && document.activeElement!==$('q')) $('q').value=q;
   $('addb').textContent=acct==='ann'?'+ Add annual charge':'+ Add bill';
@@ -2843,7 +3084,8 @@ function render(){
   renderDigest();
   sectionSummaries();
   paintSections();
-  if(acct==='sum') renderSummary();
+  if(acct==='next') renderNext();
+  else if(acct==='sum') renderSummary();
   else if(acct==='ann') renderAnnual();
   else if(acctOf(acct).kind==='care'){ renderCare(); careLoad().then(()=>{ if(acctOf(acct).kind==='care') renderCare(); }); }
   else renderAccount();
