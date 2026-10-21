@@ -649,7 +649,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v51 \u00b7 same tools everywhere';
+const BUILD='v53 \u00b7 last business day';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -698,7 +698,7 @@ function loadView(){
 function saveView(){
   try{
     const all=loadView();
-    all[S.pid]={acct, grp, srt, sf, month:cur.getMonth(), year:cur.getFullYear(), at:Date.now()};
+    all[S.pid]={acct, grp, srt, sf, horizon, month:cur.getMonth(), year:cur.getFullYear(), at:Date.now()};
     all.__last=S.pid;
     localStorage.setItem(VIEWKEY, JSON.stringify(all));
   }catch(e){}
@@ -709,6 +709,7 @@ function applyView(){
   if(v.acct) acct=v.acct;
   if(v.grp) grp=v.grp;
   if(v.srt) srt=v.srt;
+  if(v.horizon!==undefined) horizon=v.horizon;
   sf=v.sf||'';
   // the month only carries over for the rest of the day; after that, today
   const sameDay = v.at && (Date.now()-v.at) < 14*36e5;
@@ -2077,12 +2078,58 @@ addEventListener('keydown',e=>{
 });
 
 /* ======================= WHAT'S COMING ======================= */
-let horizon=14, doneToo=false;
-const HORIZONS=[[7,'next 7 days'],[14,'next 14 days'],[30,'next 30 days'],[45,'next 45 days']];
+let horizon='pay', doneToo=false;
+
+// Auburn pays on the last working day, so a month ending at the weekend
+// pays on the Friday before.
+function lastWorkday(y,mo){
+  const d=new Date(y,mo+1,0);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()-1);
+  return d;
+}
+// Paydays, taken from the payday-email settings so there is one place to set them:
+// Greater Peace every fortnight from the anchor, Auburn at the end of the month.
+function paydays(from,count){
+  const d=S.digest, out=[];
+  const start=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+  if(d&&d.biweekly_on&&d.biweekly_anchor){
+    const a=new Date(d.biweekly_anchor+'T00:00:00');
+    let k=Math.ceil((start-a)/(14*864e5));
+    for(let i=0;i<count+1;i++){
+      const p=new Date(a.getFullYear(),a.getMonth(),a.getDate()+14*(k+i));
+      if(p>=start) out.push({when:p,who:'Greater Peace'});
+    }
+  }
+  if(!d||d.monthly_on!==false){
+    for(let i=0;i<count+1;i++){
+      const p=lastWorkday(start.getFullYear(),start.getMonth()+i);
+      if(p>=start) out.push({when:p,who:'Auburn'});
+    }
+  }
+  return out.sort((x,y)=>x.when-y.when).slice(0,count);
+}
+const nextPayday=()=>paydays(TODAY,1)[0]||null;
+function windowEnd(){
+  if(horizon==='pay'){
+    const p=nextPayday();
+    return p?p.when:new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+14);
+  }
+  return new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+ +horizon);
+}
+function windowLabel(){
+  if(horizon==='pay'){
+    const p=nextPayday();
+    return p ? 'before '+p.who+' pays, '+p.when.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})
+             : 'before the next payday';
+  }
+  return 'next '+horizon+' days';
+}
+const HORIZONS=[['pay','until my next payday'],[7,'next 7 days'],[14,'next 14 days'],
+                [30,'next 30 days'],[45,'next 45 days']];
 
 // everything landing in the window, from every tab, in one list
 function comingUp(){
-  const out=[], today=TODAY, end=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+horizon);
+  const out=[], today=TODAY, end=windowEnd();
   const months=[shift(cur,-1),cur,shift(cur,1),shift(cur,2)]
     .filter((m,i,a)=>a.findIndex(x=>mk(x)===mk(m))===i);
   const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
@@ -2180,21 +2227,25 @@ function renderNext(){
   const total=rows.reduce((s,x)=>s+Math.max(0,x.amount),0);
   const lateRows=rows.filter(x=>x.late);
   const weekRows=rows.filter(x=>!x.late&&(x.when-TODAY)/864e5<=7);
+  void weekRows;
   const paidRows=rows.filter(x=>x.paid);
   $('tiles').innerHTML=`
-   <div class="tile"><div class="l">Due in the ${esc(HORIZONS.find(h=>h[0]===horizon)[1])}</div>
+   <div class="tile"><div class="l">Due ${esc(windowLabel())}</div>
      <div class="v">${money0(total)}</div><div class="c">${rows.length} to pay</div></div>
    <div class="tile"><div class="l">Already past</div>
      <div class="v" style="color:${lateRows.length?'var(--red)':'var(--mute)'}">${money0(lateRows.reduce((s,x)=>s+x.amount,0))}</div>
      <div class="c">${lateRows.length} overdue</div></div>
-   <div class="tile"><div class="l">This week</div><div class="v" style="color:var(--gold)">${money0(weekRows.reduce((s,x)=>s+x.amount,0))}</div>
-     <div class="c">${weekRows.length} within 7 days</div></div>
+   <div class="tile"><div class="l">Next payday</div>${(()=>{const p=nextPayday();
+     const days=p?Math.round((p.when-TODAY)/864e5):null;
+     return `<div class="v" style="color:var(--gold);font-size:19px">${
+       p? p.when.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) : '\u2014'}</div>
+     <div class="c">${p? p.who+' \u00b7 '+(days===0?'today':days===1?'tomorrow':'in '+days+' days') : 'set it in the menu'}</div>`;})()}</div>
    <div class="tile"><div class="l">Ticked off</div><div class="v" style="color:var(--green)">${paidRows.length}</div>
      <div class="c">${doneToo?'showing':'hidden'}</div></div>`;
 
   $('ptitle').innerHTML='What is coming '
     +`<select id="nx-h" class="noprint" style="margin-left:8px;font-size:13px">${
-      HORIZONS.map(([n,t])=>`<option value="${n}" ${n===horizon?'selected':''}>${t}</option>`).join('')}</select>`
+      HORIZONS.map(([n,t])=>`<option value="${n}" ${String(n)===String(horizon)?'selected':''}>${t}</option>`).join('')}</select>`
     +`<label class="nrow noprint" style="display:inline-flex;padding:0;margin-left:12px">
        <input type="checkbox" id="nx-done" ${doneToo?'checked':''}><span>show what is done</span></label>`;
 
@@ -2281,11 +2332,11 @@ function renderNext(){
      <th class="c noprint" style="width:46px">Go</th></tr></thead>
    <tbody>${body||`<tr><td colspan="6" class="hint" style="padding:22px">${
      rows.length?'Nothing matches that filter.'
-     :'Nothing due in the '+HORIZONS.find(h=>h[0]===horizon)[1]+'. '}</td></tr>`}</tbody>
+     :'Nothing due '+windowLabel()+'.'}</td></tr>`}</tbody>
    <tfoot><tr><td class="lbl" colspan="5">${rows.length} to pay</td>
      <td class="r">${money(total)}</td><td class="noprint"></td></tr></tfoot>`;
 
-  $('nx-h').onchange=e=>{horizon=+e.target.value;render();};
+  $('nx-h').onchange=e=>{horizon=e.target.value==='pay'?'pay':+e.target.value;render();};
   $('nx-done').onchange=e=>{doneToo=e.target.checked;render();};
   document.querySelectorAll('tr.grp').forEach(r=>r.onclick=e=>{
     if(e.target.closest('button,input')) return;
