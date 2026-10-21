@@ -388,6 +388,39 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 .cellm:hover{border-color:var(--edge)}
 .cellm.nowm{outline:1.5px solid var(--gold);outline-offset:-1px}
 #diag{background:rgba(0,0,0,.4);border:1px solid var(--edge-soft);color:var(--mute)}
+#selbar{position:fixed;left:0;right:0;bottom:0;z-index:62;
+  background:rgba(14,14,16,.96);border-top:1px solid var(--edge);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 -14px 40px rgba(0,0,0,.55);
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.selinner{display:flex;align-items:center;gap:10px;padding:11px 22px;flex-wrap:wrap}
+.selcount{font-size:13.5px;color:var(--ink)}
+.seltotal{font:500 19px/1 'IBM Plex Mono',monospace;color:var(--gold)}
+#selbar button{font-size:13px;padding:7px 12px}
+#selbar button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;
+  border-color:transparent;font-weight:600}
+.selchk{width:16px;height:16px;accent-color:#CFB53B;cursor:pointer}
+td.sel,th.sel{width:38px;text-align:center;padding-left:14px}
+tr.picked td{background:rgba(207,181,59,.1)!important}
+#calcwrap{position:fixed;inset:0;z-index:74;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+#calcbox{width:300px;border-radius:14px;padding:18px;
+  background:linear-gradient(170deg,rgba(26,26,29,.98),rgba(10,10,11,.99));
+  border:1px solid var(--edge);box-shadow:0 26px 60px rgba(0,0,0,.6)}
+#calc-d{font:500 30px/1.2 'IBM Plex Mono',monospace;text-align:right;color:var(--gold);
+  padding:6px 10px;border-bottom:1px solid var(--rule2);overflow:hidden;text-overflow:ellipsis}
+#calc-sub{text-align:right;min-height:17px;padding:4px 10px 0}
+#calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+#calc-keys button{padding:13px 0;font-size:16px;font-family:'IBM Plex Mono',monospace}
+#calc-keys button.op{color:var(--gold);border-color:var(--edge)}
+#calc-keys button.eq{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;
+  border-color:transparent;font-weight:700}
+@media(max-width:760px){
+  .selinner{padding:10px 13px;gap:7px}
+  .seltotal{font-size:17px}
+  #selbar button{font-size:12.5px;padding:6px 10px}
+  main{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+}
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
   background:rgba(20,20,22,.92);color:var(--gold);border:1px solid var(--edge);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -406,6 +439,13 @@ td.drawer{padding:0;background:rgba(0,0,0,.28)}
 }
 
 /* ---------- phone ---------- */
+@media(max-width:1120px){
+  th.mo.lastcol,td.lock{display:none}      /* reference column goes first */
+  td:first-child{min-width:150px}
+}
+@media(max-width:940px){
+  th.c.hidesm,td.c.hidesm{display:none}
+}
 @media(max-width:760px){
  :root{padding-top:env(safe-area-inset-top,0px)}
  .wrap{padding:0 13px}
@@ -584,6 +624,24 @@ window.addEventListener('unhandledrejection',function(e){
  <p class="hint" style="margin-top:12px" id="foothint"><b>Last</b> is locked — what cleared, for reference.
   <b>Current</b> is the month you are working. <b>Next</b> is for anything you pay early.</p>
 </main></div>
+<div id="selbar" class="noprint" hidden>
+ <div class="wrap selinner">
+  <span class="selcount" id="sel-n"></span>
+  <span class="seltotal num" id="sel-t"></span>
+  <span class="spacer"></span>
+  <span class="row-flex" id="sel-acts"></span>
+  <button id="sel-calc" title="Calculator">= Calculator</button>
+  <button id="sel-none">Clear</button>
+ </div>
+</div>
+<div id="calcwrap" class="noprint" hidden><div id="calcbox">
+ <div id="calc-d" class="num">0</div>
+ <div id="calc-sub" class="hint"></div>
+ <div id="calc-keys"></div>
+ <div class="row-flex" style="margin-top:9px">
+   <button id="calc-use" class="mini">Use the selected total</button>
+   <span class="spacer"></span><button id="calc-x" class="mini">Close</button></div>
+</div></div>
 <div id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -591,7 +649,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BBDKBs9F-MmbJluKXkh7Ca0nK6x7IK_J3d7TsaZS8VmuDHgk_cEtT-5S4lvnTTf-WosktKc_f4LKIJ4Iw6YwzT0';
-const BUILD='v48 \u00b7 what is coming';
+const BUILD='v51 \u00b7 same tools everywhere';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -626,6 +684,7 @@ const lastDay=m=>new Date(m.getFullYear(),m.getMonth()+1,0).getDate();
 const shift=(m,n)=>new Date(m.getFullYear(),m.getMonth()+n,1);
 const esc=s=>String(s??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
+const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
 
 let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
@@ -646,7 +705,7 @@ function saveView(){
 }
 function applyView(){
   const v=(loadView()||{})[S.pid];
-  if(!v) return;
+  if(!v){ acct='next'; return; }
   if(v.acct) acct=v.acct;
   if(v.grp) grp=v.grp;
   if(v.srt) srt=v.srt;
@@ -997,7 +1056,7 @@ async function loadProfile(){
   S.arr={}; ar.data.forEach(r=>S.arr[r.bill_id]=r);
   S.plans={}; (pl.data||[]).forEach(r=>(S.plans[r.bill_id]=S.plans[r.bill_id]||[]).push(r));
   S.planPays={}; (pp.data||[]).forEach(r=>(S.planPays[r.plan_id]=S.planPays[r.plan_id]||[]).push(r));
-  if(!acct||!S.tabs.some(x=>x.code===acct)) acct=(S.tabs[0]||{}).code||'sum';
+  if(!acct) acct='next';
 }
 
 /* ================= MODEL ================= */
@@ -1138,23 +1197,29 @@ function drawerHTML(x,m){
   const b=x.b,p=per(m),sp=getSplits(b,p),a=S.arr[b.id],act=arrFor(b,m);
   const others=S.profiles.filter(z=>z.id!==S.pid);
   const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
-  const mv=moving===b.id?`<div class="parts"><h4>Move to the Annual tab</h4>
+  const mv=moving===b.id?`<div class="parts"><h4>Move this bill</h4>
      <div class="form">
-      <div><label>Which month</label><select id="mv-m">${MN.map((z,i)=>
+      <div><label>To which tab</label><select id="mv-t">${S.tabs.filter(z=>z.kind!=='care').map(z=>
+        `<option value="${esc(z.code)}" ${z.code===b.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
+      <button data-a="movetab">Move tab</button></div>
+     <div class="form" style="margin-top:4px;border-top:1px solid var(--rule2);padding-top:11px">
+      <div><label>Or on to Annual, in</label><select id="mv-m">${MN.map((z,i)=>
         `<option value="${i+1}" ${i+1===m.getMonth()+1?'selected':''}>${z}</option>`).join('')}</select></div>
       <div><label>Day</label><input id="mv-d" type="number" min="1" max="31" value="${b.due_day||15}" style="width:76px"></div>
-      <button data-a="movesave">Move it</button><button data-a="movecancel">Cancel</button></div>
-     <p class="hint" style="margin:8px 0 0">It leaves ${esc(acctOf(b.tab_code).name)} and lands on Annual,
-       still counted against that tab. Anything already recorded month by month stays on the old rows.</p></div>`:'';
+      <button data-a="movesave">Move to Annual</button>
+      <button data-a="movecancel">Cancel</button></div>
+     <p class="hint" style="margin:9px 0 0">Changing tab keeps every payment with the bill.
+       Moving to Annual keeps it counted against ${esc(acctOf(b.tab_code).name)} but shows it once a year
+       \u2014 month-by-month records stay on the old rows.</p></div>`:'';
   const ef=editing===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
      <div><label>Name</label><input id="ed-n" value="${esc(b.name)}" style="width:200px"></div>
      <div><label>Category</label>${catSelect('ed-c',b.category)}</div>
      <div><label>Due day</label><input id="ed-d" type="number" min="1" max="31" value="${b.due_day||''}"
        placeholder="Varies" title="Leave empty if it moves around" style="width:78px"></div>
      <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${b.amount}" style="width:110px"></div>
-     <div><label>Tab</label><select id="ed-ac">${S.tabs.map(z=>`<option value="${z.code}" ${z.code===b.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
      <button data-a="saveedit">Save changes</button><button data-a="canceledit">Cancel</button></div>
-     <p class="hint" style="margin:7px 0 0">Applies to every month. Amounts already recorded stay as recorded.</p></div>`:'';
+     <p class="hint" style="margin:7px 0 0">Applies to every month. Amounts already recorded stay as recorded.
+       To put it on another tab, use <b>Move</b>.</p></div>`:'';
   const parts=sp?`<div class="parts"><h4>Split — ${sp.length} parts</h4>
     ${sp.map((z,i)=>`<div class="part"><span class="pn">Part ${i+1}</span>
       <input type="number" step="0.01" data-sp="${z.id}" value="${z.amount}" aria-label="Part ${i+1} amount">
@@ -1259,7 +1324,7 @@ function drawerHTML(x,m){
      <button data-a="edit">Edit bill</button><button data-a="split">Split into parts</button>
      <button data-a="zero">Mark paid at $0</button><button data-a="full">Mark paid in full</button>
      <button data-a="clear">Clear this month</button>
-     <button data-a="move">Move to Annual</button>${share}
+     <button data-a="move">Move\u2026</button>${share}
      <button data-a="remove" class="danger">Remove bill</button>
      <button data-a="close" style="margin-left:auto">Close</button></div>${mv}${ef}${credBox}${planBox}${parts}${arrBox}</div>`;
 }
@@ -1304,7 +1369,10 @@ function renderAccount(){
         return ` <span class="tag split">${R.n} ${R.n===1?'plan':'plans'}</span>`
           +(R.dueN>R.n?` <span class="tag due">${R.dueN} payments due</span>`:'');})();
     const open=drawer===x.b.id;
-    return `<tr class="${s}${open?' open':''}">
+    const pk=pickKey(x.b,p);
+    return `<tr class="${s}${open?' open':''}${picked.has(pk)?' picked':''}" data-row="${x.b.id}">
+      <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
+        ${picked.has(pk)?'checked':''} aria-label="Select ${esc(x.b.name)}"></td>
       <td class="name"><span class="bn">${esc(x.b.name)}</span>${tags}<div class="cat">${(()=>{
         const R=planRollup(x.b,cur);
         if(!R) return esc(x.b.category);
@@ -1318,7 +1386,7 @@ function renderAccount(){
       <td class="c hidesm">${dueLabel(x.b)}</td>
       <td data-l="Status"><span class="tag ${s}">${LBL[s]}</span></td>
       <td class="r num" data-l="Budget · day ${x.b.due_day||'last'}">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
-      <td class="r lock" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
+      <td class="r lock lastcol" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
       <td class="cell" data-l="${lbl(cur)}">${(sp||(plansOf(x.b)||[]).length)?`<div class="num splitsum">${money(C||0)}</div>`
         :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="text" inputmode="decimal"
         value="${C!==null?money(C):''}" placeholder="${money(bg)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
@@ -1327,9 +1395,9 @@ function renderAccount(){
         aria-label="${esc(x.b.name)} next month"></td>
       <td class="act noprint"><button class="menu" data-m="${x.b.id}"
         aria-label="Actions for ${esc(x.b.name)}" title="Edit, split, arrangement">&#8943;</button></td></tr>`
-     +(open?`<tr class="drawerrow"><td colspan="8" class="drawer">${drawerHTML(x,cur)}</td></tr>`:'');
+     +(open?`<tr class="drawerrow"><td colspan="9" class="drawer">${drawerHTML(x,cur)}</td></tr>`:'');
   };
-  const addRow=adding?`<tr><td colspan="8" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
+  const addRow=adding?`<tr><td colspan="9" class="drawer"><div class="dr"><h4>Add a bill to ${esc(A.name)}</h4>
     <div class="form"><div><label>Name</label><input id="nb-n" placeholder="Bill name" style="width:200px"></div>
      <div><label>Category</label>${catSelect('nb-c','Other')}</div>
      <div><label>Due day</label><input id="nb-d" type="number" min="1" max="31"
@@ -1340,19 +1408,21 @@ function renderAccount(){
     if(name===null) return items.map(rowHTML).join('');
     const gb=items.reduce((t,x)=>t+budgetOf(x.b,cur),0);
     const gc=items.reduce((t,x)=>t+(paidOf(x.b,p)||0),0);
-    return groupRow(name,items.length,gb,gc,8)
+    return groupRow(name,items.length,gb,gc,9)
       + (shut.has(name)?'':items.map(rowHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
-   <thead><tr><th>Bill</th><th class="c hidesm">Due</th><th>Status</th><th class="r">Budget</th>
-    <th class="r mo">Last<small>${lbl(prev)} \u00b7 locked</small></th>
+   <thead><tr><th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
+      aria-label="Select everything shown"></th>
+    <th>Bill</th><th class="c hidesm">Due</th><th>Status</th><th class="r">Budget</th>
+    <th class="r mo lastcol">Last<small>${lbl(prev)} \u00b7 locked</small></th>
     <th class="r mo">Current<small>${lbl(cur)}</small></th>
     <th class="r mo">Next<small>${lbl(nxt)} \u00b7 early</small></th>
     <th class="c noprint" style="width:46px">Edit</th></tr></thead>
-   <tbody>${addRow}${body||`<tr><td colspan="8" class="hint" style="padding:20px">${
+   <tbody>${addRow}${body||`<tr><td colspan="9" class="hint" style="padding:20px">${
      all.length?'Nothing matches that filter.'
      :'No bills on '+esc(A.name)+' yet. Add the first one with <b>+ Add bill</b> above.'}</td></tr>`}</tbody>
-   <tfoot><tr><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
+   <tfoot><tr><td class="noprint"></td><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
     <td class="r">${money(tb)}</td><td class="r" style="opacity:.6">${money(tl)}</td>
     <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td>
     <td class="noprint"></td></tr></tfoot>`;
@@ -1427,7 +1497,7 @@ function renderAnnual(){
      <div class="c">plan around it</div></div>`;
   $('ptitle').textContent='Annual charges — '+Y;
   const others=S.profiles.filter(z=>z.id!==S.pid);
-  const addRow=adding?`<tr><td colspan="8" class="drawer"><div class="dr"><h4>Add an annual charge</h4>
+  const addRow=adding?`<tr><td colspan="9" class="drawer"><div class="dr"><h4>Add an annual charge</h4>
     <div class="form"><div><label>Name</label><input id="na-n" placeholder="Licence renewal" style="width:190px"></div>
      <div><label>Tab</label><select id="na-ac">${S.tabs.map(z=>`<option value="${z.code}">${esc(z.name)}</option>`).join('')}</select></div>
      <div><label>Month</label><select id="na-m">${MN.map((z,i)=>`<option value="${i+1}">${z}</option>`).join('')}</select></div>
@@ -1445,12 +1515,14 @@ function renderAnnual(){
     const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
     const ef=editing===a.id?`<div class="parts"><h4>Edit charge</h4><div class="form">
        <div><label>Name</label><input id="ed-n" value="${esc(a.name)}" style="width:190px"></div>
-       <div><label>Tab</label><select id="ed-ac">${S.tabs.map(z=>`<option value="${z.code}" ${z.code===a.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
        <div><label>Month</label><select id="ed-m">${MN.map((z,i)=>`<option value="${i+1}" ${i+1===a.due_month?'selected':''}>${z}</option>`).join('')}</select></div>
        <div><label>Day</label><input id="ed-d" type="number" min="1" max="31" value="${a.due_day||15}" style="width:70px"></div>
        <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${a.amount}" style="width:110px"></div>
        <button data-a="saveannedit">Save changes</button><button data-a="canceledit">Cancel</button></div></div>`:'';
-    return `<tr class="${s}${open?' open':''}">
+    const pk='b:'+a.id+':'+Y;
+    return `<tr class="${s}${open?' open':''}${picked.has(pk)?' picked':''}">
+      <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
+        ${picked.has(pk)?'checked':''} aria-label="Select ${esc(a.name)}"></td>
       <td class="name"><span class="bn">${esc(a.name)}</span> <span class="tag annual">annual</span>
         ${a.shared_from?` <span class="tag shared">from ${esc(a.shared_by)}</span>`:''}
         <div class="cat">${esc(a.category)}</div></td>
@@ -1463,24 +1535,34 @@ function renderAnnual(){
         value="${rec?rec.amount:''}" placeholder="${(+a.amount).toFixed(2)}" aria-label="${esc(a.name)} paid">
         <button class="menu noprint" data-m="${a.id}" aria-label="Actions for ${esc(a.name)}"
          style="position:absolute;right:-30px;top:7px">&#8943;</button></td></tr>`
-     +(open?`<tr class="drawerrow"><td colspan="8" class="drawer"><div class="dr"><div class="acts">
+     +(open?`<tr class="drawerrow"><td colspan="9" class="drawer"><div class="dr"><div class="acts">
         <button data-a="edit">Edit charge</button><button data-a="annfull">Mark paid in full</button>
         <button data-a="annzero">Mark paid at $0</button><button data-a="annclear">Clear</button>${share}
         <button data-a="remove" class="danger">Remove</button>
-        <button data-a="close" style="margin-left:auto">Close</button></div>${ef}</div></td></tr>`:'');
+        <button data-a="close" style="margin-left:auto">Close</button></div>${ef}${
+        moving===a.id?`<div class="parts"><h4>Move this charge</h4>
+          <div class="form">
+            <div><label>To which tab</label><select id="mv-t">${S.tabs.filter(z=>z.kind!=='care').map(z=>
+              `<option value="${esc(z.code)}" ${z.code===a.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
+            <button data-a="movetab">Move tab</button></div>
+          <div class="form" style="margin-top:4px;border-top:1px solid var(--rule2);padding-top:11px">
+            <button data-a="tomonthly">Make it a monthly bill again</button>
+            <button data-a="movecancel">Cancel</button></div></div>`:''}</div></td></tr>`:'');
   };
   const body=bucket(sortRows(annRows,'ann'),'ann').map(([name,items])=>{
     if(name===null) return items.map(annHTML).join('');
     const gb=items.reduce((t,x)=>t+ +x.b.amount,0);
     const gc=items.reduce((t,x)=>t+(x.rec?+x.rec.amount:0),0);
-    return groupRow(name,items.length,gb,gc,8)+(shut.has(name)?'':items.map(annHTML).join(''));
+    return groupRow(name,items.length,gb,gc,9)+(shut.has(name)?'':items.map(annHTML).join(''));
   }).join('');
   $('tbl').innerHTML=`
-   <thead><tr><th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
+   <thead><tr><th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
+      aria-label="Select everything shown"></th>
+    <th>Charge</th><th>Tab</th><th class="c">Due</th><th class="r">Amount</th>
     <th class="r">Set aside /mo</th><th>Status</th><th class="r mo">Paid<small>${Y}</small></th>
     <th class="c noprint" style="width:46px">Edit</th></tr></thead>
-   <tbody>${addRow}${body||'<tr><td colspan="8" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
-   <tfoot><tr><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
+   <tbody>${addRow}${body||'<tr><td colspan="9" class="hint" style="padding:18px">Nothing here.</td></tr>'}</tbody>
+   <tfoot><tr><td class="noprint"></td><td class="lbl" colspan="3">Total</td><td class="r">${money(tb)}</td>
     <td class="r">${money(tb/12)}</td><td></td><td class="r">${money(tp)}</td>
     <td class="noprint"></td></tr></tfoot>`;
   wire(); $('msg').innerHTML='';
@@ -1587,6 +1669,12 @@ function renderSummary(){
 /* ================= WIRE ================= */
 function wire(){
   wireCat('ed-c'); wireCat('nb-c');
+  wirePicks();
+  // the whole row opens its drawer, not just the small menu at the end
+  document.querySelectorAll('tr[data-row]').forEach(r=>r.addEventListener('click',e=>{
+    if(e.target.closest('input,button,select,textarea,a,label')) return;
+    drawer = drawer===r.dataset.row ? null : r.dataset.row;
+    editing=null; moving=null; render();}));
   document.querySelectorAll('tr.grp').forEach(r=>r.onclick=()=>{
     const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
   // Cents-first entry, the way a card terminal works: every digit you type
@@ -1661,19 +1749,19 @@ function act(a,id,to){
       due_day:Math.min(31,Math.max(1,+$('na-d').value||15))});
     if(error)throw error; adding=false;});
   const b=S.bills.find(z=>z.id===id); if(!b) return;
-  const p=b.is_annual?String(cur.getFullYear()):per(cur), bg=budgetOf(b,cur);
-  if(a==='close'){drawer=null;editing=null;moving=null;return render();}
+  const M=drawerM||cur;                                   // the month the row belongs to
+  const p=b.is_annual?String(M.getFullYear()):per(M), bg=budgetOf(b,M);
+  if(a==='close'){drawer=null;drawerKey=null;drawerM=null;editing=null;moving=null;return render();}
   if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
     const {error}=await db.from('bills').update({is_example:false,name:n,category:catValue('ed-c'),
       due_day:$('ed-d').value===''?null:Math.min(31,Math.max(1,+$('ed-d').value)),
-      amount:+$('ed-a').value||0,
-      tab_code:$('ed-ac').value}).eq('id',b.id);
+      amount:+$('ed-a').value||0}).eq('id',b.id);
     if(error)throw error; editing=null;});
   if(a==='saveannedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('It needs a name.');
-    const {error}=await db.from('bills').update({name:n,tab_code:$('ed-ac').value,
+    const {error}=await db.from('bills').update({name:n,
       due_month:+$('ed-m').value,due_day:Math.min(31,Math.max(1,+$('ed-d').value||15)),
       amount:+$('ed-a').value||0}).eq('id',b.id);
     if(error)throw error; editing=null;});
@@ -1698,6 +1786,12 @@ function act(a,id,to){
       if(error)throw error; drawer=null;});}
   if(a==='move'){ moving=moving===b.id?null:b.id; editing=null; return render(); }
   if(a==='movecancel'){ moving=null; return render(); }
+  if(a==='movetab') return go(async()=>{
+    const code=$('mv-t').value;
+    if(code===b.tab_code){ moving=null; return; }
+    const {error}=await db.from('bills').update({tab_code:code}).eq('id',b.id);
+    if(error) throw error; moving=null; drawer=null; acct=code;
+    toast(b.name+' is on '+acctOf(code).name+' now.');});
   if(a==='movesave') return go(async()=>{
     const {error}=await db.from('bills').update({is_annual:true,
       due_month:+$('mv-m').value,
@@ -1822,6 +1916,166 @@ function act(a,id,to){
     const {error}=await db.from('arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
 }
 
+/* ======================= PICKING SEVERAL AT ONCE ======================= */
+let picked=new Set();
+const pickKey=(b,p)=>'b:'+b.id+':'+p;
+
+function pickedRows(){
+  // resolve the keys back into something actionable
+  const out=[];
+  picked.forEach(k=>{
+    const [t,id,p]=k.split(':');
+    if(t==='b'){ const b=S.bills.find(z=>z.id===id); if(b) out.push({kind:'bill',b,p}); }
+    else if(t==='plan'){
+      const b=S.bills.find(z=>(S.plans[z.id]||[]).some(x=>x.id===id));
+      const plan=b&&(S.plans[b.id]||[]).find(x=>x.id===id);
+      if(plan) out.push({kind:'plan',b,plan,p});
+    }
+  });
+  return out;
+}
+function pickedTotal(){
+  let t=0;
+  pickedRows().forEach(x=>{
+    if(x.kind==='plan') t+=+x.plan.amount;
+    else if(x.b.is_annual){ const r=getPay(x.b,x.p); t+=Math.max(0,+x.b.amount-(r?+r.amount:0)); }
+    else { const m=new Date(+x.p.slice(0,4),+x.p.slice(5,7)-1,1);
+      t+=Math.max(0,budgetOf(x.b,m)-(paidOf(x.b,x.p)||0)); }
+  });
+  return t;
+}
+function paintSelbar(){
+  const bar=$('selbar'), n=picked.size;
+  bar.hidden = n===0;
+  if(!n) return;
+  $('sel-n').textContent = n+' selected';
+  $('sel-t').textContent = money(pickedTotal());
+  const acts = acct==='next'
+    ? [['bulkpay','Mark them paid','pay'],['bulkclear','Clear them','']]
+    : acct==='ann'
+    ? [['bulkpay','Mark paid in full','pay'],['bulkzero','Mark at $0',''],['bulkclear','Clear','']]
+    : [['bulkpay','Mark paid in full','pay'],['bulkzero','Mark at $0',''],
+       ['bulkclear','Clear this month',''],['bulkcat','Change category',''],
+       ['bulkann','Move to Annual',''],['bulkdel','Remove','danger']];
+  $('sel-acts').innerHTML=acts.map(([a,t,c])=>
+    `<button data-bulk="${a}" class="${c}">${t}</button>`).join('');
+  $('sel-acts').querySelectorAll('[data-bulk]').forEach(b=>b.onclick=()=>bulk(b.dataset.bulk));
+}
+function bulk(a){
+  const rows=pickedRows(); if(!rows.length) return;
+  const n=rows.length;
+  if(a==='bulkdel' && !confirm('Remove '+n+' bills from every month?')) return;
+  if(a==='bulkann'){
+    const mo=prompt('Which month do these fall in? 1-12',String(cur.getMonth()+1));
+    if(!mo) return;
+    return go(async()=>{
+      for(const x of rows) if(x.kind==='bill')
+        await db.from('bills').update({is_annual:true,due_month:Math.min(12,Math.max(1,+mo))}).eq('id',x.b.id);
+      picked.clear(); toast(n+' moved to Annual.');});
+  }
+  if(a==='bulkcat'){
+    const list=catList();
+    const c=prompt('New category for '+n+' bills:\n\n'+list.join(', '));
+    if(!c||!c.trim()) return;
+    return go(async()=>{
+      for(const x of rows) if(x.kind==='bill')
+        await db.from('bills').update({category:c.trim()}).eq('id',x.b.id);
+      picked.clear(); toast(n+' recategorised.');});
+  }
+  go(async()=>{
+    for(const x of rows){
+      if(x.kind==='plan'){
+        if(a==='bulkpay'){
+          await db.from('plan_payments').insert({profile_id:S.pid,bill_id:x.b.id,plan_id:x.plan.id,
+            amount:+x.plan.amount, paid_on:new Date().toISOString().slice(0,10)});
+        } else if(a==='bulkclear'){
+          const got=(S.planPays[x.plan.id]||[]).filter(r=>String(r.paid_on).slice(0,7)===x.p);
+          if(got.length) await db.from('plan_payments').delete().eq('id',got[got.length-1].id);
+        }
+        continue;
+      }
+      if(a==='bulkdel'){ await db.from('bills').update({archived:true}).eq('id',x.b.id); continue; }
+      await clearSplits(x.b,x.p);
+      if(a==='bulkpay'){
+        const m=/^\d{4}-\d{2}$/.test(x.p)?new Date(+x.p.slice(0,4),+x.p.slice(5,7)-1,1):cur;
+        await setPay(x.b,x.p, x.b.is_annual? +x.b.amount : budgetOf(x.b,m));
+      }
+      else if(a==='bulkzero')  await setPay(x.b,x.p,0);
+      else if(a==='bulkclear') await setPay(x.b,x.p,null);
+    }
+    picked.clear();
+    toast(n+(a==='bulkdel'?' removed.':a==='bulkclear'?' cleared.':' updated.'));
+  });
+}
+function wirePicks(){
+  document.querySelectorAll('.selchk[data-pick]').forEach(c=>{
+    c.onclick=e=>e.stopPropagation();
+    c.onchange=()=>{
+      const k=c.dataset.pick;
+      c.checked?picked.add(k):picked.delete(k);
+      const tr=c.closest('tr'); if(tr) tr.classList.toggle('picked',c.checked);
+      paintSelbar();
+      const all=$('pick-all'); if(all){
+        const boxes=[...document.querySelectorAll('.selchk[data-pick]')];
+        all.checked=boxes.length&&boxes.every(b=>b.checked);
+        all.indeterminate=!all.checked&&boxes.some(b=>b.checked);}
+    };});
+  const all=$('pick-all');
+  if(all) all.onchange=()=>{
+    document.querySelectorAll('.selchk[data-pick]').forEach(c=>{
+      c.checked=all.checked;
+      c.checked?picked.add(c.dataset.pick):picked.delete(c.dataset.pick);
+      const tr=c.closest('tr'); if(tr) tr.classList.toggle('picked',c.checked);});
+    paintSelbar();};
+  paintSelbar();
+}
+
+/* ---- a calculator, because you always end up needing one ---- */
+let calc={show:'0',acc:null,op:null,fresh:true};
+function calcOpen(seed){
+  if(seed!=null){ calc={show:String(Math.round(seed*100)/100),acc:null,op:null,fresh:true}; }
+  $('calcwrap').hidden=false; calcPaint();
+}
+function calcPaint(){
+  $('calc-d').textContent=(+calc.show).toLocaleString('en-US',{maximumFractionDigits:6})
+    +(String(calc.show).endsWith('.')?'.':'');
+  $('calc-sub').textContent=calc.op?(Number(calc.acc).toLocaleString('en-US')+' '+calc.op):'';
+  const keys=[['C','op'],['\u00f7','op'],['\u00d7','op'],['\u2190','op'],
+              ['7',''],['8',''],['9',''],['\u2212','op'],
+              ['4',''],['5',''],['6',''],['+','op'],
+              ['1',''],['2',''],['3',''],['=','eq'],
+              ['0',''],['.',''],['%','op'],['\u00b1','op']];
+  $('calc-keys').innerHTML=keys.map(([k,c])=>`<button class="${c}" data-k="${k}">${k}</button>`).join('');
+  $('calc-keys').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>calcKey(b.dataset.k));
+}
+function calcKey(k){
+  const num=()=>+calc.show;
+  if(/[0-9]/.test(k)){ calc.show = calc.fresh||calc.show==='0' ? k : calc.show+k; calc.fresh=false; }
+  else if(k==='.'){ if(!String(calc.show).includes('.')){ calc.show=(calc.fresh?'0':calc.show)+'.'; calc.fresh=false; } }
+  else if(k==='C'){ calc={show:'0',acc:null,op:null,fresh:true}; }
+  else if(k==='\u2190'){ calc.show=String(calc.show).length>1?String(calc.show).slice(0,-1):'0'; }
+  else if(k==='\u00b1'){ calc.show=String(-num()); }
+  else if(k==='%'){ calc.show=String(num()/100); }
+  else if(k==='='){
+    if(calc.op!=null&&calc.acc!=null){ calc.show=String(apply(calc.acc,num(),calc.op));
+      calc.acc=null; calc.op=null; calc.fresh=true; }
+  } else {
+    if(calc.op!=null&&calc.acc!=null&&!calc.fresh) calc.show=String(apply(calc.acc,num(),calc.op));
+    calc.acc=num(); calc.op=k; calc.fresh=true;
+  }
+  calcPaint();
+}
+const apply=(a,b,op)=> op==='+'?a+b : op==='\u2212'?a-b : op==='\u00d7'?a*b
+  : op==='\u00f7'?(b===0?0:a/b) : b;
+addEventListener('keydown',e=>{
+  if($('calcwrap').hidden) return;
+  if(e.key==='Escape'){$('calcwrap').hidden=true;return;}
+  const map={'*':'\u00d7','/':'\u00f7','-':'\u2212','Enter':'=','Backspace':'\u2190','Escape':'C'};
+  const k=map[e.key]||e.key;
+  if(/^[0-9.]$/.test(k)||['+','\u2212','\u00d7','\u00f7','=','\u2190','C','%'].includes(k)){
+    e.preventDefault(); calcKey(k); }
+});
+
 /* ======================= WHAT'S COMING ======================= */
 let horizon=14, doneToo=false;
 const HORIZONS=[[7,'next 7 days'],[14,'next 14 days'],[30,'next 30 days'],[45,'next 45 days']];
@@ -1911,6 +2165,8 @@ const weekLabel=d=>{
   return 'Later';
 };
 const nextStatus=x=>x.paid?'paid':x.late?'late':(x.when-TODAY)/864e5<=2?'due':'sched';
+const monthOf=p=>/^\d{4}-\d{2}$/.test(p)?new Date(+p.slice(0,4),+p.slice(5,7)-1,1):cur;
+let drawerKey=null;
 
 function renderNext(){
   $('sumview').hidden=true; $('tiles').hidden=false;
@@ -1974,6 +2230,10 @@ function renderNext(){
     return `<tr class="${s}${x.paid?' paid':''}">
       <td class="c" style="width:42px"><input type="checkbox" class="nxchk" data-k="${x.key}"
         ${x.paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
+      <td class="sel noprint"><input type="checkbox" class="selchk"
+        data-pick="${x.kind==='plan'?'plan:'+x.plan.id+':'+x.period:'b:'+x.bill.id+':'+x.period}"
+        ${picked.has(x.kind==='plan'?'plan:'+x.plan.id+':'+x.period:'b:'+x.bill.id+':'+x.period)?'checked':''}
+        aria-label="Select ${esc(x.name)}"></td>
       <td><span class="bn" style="${x.paid?'text-decoration:line-through;color:var(--mute)':''}">${esc(x.name)}</span>
         ${x.kind==='plan'?' <span class="tag split">plan</span>':''}
         ${x.kind==='annual'?' <span class="tag annual">annual</span>':''}
@@ -1982,7 +2242,22 @@ function renderNext(){
         <div class="cat">${when}</div></td>
       <td><span class="tag ${s}">${s==='paid'?'Done':s==='late'?'Past due':s==='due'?'Due now':'Coming up'}</span></td>
       <td class="r num">${money(Math.max(0,x.amount))}</td>
-      <td class="act noprint"><button class="menu" data-goto="${x.key}" title="Open it where it lives">&rsaquo;</button></td></tr>`;
+      <td class="act noprint"><button class="menu" data-nxmenu="${x.key}"
+        title="Edit, split, move, logins">&ctdot;</button></td></tr>`
+      + (drawer===x.bill.id && drawerKey===x.key
+          ? `<tr class="drawerrow"><td colspan="7" class="drawer">${
+              x.bill.is_annual
+                ? `<div class="dr"><div class="acts">
+                     <button data-a="annfull">Mark paid in full</button>
+                     <button data-a="annzero">Mark paid at $0</button>
+                     <button data-a="annclear">Clear</button>
+                     <button data-nxgo="${x.key}">Open it on Annual</button>
+                     <button data-a="close" style="margin-left:auto">Close</button></div></div>`
+                : drawerHTML({b:x.bill,when:x.when}, monthOf(x.period))
+                  .replace('<button data-a="close"',
+                    `<button data-nxgo="${x.key}">Open it on ${esc(x.tab.name)}</button><button data-a="close"`)
+            }</td></tr>`
+          : '');
   };
 
   const body=order.map(k=>{
@@ -1992,20 +2267,22 @@ function renderNext(){
     const done=items.filter(x=>x.paid).length;
     const off=shut.has(k);
     return `<tr class="grp${off?' shut':''}" data-g="${esc(k)}">
-        <td colspan="6"><span class="gname"><span class="chev">\u25BE</span>${esc(k)}
+        <td colspan="7"><span class="gname"><span class="chev">\u25BE</span>${esc(k)}
           <span class="gcount">${items.length} ${items.length===1?'item':'items'}${done?' \u00b7 '+done+' done':''}</span></span>
           <span class="gsum">${money(sum)}</span></td></tr>`
       + (off?'':items.map(line).join(''));
   }).join('');
 
   $('tbl').innerHTML=`
-   <thead><tr><th class="c" style="width:42px">Paid</th><th>What</th>
+   <thead><tr><th class="c" style="width:42px">Paid</th>
+     <th class="sel noprint"><input type="checkbox" id="pick-all" class="selchk"
+       aria-label="Select everything shown"></th><th>What</th>
      <th class="c hidesm">When</th><th>Status</th><th class="r">Amount</th>
      <th class="c noprint" style="width:46px">Go</th></tr></thead>
    <tbody>${body||`<tr><td colspan="6" class="hint" style="padding:22px">${
      rows.length?'Nothing matches that filter.'
      :'Nothing due in the '+HORIZONS.find(h=>h[0]===horizon)[1]+'. '}</td></tr>`}</tbody>
-   <tfoot><tr><td class="lbl" colspan="4">${rows.length} to pay</td>
+   <tfoot><tr><td class="lbl" colspan="5">${rows.length} to pay</td>
      <td class="r">${money(total)}</td><td class="noprint"></td></tr></tfoot>`;
 
   $('nx-h').onchange=e=>{horizon=+e.target.value;render();};
@@ -2014,7 +2291,17 @@ function renderNext(){
     if(e.target.closest('button,input')) return;
     const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
   document.querySelectorAll('.nxchk').forEach(c=>c.onchange=()=>tick(c.dataset.k,c.checked));
-  document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>jumpTo(b.dataset.goto));
+  wirePicks();
+  document.querySelectorAll('[data-nxmenu]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.nxmenu;
+    const row=comingUp().find(z=>z.key===k)
+      || (()=>{const w=doneToo; doneToo=true; const r=comingUp().find(z=>z.key===k); doneToo=w; return r;})();
+    if(!row) return;
+    if(drawerKey===k){ drawer=null; drawerKey=null; drawerM=null; }
+    else { drawer=row.bill.id; drawerKey=k; drawerM=monthOf(row.period); }
+    editing=null; moving=null; render();});
+  document.querySelectorAll('[data-nxgo]').forEach(b=>b.onclick=()=>jumpTo(b.dataset.nxgo));
+  wire();
   $('msg').innerHTML=lateRows.length?`<div class="note" style="background:var(--redw);border-color:rgba(224,102,92,.3)">
     <b style="color:var(--red)">${lateRows.length} already past</b> \u2014 ${money(lateRows.reduce((s,x)=>s+x.amount,0))} sitting unrecorded.</div>`:'';
 }
@@ -2126,7 +2413,7 @@ function renderCare(){
     return `<tr class="grp"><td colspan="8"><span class="gname">${esc(title)}
         <span class="gcount">${mine.length||'nothing yet'}</span></span>
         <span class="gsum"><button class="mini" data-careadd="${key}">Add</button></span></td></tr>`
-      + (careAdd===key?`<tr><td colspan="8" class="drawer"><div class="dr">
+      + (careAdd===key?`<tr><td colspan="9" class="drawer"><div class="dr">
           <div class="form">
             <div style="flex:1 1 200px"><label>Heading</label>
               <input id="cn-t" placeholder="e.g. ${esc(hint.split('.')[0])}" style="width:100%"></div>
@@ -2144,7 +2431,7 @@ function renderCare(){
             <td class="r">${n.body_ct?'<span class="tag sched">encrypted</span>'
               :'<span class="hint">no details</span>'}</td>
             <td class="act noprint"><button class="menu" data-care="${n.id}">&ctdot;</button></td></tr>`
-          + (open?`<tr><td colspan="8" class="drawer"><div class="dr">
+          + (open?`<tr><td colspan="9" class="drawer"><div class="dr">
               ${shown!==undefined
                 ? `<div style="white-space:pre-wrap;font-size:14px;color:var(--ink);
                      background:rgba(0,0,0,.3);border:1px solid var(--edge-soft);border-radius:8px;
@@ -2512,7 +2799,7 @@ async function disablePush(){
     await sub.unsubscribe(); }
 }
 
-let credOpen=null, credShow={}, moving=null, pasteFor=null, pasted=[], lastRead='', showRaw=false;
+let credOpen=null, credShow={}, moving=null, drawerM=null, pasteFor=null, pasted=[], lastRead='', showRaw=false;
 
 /* ---- read a BNPL schedule out of pasted text or a screenshot ---- */
 const MONTHS3={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
@@ -3029,7 +3316,6 @@ function renderDigest(){
     if(error) throw error; toast('Payday emails go to '+to);});
 }
 
-const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
 function render(){
   const vis=TABS().filter(t=>!hidden(t.k));
   if(!vis.some(t=>t.k===acct)) acct=(vis[0]||{k:'sum'}).k;
@@ -3040,7 +3326,9 @@ function render(){
       p.owner_id!==user.id?' \u2014 shared with you':''}</option>`).join('');
   $('dtabs').innerHTML=vis.map(t=>{
     let n='';
-    if(t.k==='next'){ const r=comingUp(); n=r.length?String(r.length):''; }
+    if(t.k==='next'){ const r=comingUp().filter(x=>!x.paid);
+      const owed=r.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
+      n = r.length ? money0(owed) : ''; }
     else if(t.k!=='ann'&&t.k!=='sum'&&acctOf(t.k).kind!=='care') n=money0(figures(cur,t.k).owed);
     else if(t.k==='ann'){const Y=String(cur.getFullYear());
       n=money0(annuals().filter(a=>!getPay(a,Y)).reduce((s,a)=>s+ +a.amount,0));}
@@ -3048,7 +3336,8 @@ function render(){
       ${t.c?`<span class="d" style="background:${t.c}"></span>`:''}${esc(t.n)}
       ${n?`<span class="n">${n}</span>`:''}</button>`;}).join('');
   document.querySelectorAll('.dtab').forEach(t=>t.onclick=()=>{
-    acct=t.dataset.a;drawer=null;adding=false;editing=null;moving=null;shareOpen=false;closeMenu();render();});
+    acct=t.dataset.a;drawer=null;drawerKey=null;drawerM=null;
+    adding=false;editing=null;moving=null;shareOpen=false;closeMenu();render();});
   const ct=vis.find(t=>t.k===acct);
   $('curtab').innerHTML = ct
     ? (ct.c?`<span class="d" style="background:${ct.c}"></span>`:'')+esc(ct.n)
@@ -3140,6 +3429,10 @@ $('sb').onchange=e=>{srt=e.target.value;render();};
 $('addb').onclick=()=>{adding=!adding;drawer=null;render();};
 $('tabcfg').onclick=()=>{cfg=!cfg;render();};
 on('helpopen',()=>{closeMenu();helpOpen();});
+on('sel-none',()=>{picked.clear();render();});
+on('sel-calc',()=>calcOpen(pickedTotal()));
+on('calc-x',()=>{$('calcwrap').hidden=true;});
+on('calc-use',()=>calcOpen(pickedTotal()));
 on('carenew',()=>{
   const n=prompt('Whose care file is this?\n\ne.g. "Mum" or "Dad\u2019s file"\n\n'
     +'Everything in it is encrypted. Share it only with the people who would need it.');
