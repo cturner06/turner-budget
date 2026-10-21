@@ -206,7 +206,20 @@ main{padding:26px 0 80px}
   border:1px solid var(--edge-soft);
   backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
-.tile .l{font-size:12.5px;color:var(--mute);min-height:2.6em;display:flex;align-items:flex-start}
+.tile .l{font-size:12.5px;color:var(--mute);min-height:2.6em;display:flex;align-items:flex-start;gap:7px}
+.tile .l .d{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:5px}
+button.tilelink{text-align:left;cursor:pointer;font:inherit;width:100%;
+  transition:border-color .15s,background .15s,transform .1s}
+button.tilelink:hover{border-color:var(--edge);background:linear-gradient(165deg,rgba(255,255,255,.09),rgba(255,255,255,.04))}
+button.tilelink:active{transform:translateY(1px)}
+button.tilelink.on{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(207,181,59,.25)}
+button.tilelink .l{min-height:auto;margin-bottom:6px}
+#navtiles .tiles{margin-bottom:14px}
+.tile .two{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-top:5px}
+.tile .two .big{font:500 22px/1.1 'IBM Plex Mono',monospace;letter-spacing:-.02em}
+.tile .two .lateamt{font:500 14px/1.1 'IBM Plex Mono',monospace;color:var(--red)}
+.tile .two .lateamt.none{color:var(--ash)}
+.tile .sm{font-size:11.5px;color:var(--ash);margin-top:3px}
 .tile .v{font:500 25px/1.15 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
   margin-top:7px;letter-spacing:-.02em;color:var(--ink)}
 .tile .c{font-size:12px;color:var(--ash);margin-top:4px}
@@ -625,7 +638,7 @@ window.addEventListener('unhandledrejection',function(e){
  </div>
 </aside>
 <main class="wrap">
- <div id="msg"></div><div class="tiles" id="tiles"></div>
+ <div id="msg"></div><div id="navtiles"></div><div class="tiles" id="tiles"></div>
  <div class="panel"><div class="ptop"><h2 id="ptitle">Bills</h2><span class="spacer"></span>
    <button id="addb" class="mini noprint">+ Add bill</button>
    <button id="prt" class="mini noprint">Print</button>
@@ -2309,6 +2322,42 @@ const nextStatus=x=>x.paid?'paid':x.late?'late':(x.when-TODAY)/864e5<=2?'due':'s
 const monthOf=p=>/^\d{4}-\d{2}$/.test(p)?new Date(+p.slice(0,4),+p.slice(5,7)-1,1):cur;
 let drawerKey=null;
 
+// The same four tiles sit on top of every view: what each tab owes before the
+// next payday, and the whole lot. Each one is a way in.
+function paydayTiles(){
+  const rows=comingUp().filter(x=>!x.paid);
+  const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
+  const want=['p','f','b'].map(c=>vis.find(a=>a.code===c)).filter(Boolean);
+  const three=want.length?want:vis.slice(0,3);
+  const face=(key,name,colour,set,on)=>{
+    const coming=set.filter(x=>!x.late), late=set.filter(x=>x.late);
+    const c=coming.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
+    const l=late.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
+    return `<button class="tile tilelink${on?' on':''}" data-tab="${esc(key)}">
+      <div class="l"><span class="d" style="background:${colour}"></span>${esc(name)}</div>
+      <div class="two">
+        <span class="big" style="color:${c?'var(--ink)':'var(--mute)'}">${money0(c)}</span>
+        <span class="lateamt${l?'':' none'}">${l?money0(l)+' past due':'none past due'}</span></div>
+      <div class="sm">${coming.length} coming${late.length?' \u00b7 '+late.length+' late':''}</div></button>`;
+  };
+  return `<div class="tiles">`
+    + three.map(a=>face(a.code,a.name,a.color,
+        rows.filter(x=>x.tab&&x.tab.code===a.code), acct===a.code)).join('')
+    + (()=>{ const p=nextPayday();
+        const html=face('next','Everything','var(--gold)',rows,acct==='next');
+        return p ? html.replace('</button>',
+          `<div class="sm" style="color:var(--gold)">before ${esc(p.who)}, ${
+            p.when.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div></button>`)
+          : html; })()
+    + `</div>`;
+}
+function wireTiles(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
+    acct=b.dataset.tab; drawer=null; drawerKey=null; drawerM=null;
+    adding=false; editing=null; moving=null; shareOpen=false; render();
+    try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}});
+}
+
 function renderNext(){
   $('sumview').hidden=true; $('tiles').hidden=false;
   document.querySelector('.panel').hidden=false; $('foothint').hidden=true;
@@ -2320,24 +2369,10 @@ function renderNext(){
 
   const total=rows.reduce((s,x)=>s+Math.max(0,x.amount),0);
   const lateRows=rows.filter(x=>x.late);
-  const weekRows=rows.filter(x=>!x.late&&(x.when-TODAY)/864e5<=7);
-  void weekRows;
-  const paidRows=rows.filter(x=>x.paid);
-  $('tiles').innerHTML=`
-   <div class="tile"><div class="l">Due ${esc(windowLabel())}</div>
-     <div class="v">${money0(total)}</div><div class="c">${rows.length} to pay</div></div>
-   <div class="tile"><div class="l">Already past</div>
-     <div class="v" style="color:${lateRows.length?'var(--red)':'var(--mute)'}">${money0(lateRows.reduce((s,x)=>s+x.amount,0))}</div>
-     <div class="c">${lateRows.length} overdue</div></div>
-   <div class="tile"><div class="l">Next payday</div>${(()=>{const p=nextPayday();
-     const days=p?Math.round((p.when-TODAY)/864e5):null;
-     return `<div class="v" style="color:var(--gold);font-size:19px">${
-       p? p.when.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) : '\u2014'}</div>
-     <div class="c">${p? p.who+' \u00b7 '+(days===0?'today':days===1?'tomorrow':'in '+days+' days') : 'set it in the menu'}</div>`;})()}</div>
-   <div class="tile"><div class="l">Ticked off</div><div class="v" style="color:var(--green)">${paidRows.length}</div>
-     <div class="c">${doneToo?'showing':'hidden'}</div></div>`;
-
-  $('ptitle').innerHTML='What is coming '
+  $('tiles').innerHTML='';
+  $('tiles').hidden=true;
+  $('ptitle').innerHTML='What is coming <span class="hint" style="font-weight:400">'
+    +esc(windowLabel())+(lateRows.length?' \u00b7 '+lateRows.length+' already past':'')+'</span> '
     +`<select id="nx-h" class="noprint" style="margin-left:8px;font-size:13px">${
       HORIZONS.map(([n,t])=>`<option value="${n}" ${String(n)===String(horizon)?'selected':''}>${t}</option>`).join('')}</select>`
     +`<label class="nrow noprint" style="display:inline-flex;padding:0;margin-left:12px">
@@ -3687,6 +3722,8 @@ function render(){
   else if(acct==='ann') renderAnnual();
   else if(acctOf(acct).kind==='care'){ renderCare(); careLoad().then(()=>{ if(acctOf(acct).kind==='care') renderCare(); }); }
   else renderAccount();
+  $('navtiles').innerHTML = acct==='sum' ? '' : paydayTiles();
+  wireTiles();
   saveView();
 }
 let openSec=null;
