@@ -2517,9 +2517,22 @@ function comingUp(){
 
   // nothing with no money attached: a bill at $0 is not a thing to tick off
   const seen=new Set();
-  return out.filter(x=>x.amount>0.004||x.paid)
-            .filter(x=>seen.has(x.key)?false:(seen.add(x.key),true))
-            .sort((a,b)=>a.when-b.when);
+  const kept=out.filter(x=>x.amount>0.004||x.paid)
+                .filter(x=>seen.has(x.key)?false:(seen.add(x.key),true));
+
+  // One line per bill, at its oldest unpaid month. Without this, clearing
+  // September simply promotes October into the same slot, and the tick
+  // looks as though it undid itself.
+  const best=new Map();
+  kept.forEach(x=>{
+    if(x.kind==='plan'){ best.set(x.key,x); return; }
+    const k=(x.paid?'done:':'owing:')+x.bill.id;
+    const prev=best.get(k);
+    if(!prev){ best.set(k,x); x.behind=1; }
+    else if(x.when<prev.when){ x.behind=(prev.behind||1)+1; best.set(k,x); }
+    else { prev.behind=(prev.behind||1)+1; }
+  });
+  return [...best.values()].sort((a,b)=>a.when-b.when);
 }
 
 const NEXT_GROUPS=[['none','No grouping'],['tab','Tab'],['week','Week'],
@@ -2661,8 +2674,12 @@ function renderNext(){
           ? `<tr class="drawerrow"><td colspan="10" class="drawer">${drawerHTML({b:x.bill,when:x.when},monthOf(x.period))}</td></tr>`:'');
     }
     const st=nextStatus(x);
+    const extra=(x.behind||1)-1;
+    const whenTxt = extra
+      ? when+' \u00b7 '+extra+' more month'+(extra>1?'s':'')+' behind'
+      : when;
     return billRow({b:x.bill,when:x.when}, monthOf(x.period),
-      {tab:x.tab, when, when2:x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+      {tab:x.tab, when:whenTxt, when2:x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'}),
        key:x.key, status:st,
        statusText:{paid:'Paid',late:'Past due',due:'Due now',sched:'Coming up'}[st]});
   };
@@ -3996,11 +4013,11 @@ function sectionSummaries(){
   $('vprof').textContent=S.prof?S.prof.name:'';
   $('vnotify').textContent = S.device==='unsupported' ? 'not available'
     : (S.device && S.notify) ? 'on' : 'off';
-  $('vemail').textContent = S.digest
-    ? (S.digest.enabled?S.digest.recipient.split('@')[0]:'off') : 'off';
-  const hid=(S.prof.hidden_tabs||[]).length;
+  $('vemail').textContent = (S.digest && S.digest.enabled && S.digest.recipient)
+    ? String(S.digest.recipient).split('@')[0] : 'off';
+  const hid=((S.prof&&S.prof.hidden_tabs)||[]).length;
   $('vtabs').textContent = hid? hid+' hidden' : S.tabs.length+' showing';
-  $('vacct').textContent = user.email.split('@')[0];
+  $('vacct').textContent = (user&&user.email)?String(user.email).split('@')[0]:'';
   applyTheme();
 }
 document.querySelectorAll('.dhead').forEach(hd=>hd.onclick=()=>{
