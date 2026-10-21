@@ -121,6 +121,13 @@ select option{background:var(--coal);color:var(--ink)}
 #burger[aria-expanded="true"] span:nth-child(2){opacity:0}
 #burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
 .curtab{font-size:13.5px;color:var(--gold);display:flex;align-items:center;gap:8px}
+.hstats{display:flex;align-items:center;gap:14px;font-size:12.5px;color:var(--mute);
+  padding:4px 13px;border-radius:999px;border:1px solid var(--edge-soft);
+  background:var(--glass);white-space:nowrap;line-height:1.2}
+.hstats:empty{display:none}
+.hstats b{font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--ink);font-size:13px}
+.hstats .ok b{color:var(--green)}
+.hstats span{display:inline-flex;align-items:baseline;gap:6px}
 .curtab .d{width:7px;height:7px;border-radius:50%}
 #scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:58;
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
@@ -219,7 +226,9 @@ button.tilelink .l{min-height:auto;margin-bottom:6px}
 .tile .two .big{font:500 22px/1.1 'IBM Plex Mono',monospace;letter-spacing:-.02em}
 .tile .two .lateamt{font:500 14px/1.1 'IBM Plex Mono',monospace;color:var(--red)}
 .tile .two .lateamt.none{color:var(--ash)}
-.tile .sm{font-size:11.5px;color:var(--ash);margin-top:3px}
+.tile .sm{font-size:11.5px;color:var(--ash);margin-top:5px}
+button.tilelink .prog{margin-top:9px;height:4px}
+button.tilelink .prog i{transition:width .25s}
 .tile .v{font:500 25px/1.15 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
   margin-top:7px;letter-spacing:-.02em;color:var(--ink)}
 .tile .c{font-size:12px;color:var(--ash);margin-top:4px}
@@ -578,6 +587,7 @@ window.addEventListener('unhandledrejection',function(e){
     aria-controls="drawer"><span></span><span></span><span></span></button>
   <h1>Turner Budget</h1>
   <span class="sub" id="hsub"></span>
+  <span class="hstats" id="hstats"></span>
   <span class="spacer"></span>
   <span class="curtab" id="curtab"></span>
  </div>
@@ -1430,15 +1440,9 @@ function renderAccount(){
   const owed=all.reduce((s,x)=>s+Math.max(0,budgetOf(x.b,cur)-(paidOf(x.b,p)||0)),0);
   const lateN=all.filter(x=>status(x,cur)==='late').length, aheadN=all.filter(x=>status(x,cur)==='ahead').length;
   const pct=all.length?Math.round(done.length/all.length*100):0;
-  $('tiles').innerHTML=`
-   <div class="tile"><div class="l">Monthly obligations</div><div class="v">${money0(budget)}</div>
-     <div class="c">${all.length} recurring items</div></div>
-   <div class="tile"><div class="l">Cleared</div><div class="v" style="color:var(--green)">${money0(cleared)}</div>
-     <div class="c">${done.length} of ${all.length}</div><div class="prog"><i style="width:${pct}%"></i></div></div>
-   <div class="tile"><div class="l">Still owed</div><div class="v">${money0(owed)}</div>
-     <div class="c">${lateN?lateN+' past the due day':'nothing overdue'}</div></div>
-   <div class="tile"><div class="l">Paid ahead</div><div class="v" style="color:${aheadN?'var(--p)':'var(--ash)'}">${aheadN}</div>
-     <div class="c">recorded in ${lbl(nxt)}</div></div>`;
+  $('tiles').innerHTML=''; $('tiles').hidden=true;
+  $('hstats').innerHTML=`<span>Monthly <b>${money0(budget)}</b></span>`
+    +`<span class="ok">Cleared <b>${money0(cleared)}</b></span>`;
   $('ptitle').innerHTML=esc(A.name)+(A.institution?` <span class="hint" style="font-weight:400">${esc(A.institution)}</span>`:'')
     +' <button class="mini noprint" id="tabshare" style="margin-left:8px">Share this tab</button>'
     +(A.kind==='project'?'<button class="mini noprint" id="tabren" style="margin-left:5px">Rename</button>'
@@ -1564,15 +1568,9 @@ function renderAnnual(){
   const pct=list.length?Math.round(paid.length/list.length*100):0;
   const by={};list.forEach(a=>by[a.due_month]=(by[a.due_month]||0)+ +a.amount);
   const hv=Object.keys(by).sort((x,y)=>by[y]-by[x])[0];
-  $('tiles').innerHTML=`
-   <div class="tile"><div class="l">Annual total</div><div class="v">${money0(tot)}</div>
-     <div class="c">${list.length} charges in ${Y}</div></div>
-   <div class="tile"><div class="l">Set aside monthly</div><div class="v" style="color:var(--gold)">${money0(tot/12)}</div>
-     <div class="c">and none of these hurt</div></div>
-   <div class="tile"><div class="l">Paid this year</div><div class="v" style="color:var(--green)">${money0(paidAmt)}</div>
-     <div class="c">${paid.length} of ${list.length}</div><div class="prog"><i style="width:${pct}%"></i></div></div>
-   <div class="tile"><div class="l">Heaviest month</div><div class="v">${hv?MN[hv-1]:'\u2014'}</div>
-     <div class="c">plan around it</div></div>`;
+  $('tiles').innerHTML=''; $('tiles').hidden=true;
+  $('hstats').innerHTML=`<span>Annual <b>${money0(tot)}</b></span>`
+    +`<span class="ok">Paid <b>${money0(paidAmt)}</b></span>`;
   $('ptitle').textContent='Annual charges — '+Y;
   const others=S.profiles.filter(z=>z.id!==S.pid);
   const addRow=adding?`<tr><td colspan="10" class="drawer"><div class="dr"><h4>Add an annual charge</h4>
@@ -2329,22 +2327,37 @@ function paydayTiles(){
   const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
   const want=['p','f','b'].map(c=>vis.find(a=>a.code===c)).filter(Boolean);
   const three=want.length?want:vis.slice(0,3);
-  const face=(key,name,colour,set,on)=>{
+  // how far through the month each tab is, so the bar means something
+  const progress=codes=>{
+    let budget=0, cleared=0, n=0, done=0;
+    codes.forEach(code=>{
+      billsFor(cur,code).forEach(x=>{
+        const bg=budgetOf(x.b,cur), v=paidOf(x.b,per(cur));
+        budget+=bg; n++;
+        if(v!==null&&allPaid(x.b,per(cur))){ cleared+=v; done++; }
+      });
+    });
+    return {budget,cleared,n,done,pct:budget?Math.min(100,Math.round(cleared/budget*100)):0};
+  };
+  const face=(key,name,colour,set,on,codes)=>{
     const coming=set.filter(x=>!x.late), late=set.filter(x=>x.late);
     const c=coming.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
     const l=late.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
+    const P=progress(codes);
     return `<button class="tile tilelink${on?' on':''}" data-tab="${esc(key)}">
       <div class="l"><span class="d" style="background:${colour}"></span>${esc(name)}</div>
       <div class="two">
         <span class="big" style="color:${c?'var(--ink)':'var(--mute)'}">${money0(c)}</span>
         <span class="lateamt${l?'':' none'}">${l?money0(l)+' past due':'none past due'}</span></div>
-      <div class="sm">${coming.length} coming${late.length?' \u00b7 '+late.length+' late':''}</div></button>`;
+      <div class="prog" title="${money(P.cleared)} of ${money(P.budget)} cleared this month">
+        <i style="width:${P.pct}%;background:${P.pct>=100?'var(--green)':'linear-gradient(90deg,'+colour+'88,'+colour+')'}"></i></div>
+      <div class="sm">${P.done} of ${P.n} paid this month \u00b7 ${P.pct}%</div></button>`;
   };
   return `<div class="tiles">`
     + three.map(a=>face(a.code,a.name,a.color,
-        rows.filter(x=>x.tab&&x.tab.code===a.code), acct===a.code)).join('')
+        rows.filter(x=>x.tab&&x.tab.code===a.code), acct===a.code, [a.code])).join('')
     + (()=>{ const p=nextPayday();
-        const html=face('next','Everything','var(--gold)',rows,acct==='next');
+        const html=face('next','Everything','var(--gold)',rows,acct==='next',vis.map(a=>a.code));
         return p ? html.replace('</button>',
           `<div class="sm" style="color:var(--gold)">before ${esc(p.who)}, ${
             p.when.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div></button>`)
