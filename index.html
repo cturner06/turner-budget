@@ -1026,14 +1026,14 @@ async function vaultCreate(pass){
   const salt=RAND(16), iters=310000;
   const kek=await passKey(pass,salt,iters);
   const {ct,iv}=await gcmEnc(kek,TXT.encode(JSON.stringify(privJwk)));
-  const {error}=await db.from('user_keys').upsert({user_id:user.id,public_key:B64(pubRaw),
+  const {error}=await db.from('bud_user_keys').upsert({user_id:user.id,public_key:B64(pubRaw),
     enc_private:ct,iv,salt:B64(salt),iterations:iters},{onConflict:'user_id'});
   if(error) throw error;
   V.priv=pair.privateKey; V.pub=B64(pubRaw); V.open=true;
   return B64(pubRaw);
 }
 async function vaultUnlock(pass){
-  const {data,error}=await db.from('user_keys').select('*').eq('user_id',user.id).maybeSingle();
+  const {data,error}=await db.from('bud_user_keys').select('*').eq('user_id',user.id).maybeSingle();
   if(error) throw error;
   if(!data) throw new Error('No vault on this account yet.');
   const kek=await passKey(pass,UNB64(data.salt),data.iterations);
@@ -1052,10 +1052,10 @@ async function loadTabKey(code){
   if(!V.open) return null;
   const k=S.pid+'|'+code;
   if(V.keys[k]) return V.keys[k];
-  const {data}=await db.from('vault_keys').select('*')
+  const {data}=await db.from('bud_vault_keys').select('*')
     .eq('profile_id',S.pid).eq('tab_code',code).eq('user_id',user.id).maybeSingle();
   if(!data) return null;
-  const {data:from}=await db.from('user_keys').select('public_key').eq('user_id',data.from_user).maybeSingle();
+  const {data:from}=await db.from('bud_user_keys').select('public_key').eq('user_id',data.from_user).maybeSingle();
   if(!from) return null;
   const wrapKey=await sharedKey(V.priv,from.public_key);
   const raw=await gcmDec(wrapKey,data.wrapped,data.iv);
@@ -1074,7 +1074,7 @@ async function wrapFor(uid,theirPub,rawKey,code){
   code=code||acct;
   const wrapKey=await sharedKey(V.priv,theirPub);
   const {ct,iv}=await gcmEnc(wrapKey,rawKey);
-  const {error}=await db.from('vault_keys').upsert({profile_id:S.pid,tab_code:code,
+  const {error}=await db.from('bud_vault_keys').upsert({profile_id:S.pid,tab_code:code,
     user_id:uid,from_user:user.id,wrapped:ct,iv},{onConflict:'profile_id,tab_code,user_id'});
   if(error) throw error;
 }
@@ -1200,7 +1200,7 @@ async function start(){
     await loadProfiles();
     if(!S.profiles.length){
       // first run on a fresh account: an empty household of their own
-      const {data,error}=await db.rpc('create_household',{p_name:'My household'});
+      const {data,error}=await db.rpc('bud_create_household',{p_name:'My household'});
       if(error) throw error; await loadProfiles(); S.pid=data;
     }
     if(!S.profiles.length) throw new Error('Signed in, but no profile came back. '
@@ -1215,25 +1215,25 @@ async function start(){
   }catch(e){$('boot').textContent='Could not load: '+(e.message||e);oops(e);}
 }
 async function loadProfiles(){
-  const {data,error}=await db.from('profiles').select('*').order('created_at');
+  const {data,error}=await db.from('bud_profiles').select('*').order('created_at');
   if(error) throw error; S.profiles=data||[];
 }
 async function loadProfile(){
   localStorage.setItem('tb-pid',S.pid);
   S.prof=S.profiles.find(p=>p.id===S.pid);
   const [t,b,p,sp,ar,pl,pp,dg]=await Promise.all([
-    db.from('tabs').select('*').eq('profile_id',S.pid).order('sort'),
-    db.from('bills').select('*').eq('profile_id',S.pid).eq('archived',false),
-    db.from('payments').select('*').eq('profile_id',S.pid),
-    db.from('splits').select('*').eq('profile_id',S.pid).order('seq'),
-    db.from('arrangements').select('*').eq('profile_id',S.pid),
-    db.from('plans').select('*').eq('profile_id',S.pid).eq('done',false).order('created_at'),
-    db.from('plan_payments').select('*').eq('profile_id',S.pid),
-    db.from('digest_settings').select('*').eq('profile_id',S.pid)]);
+    db.from('bud_tabs').select('*').eq('profile_id',S.pid).order('sort'),
+    db.from('bud_bills').select('*').eq('profile_id',S.pid).eq('archived',false),
+    db.from('bud_payments').select('*').eq('profile_id',S.pid),
+    db.from('bud_splits').select('*').eq('profile_id',S.pid).order('seq'),
+    db.from('bud_arrangements').select('*').eq('profile_id',S.pid),
+    db.from('bud_plans').select('*').eq('profile_id',S.pid).eq('done',false).order('created_at'),
+    db.from('bud_plan_payments').select('*').eq('profile_id',S.pid),
+    db.from('bud_digest_settings').select('*').eq('profile_id',S.pid)]);
   await vendLoad();
-  const ts=await db.from('tab_shares').select('*').eq('profile_id',S.pid);
+  const ts=await db.from('bud_tab_shares').select('*').eq('profile_id',S.pid);
   S.shares=ts.data||[];
-  const np=await db.from('notify_prefs').select('*').eq('profile_id',S.pid);
+  const np=await db.from('bud_notify_prefs').select('*').eq('profile_id',S.pid);
   S.notify=(np.data&&np.data[0])||null;
   try{
     if('serviceWorker' in navigator && window.PushManager){
@@ -1383,14 +1383,14 @@ async function go(fn){ if(busy)return; busy=true;
   try{ await fn(); await loadProfile(); render(); }catch(e){ oops(e); } finally{ busy=false; } }
 async function setPay(b,p,amount){
   if(amount===null||amount===''){ const r=getPay(b,p);
-    if(r){const {error}=await db.from('payments').delete().eq('id',r.id);if(error)throw error;} return; }
+    if(r){const {error}=await db.from('bud_payments').delete().eq('id',r.id);if(error)throw error;} return; }
   const r=getPay(b,p);
-  if(r){const {error}=await db.from('payments').update({amount}).eq('id',r.id);if(error)throw error;}
-  else{const {error}=await db.from('payments').insert({profile_id:S.pid,bill_id:b.id,period:p,
+  if(r){const {error}=await db.from('bud_payments').update({amount}).eq('id',r.id);if(error)throw error;}
+  else{const {error}=await db.from('bud_payments').insert({profile_id:S.pid,bill_id:b.id,period:p,
     amount,paid_on:new Date().toISOString().slice(0,10)});if(error)throw error;}
 }
 async function clearSplits(b,p){const sp=getSplits(b,p);
-  if(sp&&sp.length){const {error}=await db.from('splits').delete().eq('bill_id',b.id).eq('period',p);if(error)throw error;}}
+  if(sp&&sp.length){const {error}=await db.from('bud_splits').delete().eq('bill_id',b.id).eq('period',p);if(error)throw error;}}
 
 /* ================= ONE ROW, USED EVERYWHERE ================= */
 // The checklist and the account tabs draw the same row from the same data,
@@ -1680,13 +1680,13 @@ function renderAccount(){
   wire();
   const sh=$('tabshare'); if(sh) sh.onclick=()=>{shareOpen=!shareOpen;render();};
   const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this tab',A.name);if(!n)return;
-    go(async()=>{const {error}=await db.from('tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
+    go(async()=>{const {error}=await db.from('bud_tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
   const td=$('tabdel'); if(td) td.onclick=()=>{
     const n=monthly(acct).length;
     if(!confirm('Delete "'+A.name+'"'+(n?' and its '+n+' bills':'')+'?'))return;
     go(async()=>{
-      await db.from('bills').delete().eq('profile_id',S.pid).eq('tab_code',acct);
-      const {error}=await db.from('tabs').delete().eq('id',A.id);if(error)throw error;
+      await db.from('bud_bills').delete().eq('profile_id',S.pid).eq('tab_code',acct);
+      const {error}=await db.from('bud_tabs').delete().eq('id',A.id);if(error)throw error;
       acct=null;});};
   const mine=S.shares.filter(z=>z.tab_code===acct);
   const sharePanel = shareOpen ? `<div class="note" style="background:var(--glass)">
@@ -1715,15 +1715,15 @@ function renderAccount(){
   const xc=$('ex-clear');
   if(xc) xc.onclick=()=>{
     if(!confirm('Remove the example bills? Anything you have added or edited stays.')) return;
-    go(async()=>{const {error}=await db.rpc('clear_examples',{p_id:S.pid});
+    go(async()=>{const {error}=await db.rpc('bud_clear_examples',{p_id:S.pid});
       if(error) throw error; toast('Examples cleared.');});};
   const sg=$('sh-go'); if(sg) sg.onclick=()=>go(async()=>{
     const em=$('sh-em').value.trim();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) throw new Error('That does not look like an email address.');
-    const {error}=await db.rpc('share_tab',{p_id:S.pid,p_code:acct,p_email:em,p_edit:$('sh-ed').checked});
+    const {error}=await db.rpc('bud_share_tab',{p_id:S.pid,p_code:acct,p_email:em,p_edit:$('sh-ed').checked});
     if(error) throw error; toast(em+' can now open '+A.name);});
   document.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>go(async()=>{
-    const {error}=await db.rpc('unshare_tab',{p_id:S.pid,p_code:acct,p_user:b.dataset.sh});
+    const {error}=await db.rpc('bud_unshare_tab',{p_id:S.pid,p_code:acct,p_user:b.dataset.sh});
     if(error) throw error;}));
 }
 
@@ -1953,17 +1953,17 @@ function wire(){
             const got=planPaysIn(z,p);
             if(on){
               for(let i=got.length;i<dueN;i++){
-                const {error}=await db.from('plan_payments').insert({profile_id:S.pid,
+                const {error}=await db.from('bud_plan_payments').insert({profile_id:S.pid,
                   bill_id:b.id, plan_id:z.id, amount:+z.amount,
                   paid_on:new Date().toISOString().slice(0,10)});
                 if(error) throw error;
               }
             } else {
               for(const row of got){
-                const {error}=await db.from('plan_payments').delete().eq('id',row.id);
+                const {error}=await db.from('bud_plan_payments').delete().eq('id',row.id);
                 if(error) throw error;
               }
-              await db.from('plans').update({done:false}).eq('id',z.id);
+              await db.from('bud_plans').update({done:false}).eq('id',z.id);
             }
           }
           return;
@@ -2039,9 +2039,9 @@ function wire(){
     drop.addEventListener('drop',e=>{ const f=grab(e.dataTransfer); if(f) readShot(f); });
   }
   document.querySelectorAll('.dr [data-sp]').forEach(i=>i.onchange=()=>go(async()=>{
-    const {error}=await db.from('splits').update({amount:+i.value}).eq('id',i.dataset.sp);if(error)throw error;}));
+    const {error}=await db.from('bud_splits').update({amount:+i.value}).eq('id',i.dataset.sp);if(error)throw error;}));
   document.querySelectorAll('.dr [data-spp]').forEach(i=>i.onchange=()=>go(async()=>{
-    const {error}=await db.from('splits').update({paid:i.checked}).eq('id',i.dataset.spp);if(error)throw error;}));
+    const {error}=await db.from('bud_splits').update({paid:i.checked}).eq('id',i.dataset.spp);if(error)throw error;}));
 }
 function act(a,id,to){
   if(a==='cancelnew'){adding=false;return render();}
@@ -2059,12 +2059,12 @@ function act(a,id,to){
       const pw=$('nv-pw')?$('nv-pw').value:'';
       if(V.open && pw){ const enc=await encSecret({password:pw,pin:null},VKEY);
         row.secret_ct=enc.ct; row.secret_iv=enc.iv; row.key_tab=VKEY; }
-      const {data,error:ve}=await db.from('vendors').insert(row).select().single();
+      const {data,error:ve}=await db.from('bud_vendors').insert(row).select().single();
       if(ve) throw new Error(/duplicate/i.test(ve.message)
         ? 'There is already a vendor called that \u2014 pick it from the list.' : ve.message);
       vendorId=data.id; await vendLoad();
     }
-    const {error}=await db.from('bills').insert({profile_id:S.pid,tab_code:acct,name:n,
+    const {error}=await db.from('bud_bills').insert({profile_id:S.pid,tab_code:acct,name:n,
       category:catValue('nb-c'),amount:amt,
       vendor_id:vendorId||null,
       due_day:$('nb-d').value===''?null:Math.min(31,Math.max(1,+$('nb-d').value))});
@@ -2072,7 +2072,7 @@ function act(a,id,to){
   if(a==='savenewann') return go(async()=>{
     const n=$('na-n').value.trim(),amt=+$('na-a').value;
     if(!n||!amt) throw new Error('Give it a name and an amount.');
-    const {error}=await db.from('bills').insert({profile_id:S.pid,tab_code:$('na-ac').value,name:n,
+    const {error}=await db.from('bud_bills').insert({profile_id:S.pid,tab_code:$('na-ac').value,name:n,
       category:'Annual',amount:amt,is_annual:true,due_month:+$('na-m').value,
       due_day:Math.min(31,Math.max(1,+$('na-d').value||15))});
     if(error)throw error; adding=false;});
@@ -2083,51 +2083,51 @@ function act(a,id,to){
   if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
-    const {error}=await db.from('bills').update({is_example:false,name:n,category:catValue('ed-c'),
+    const {error}=await db.from('bud_bills').update({is_example:false,name:n,category:catValue('ed-c'),
       due_day:$('ed-d').value===''?null:Math.min(31,Math.max(1,+$('ed-d').value)),
       amount:+$('ed-a').value||0}).eq('id',b.id);
     if(error)throw error; editing=null;});
   if(a==='saveannedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('It needs a name.');
-    const {error}=await db.from('bills').update({name:n,
+    const {error}=await db.from('bud_bills').update({name:n,
       due_month:+$('ed-m').value,due_day:Math.min(31,Math.max(1,+$('ed-d').value||15)),
       amount:+$('ed-a').value||0}).eq('id',b.id);
     if(error)throw error; editing=null;});
   if(a==='share') return go(async()=>{
-    const {error}=await db.rpc('share_bill',{p_bill:b.id,p_to:to}); if(error)throw error;
+    const {error}=await db.rpc('bud_share_bill',{p_bill:b.id,p_to:to}); if(error)throw error;
     toast('"'+b.name+'" copied into '+S.profiles.find(z=>z.id===to).name);});
   if(a==='split') return go(async()=>{ await setPay(b,p,null); await clearSplits(b,p);
     const h=+(bg/2).toFixed(2);
-    const {error}=await db.from('splits').insert([
+    const {error}=await db.from('bud_splits').insert([
       {profile_id:S.pid,bill_id:b.id,period:p,seq:1,amount:h,paid:false},
       {profile_id:S.pid,bill_id:b.id,period:p,seq:2,amount:+(bg-h).toFixed(2),paid:false}]);
     if(error)throw error;});
   if(a==='addpart') return go(async()=>{const sp=getSplits(b,p)||[];
-    const {error}=await db.from('splits').insert({profile_id:S.pid,bill_id:b.id,period:p,
+    const {error}=await db.from('bud_splits').insert({profile_id:S.pid,bill_id:b.id,period:p,
       seq:(sp.length?Math.max(...sp.map(z=>z.seq)):0)+1,amount:0,paid:false});if(error)throw error;});
   if(a==='unsplit') return go(()=>clearSplits(b,p));
   if(a==='zero')  return go(async()=>{await clearSplits(b,p);await setPay(b,p,0);});
   if(a==='full')  return go(async()=>{await clearSplits(b,p);await setPay(b,p,bg);});
   if(a==='clear') return go(async()=>{await clearSplits(b,p);await setPay(b,p,null);});
   if(a==='remove'){ if(!confirm('Remove "'+b.name+'" from every month?'))return;
-    return go(async()=>{const {error}=await db.from('bills').update({archived:true}).eq('id',b.id);
+    return go(async()=>{const {error}=await db.from('bud_bills').update({archived:true}).eq('id',b.id);
       if(error)throw error; drawer=null;});}
   if(a==='move'){ moving=moving===b.id?null:b.id; editing=null; return render(); }
   if(a==='movecancel'){ moving=null; return render(); }
   if(a==='movetab') return go(async()=>{
     const code=$('mv-t').value;
     if(code===b.tab_code){ moving=null; return; }
-    const {error}=await db.from('bills').update({tab_code:code}).eq('id',b.id);
+    const {error}=await db.from('bud_bills').update({tab_code:code}).eq('id',b.id);
     if(error) throw error; moving=null; drawer=null; acct=code;
     toast(b.name+' is on '+acctOf(code).name+' now.');});
   if(a==='movesave') return go(async()=>{
-    const {error}=await db.from('bills').update({is_annual:true,
+    const {error}=await db.from('bud_bills').update({is_annual:true,
       due_month:+$('mv-m').value,
       due_day:Math.min(31,Math.max(1,+$('mv-d').value||15))}).eq('id',b.id);
     if(error) throw error; moving=null; drawer=null;
     toast(b.name+' is on the Annual tab now.');});
   if(a==='tomonthly') return go(async()=>{
-    const {error}=await db.from('bills').update({is_annual:false,due_month:null}).eq('id',b.id);
+    const {error}=await db.from('bud_bills').update({is_annual:false,due_month:null}).eq('id',b.id);
     if(error) throw error; drawer=null;
     toast(b.name+' is back on '+acctOf(b.tab_code).name+'.');});
   if(a==='credit'){ credOpen=b.id; return render(); }
@@ -2142,13 +2142,13 @@ function act(a,id,to){
       const pw=$('nv-pw')?$('nv-pw').value:'';
       if(V.open && pw){ const enc=await encSecret({password:pw,pin:null},VKEY);
         row.secret_ct=enc.ct; row.secret_iv=enc.iv; row.key_tab=VKEY; }
-      const {data,error}=await db.from('vendors').insert(row).select().single();
+      const {data,error}=await db.from('bud_vendors').insert(row).select().single();
       if(error) throw new Error(/duplicate/i.test(error.message)
         ? 'There is already a vendor called that \u2014 pick it from the list.' : error.message);
-      await db.from('bills').update({vendor_id:data.id}).eq('id',b.id);
+      await db.from('bud_bills').update({vendor_id:data.id}).eq('id',b.id);
       await vendLoad(); credOpen=null; toast(vn+' added.'); return;
     }
-    const {error}=await db.from('bills').update({vendor_id:pick||null}).eq('id',b.id);
+    const {error}=await db.from('bud_bills').update({vendor_id:pick||null}).eq('id',b.id);
     if(error) throw error; credOpen=null;});
   if(a==='vgo'){ const v=vendorOf(b); if(v){ acct='vend'; vendOpen=v.id; drawer=null; } return render(); }
   if(a==='vopen'||a==='vshow'||a==='vhide'||a==='vcopy'){
@@ -2170,13 +2170,13 @@ function act(a,id,to){
     const rows=keep.map(r=>({profile_id:S.pid,bill_id:b.id,
       name:(r.name+(r.desc?' \u2014 '+r.desc:'')).slice(0,80),
       ...planShape(r)}));
-    const {error}=await db.from('plans').insert(rows); if(error) throw error;
+    const {error}=await db.from('bud_plans').insert(rows); if(error) throw error;
     pasted=[]; pasteFor=null; lastRead=''; toast(rows.length+' plans added.');});
   if(a==='planadd') return go(async()=>{
     const n=$('pl-n').value.trim(), amt=+$('pl-a').value;
     if(!n||!amt) throw new Error('A plan needs a name and a monthly amount.');
     const kind=$('pl-k').value;
-    const {error}=await db.from('plans').insert({profile_id:S.pid,bill_id:b.id,name:n,amount:amt,
+    const {error}=await db.from('bud_plans').insert({profile_id:S.pid,bill_id:b.id,name:n,amount:amt,
       kind,
       every_n:kind==='repeats'?Math.max(1,Math.min(60,+$('pl-n').value||1)):1,
       every_unit:kind==='repeats'?$('pl-u').value:'month',
@@ -2188,7 +2188,7 @@ function act(a,id,to){
     if(error) throw error;});
   if(a==='planpay') return go(async()=>{
     const z=(plansOf(b)||[]).find(x=>x.id===to); if(!z) throw new Error('Plan not found.');
-    const {error}=await db.from('plan_payments').insert({profile_id:S.pid,bill_id:b.id,
+    const {error}=await db.from('bud_plan_payments').insert({profile_id:S.pid,bill_id:b.id,
       plan_id:z.id, amount:+z.amount,
       paid_on:new Date().toISOString().slice(0,10)});
     if(error) throw error;
@@ -2198,27 +2198,27 @@ function act(a,id,to){
       const d=new Date(z.next_due+'T00:00:00');
       const nd = step ? new Date(d.getFullYear(),d.getMonth(),d.getDate()+step)
                       : new Date(d.getFullYear(),d.getMonth()+(+z.every_n||1),d.getDate());
-      await db.from('plans').update({next_due:nd.toISOString().slice(0,10)}).eq('id',z.id);
+      await db.from('bud_plans').update({next_due:nd.toISOString().slice(0,10)}).eq('id',z.id);
     }
     toast('Recorded '+money(z.amount)+' against '+z.name);});
   if(a==='planundo') return go(async()=>{
     const rows=(S.planPays[to]||[]).slice().sort((x,y)=>String(y.paid_on).localeCompare(String(x.paid_on)));
     if(!rows.length) throw new Error('Nothing recorded yet.');
-    const {error}=await db.from('plan_payments').delete().eq('id',rows[0].id);
+    const {error}=await db.from('bud_plan_payments').delete().eq('id',rows[0].id);
     if(error) throw error;
-    await db.from('plans').update({done:false}).eq('id',to);});
+    await db.from('bud_plans').update({done:false}).eq('id',to);});
   if(a==='plandone') return go(async()=>{
-    const {error}=await db.from('plans').update({done:true}).eq('id',to); if(error) throw error;
+    const {error}=await db.from('bud_plans').update({done:true}).eq('id',to); if(error) throw error;
     toast('Plan cleared. It is off the budget.');});
   if(a==='plandel') return go(async()=>{
-    const {error}=await db.from('plans').delete().eq('id',to); if(error) throw error;});
+    const {error}=await db.from('bud_plans').delete().eq('id',to); if(error) throw error;});
   if(a==='savearr') return go(async()=>{
     const row={profile_id:S.pid,bill_id:b.id,amount:+$('ar-amt').value||0,
       start_month:$('ar-start').value||per(cur),months:Math.max(1,+$('ar-mo').value||1),
       note:$('ar-note').value.trim()};
-    const {error}=await db.from('arrangements').upsert(row,{onConflict:'bill_id'});if(error)throw error;});
+    const {error}=await db.from('bud_arrangements').upsert(row,{onConflict:'bill_id'});if(error)throw error;});
   if(a==='delarr') return go(async()=>{
-    const {error}=await db.from('arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
+    const {error}=await db.from('bud_arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
 }
 
 /* ======================= PICKING SEVERAL AT ONCE ======================= */
@@ -2275,7 +2275,7 @@ function bulk(a){
     if(!mo) return;
     return go(async()=>{
       for(const x of rows) if(x.kind==='bill')
-        await db.from('bills').update({is_annual:true,due_month:Math.min(12,Math.max(1,+mo))}).eq('id',x.b.id);
+        await db.from('bud_bills').update({is_annual:true,due_month:Math.min(12,Math.max(1,+mo))}).eq('id',x.b.id);
       picked.clear(); toast(n+' moved to Annual.');});
   }
   if(a==='bulkcat'){
@@ -2284,22 +2284,22 @@ function bulk(a){
     if(!c||!c.trim()) return;
     return go(async()=>{
       for(const x of rows) if(x.kind==='bill')
-        await db.from('bills').update({category:c.trim()}).eq('id',x.b.id);
+        await db.from('bud_bills').update({category:c.trim()}).eq('id',x.b.id);
       picked.clear(); toast(n+' recategorised.');});
   }
   go(async()=>{
     for(const x of rows){
       if(x.kind==='plan'){
         if(a==='bulkpay'){
-          await db.from('plan_payments').insert({profile_id:S.pid,bill_id:x.b.id,plan_id:x.plan.id,
+          await db.from('bud_plan_payments').insert({profile_id:S.pid,bill_id:x.b.id,plan_id:x.plan.id,
             amount:+x.plan.amount, paid_on:new Date().toISOString().slice(0,10)});
         } else if(a==='bulkclear'){
           const got=(S.planPays[x.plan.id]||[]).filter(r=>String(r.paid_on).slice(0,7)===x.p);
-          if(got.length) await db.from('plan_payments').delete().eq('id',got[got.length-1].id);
+          if(got.length) await db.from('bud_plan_payments').delete().eq('id',got[got.length-1].id);
         }
         continue;
       }
-      if(a==='bulkdel'){ await db.from('bills').update({archived:true}).eq('id',x.b.id); continue; }
+      if(a==='bulkdel'){ await db.from('bud_bills').update({archived:true}).eq('id',x.b.id); continue; }
       const bpl=plansOf(x.b);
       if(bpl&&bpl.length&&(a==='bulkpay'||a==='bulkclear')){
         const bm=/^\d{4}-\d{2}$/.test(x.p)?monthOf(x.p):cur;
@@ -2308,11 +2308,11 @@ function bulk(a){
           const got=planPaysIn(z,x.p);
           if(a==='bulkpay'){
             for(let i=got.length;i<dueN;i++)
-              await db.from('plan_payments').insert({profile_id:S.pid,bill_id:x.b.id,
+              await db.from('bud_plan_payments').insert({profile_id:S.pid,bill_id:x.b.id,
                 plan_id:z.id, amount:+z.amount, paid_on:new Date().toISOString().slice(0,10)});
           } else {
-            for(const row of got) await db.from('plan_payments').delete().eq('id',row.id);
-            await db.from('plans').update({done:false}).eq('id',z.id);
+            for(const row of got) await db.from('bud_plan_payments').delete().eq('id',row.id);
+            await db.from('bud_plans').update({done:false}).eq('id',z.id);
           }
         }
         continue;
@@ -2733,7 +2733,7 @@ function tick(key,on){
   if(!x) return render();
   go(async()=>{
     if(x.kind==='plan'){
-      if(on){ const {error}=await db.from('plan_payments').insert({profile_id:S.pid,
+      if(on){ const {error}=await db.from('bud_plan_payments').insert({profile_id:S.pid,
           bill_id:x.bill.id, plan_id:x.plan.id, amount:+x.plan.amount,
           paid_on:new Date().toISOString().slice(0,10)});
         if(error) throw error;
@@ -2742,11 +2742,11 @@ function tick(key,on){
           const d=new Date(x.plan.next_due+'T00:00:00');
           const nd=step?new Date(d.getFullYear(),d.getMonth(),d.getDate()+step)
                        :new Date(d.getFullYear(),d.getMonth()+(+x.plan.every_n||1),d.getDate());
-          await db.from('plans').update({next_due:nd.toISOString().slice(0,10)}).eq('id',x.plan.id);
+          await db.from('bud_plans').update({next_due:nd.toISOString().slice(0,10)}).eq('id',x.plan.id);
         }
       } else {
         const rows=(S.planPays[x.plan.id]||[]).filter(r=>String(r.paid_on).slice(0,7)===x.period);
-        if(rows.length) await db.from('plan_payments').delete().eq('id',rows[rows.length-1].id);
+        if(rows.length) await db.from('bud_plan_payments').delete().eq('id',rows[rows.length-1].id);
       }
       return;
     }
@@ -2761,7 +2761,7 @@ const VKEY='_vendors';                 // vendor secrets get their own vault key
 let vendOpen=null, vendShow={}, vendAdd=false, vendQ='';
 
 async function vendLoad(){
-  const {data}=await db.from('vendors').select('*').eq('profile_id',S.pid).order('name');
+  const {data}=await db.from('bud_vendors').select('*').eq('profile_id',S.pid).order('name');
   S.vendors=data||[];
 }
 const vendorOf=b=>b&&b.vendor_id?(S.vendors||[]).find(v=>v.id===b.vendor_id):null;
@@ -2909,7 +2909,7 @@ function vendAct(a,id){
   if(a==='del') return go(async()=>{
     const n=billsOfVendor(v).length;
     if(!confirm('Remove "'+v.name+'"?'+(n?' The '+n+' bills stay, but lose their login.':''))) return;
-    const {error}=await db.from('vendors').delete().eq('id',id); if(error) throw error;
+    const {error}=await db.from('bud_vendors').delete().eq('id',id); if(error) throw error;
     vendOpen=null; await vendLoad();});
   if(a==='save') return go(async()=>{
     const n=$('vn-n').value.trim(); if(!n) throw new Error('Give it a name.');
@@ -2924,8 +2924,8 @@ function vendAct(a,id){
       const enc=await encSecret({password:pw||keep.password||'', pin:pin||keep.pin||null}, VKEY);
       row.secret_ct=enc.ct; row.secret_iv=enc.iv; row.key_tab=VKEY;
     } else if(v){ row.secret_ct=v.secret_ct; row.secret_iv=v.secret_iv; row.key_tab=v.key_tab; }
-    const {error}= v ? await db.from('vendors').update(row).eq('id',v.id)
-                     : await db.from('vendors').insert(row);
+    const {error}= v ? await db.from('bud_vendors').update(row).eq('id',v.id)
+                     : await db.from('bud_vendors').insert(row);
     if(error) throw error; vendAdd=false; delete vendShow[id];
     await vendLoad(); toast('Saved.');});
 }
@@ -2955,7 +2955,7 @@ const CARE_SECTIONS=[
 let careOpen=null, careShow={}, careAdd=null;
 
 async function careLoad(){
-  const {data}=await db.from('care_notes').select('*')
+  const {data}=await db.from('bud_care_notes').select('*')
     .eq('profile_id',S.pid).eq('tab_code',acct).order('sort');
   S.care=data||[];
 }
@@ -3044,12 +3044,12 @@ function renderCare(){
   on('care-unlock',()=>{ openMenu(); openSec='vault'; paintSections(); });
   const sh=$('tabshare'); if(sh) sh.onclick=()=>{shareOpen=!shareOpen;render();};
   const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this file',A.name);if(!n)return;
-    go(async()=>{const {error}=await db.from('tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
+    go(async()=>{const {error}=await db.from('bud_tabs').update({name:n.trim()}).eq('id',A.id);if(error)throw error;});};
   const td=$('tabdel'); if(td) td.onclick=()=>{
     if(!confirm('Delete "'+A.name+'" and everything in it? This cannot be undone.'))return;
     go(async()=>{
-      await db.from('care_notes').delete().eq('profile_id',S.pid).eq('tab_code',acct);
-      const {error}=await db.from('tabs').delete().eq('id',A.id);if(error)throw error;acct=null;});};
+      await db.from('bud_care_notes').delete().eq('profile_id',S.pid).eq('tab_code',acct);
+      const {error}=await db.from('bud_tabs').delete().eq('id',A.id);if(error)throw error;acct=null;});};
   document.querySelectorAll('[data-careadd]').forEach(b=>b.onclick=()=>{
     careAdd=careAdd===b.dataset.careadd?null:b.dataset.careadd; careOpen=null; render();});
   document.querySelectorAll('[data-care]').forEach(b=>b.onclick=()=>{
@@ -3071,7 +3071,7 @@ function careAct(a,ds){
   if(a==='carehide'){ delete careShow[ds.id]; return render(); }
   if(a==='caredel') return go(async()=>{
     if(!confirm('Remove this entry?')) return;
-    const {error}=await db.from('care_notes').delete().eq('id',ds.id);
+    const {error}=await db.from('bud_care_notes').delete().eq('id',ds.id);
     if(error) throw error; careOpen=null; await careLoad();});
   if(a==='caresave') return go(async()=>{
     const t=$('cn-t').value.trim(), b=$('cn-b').value;
@@ -3080,8 +3080,8 @@ function careAct(a,ds){
     const enc=b ? await encSecret(b,acct) : {ct:null,iv:null};
     const row={profile_id:S.pid, tab_code:acct, section:ds.sec, title:t,
       body_ct:enc.ct, body_iv:enc.iv};
-    const {error}= ds.id ? await db.from('care_notes').update(row).eq('id',ds.id)
-                         : await db.from('care_notes').insert(row);
+    const {error}= ds.id ? await db.from('bud_care_notes').update(row).eq('id',ds.id)
+                         : await db.from('bud_care_notes').insert(row);
     if(error) throw error;
     careAdd=null; if(ds.id) delete careShow[ds.id];
     await careLoad(); toast('Saved and encrypted.');});
@@ -3362,7 +3362,7 @@ async function enablePush(){
   if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,
     applicationServerKey:urlB64(VAPID)});
   const j=sub.toJSON();
-  const {error}=await db.from('push_devices').upsert({
+  const {error}=await db.from('bud_push_devices').upsert({
     user_id:user.id, profile_id:S.pid, endpoint:sub.endpoint,
     p256dh:j.keys.p256dh, auth:j.keys.auth,
     label:(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'device'
@@ -3370,14 +3370,14 @@ async function enablePush(){
   if(error) throw error;
   if(!S.notify){
     const off=Math.round(-new Date().getTimezoneOffset()/60);
-    const r=await db.from('notify_prefs').insert({profile_id:S.pid,tz_offset:off});
+    const r=await db.from('bud_notify_prefs').insert({profile_id:S.pid,tz_offset:off});
     if(r.error) throw r.error;
   }
 }
 async function disablePush(){
   const reg=await navigator.serviceWorker.getRegistration();
   const sub=reg&&await reg.pushManager.getSubscription();
-  if(sub){ await db.from('push_devices').delete().eq('endpoint',sub.endpoint);
+  if(sub){ await db.from('bud_push_devices').delete().eq('endpoint',sub.endpoint);
     await sub.unsubscribe(); }
 }
 
@@ -3529,7 +3529,7 @@ const catValue=id=>{ const sel=$(id);
   return sel.value==='__new' ? ($(id+'-new').value.trim()||'Other') : sel.value; };
 async function renderVault(){
   const box=$('vaultbox');
-  const {data:mykey}=await db.from('user_keys').select('user_id').eq('user_id',user.id).maybeSingle();
+  const {data:mykey}=await db.from('bud_user_keys').select('user_id').eq('user_id',user.id).maybeSingle();
   $('vvault').textContent = !mykey ? 'not set up' : (V.open?'unlocked':'locked');
   if(!mykey){
     box.innerHTML=`<div class="vlock">Logins are encrypted on your device before they are sent.
@@ -3551,7 +3551,7 @@ async function renderVault(){
     $('v-unlock').onclick=()=>go(async()=>{await vaultUnlock($('v-pw').value);toast('Vault unlocked.');});
     const el=$('v-pw'); if(el) el.onkeydown=e=>{if(e.key==='Enter')$('v-unlock').click();};
     return; }
-  const mem=await db.rpc('vault_members',{p_id:S.pid,p_code:acct});
+  const mem=await db.rpc('bud_vault_members',{p_id:S.pid,p_code:acct});
   const people=(mem.data||[]).filter(m=>m.user_id!==user.id);
   box.innerHTML=`<div class="vlock">Unlocked. Logins show on the ${esc(acctOf(acct).name)} tab.</div>
     ${people.length?`<div class="dlab" style="margin:12px 0 7px">Who else can read them</div>`+
@@ -3678,16 +3678,16 @@ async function runImport(){
       const enc=await encSecret({password:x.password,pin:null},VKEY);
       row.secret_ct=enc.ct; row.secret_iv=enc.iv; row.key_tab=VKEY;
     } else if(hit){ row.secret_ct=hit.secret_ct; row.secret_iv=hit.secret_iv; row.key_tab=hit.key_tab; }
-    if(hit){ const {error}=await db.from('vendors').update(row).eq('id',hit.id);
+    if(hit){ const {error}=await db.from('bud_vendors').update(row).eq('id',hit.id);
       if(error) throw error; updated++; }
-    else { const {error}=await db.from('vendors').insert(row);
+    else { const {error}=await db.from('bud_vendors').insert(row);
       if(error) throw error; made++;
       // attach it to a bill of the same name, if there is one
       const b=S.bills.find(z=>!z.vendor_id &&
         z.name.toLowerCase().slice(0,10)===x.creditor.toLowerCase().slice(0,10));
-      if(b){ const {data}=await db.from('vendors').select('id')
+      if(b){ const {data}=await db.from('bud_vendors').select('id')
           .eq('profile_id',S.pid).eq('name',row.name).maybeSingle();
-        if(data) await db.from('bills').update({vendor_id:data.id}).eq('id',b.id); } }
+        if(data) await db.from('bud_bills').update({vendor_id:data.id}).eq('id',b.id); } }
   }
   await vendLoad();
   const w=$('impwrap'); if(w) w.remove(); IMP=null;
@@ -3831,7 +3831,7 @@ function renderNotify(){
       <button class="mini" id="np-test">Send a test</button>
       <button class="mini danger" id="np-off">Turn off here</button></div>`;
   $('np-save').onclick=()=>go(async()=>{
-    const {error}=await db.from('notify_prefs').update({
+    const {error}=await db.from('bud_notify_prefs').update({
       due_soon:$('np-due').checked, lead_days:Math.max(1,Math.min(14,+$('np-lead').value||3)),
       went_unpaid:$('np-late').checked, payday:$('np-pay').checked,
       big_charge:$('np-big').checked, big_amount:Math.max(50,+$('np-amt').value||500),
@@ -3856,7 +3856,7 @@ function renderNotify(){
 
 async function renderMembers(){
   const box=$('members'); if(!box) return;
-  const {data,error}=await db.rpc('household_members',{p_id:S.pid});
+  const {data,error}=await db.rpc('bud_household_members',{p_id:S.pid});
   if(error){ box.innerHTML='<p class="hint">Could not read who is in this household.</p>'; return; }
   const people=Array.isArray(data)?data:[];
   const mine=S.prof.owner_id===user.id;
@@ -3880,23 +3880,23 @@ async function renderMembers(){
   if(inv) inv.onclick=()=>{
     const em=prompt('Email address of the person to invite.\nThey need an account here already.');
     if(!em||!em.trim()) return;
-    go(async()=>{const {error}=await db.rpc('share_profile',{p_id:S.pid,p_email:em.trim()});
+    go(async()=>{const {error}=await db.rpc('bud_share_profile',{p_id:S.pid,p_email:em.trim()});
       if(error) throw error; await loadProfiles(); toast(em.trim()+' is in '+S.prof.name);});};
   const lv=$('m-leave');
   if(lv) lv.onclick=()=>{
     if(!confirm('Leave "'+S.prof.name+'"? You keep your own household.')) return;
-    go(async()=>{const {error}=await db.rpc('leave_household',{p_id:S.pid});
+    go(async()=>{const {error}=await db.rpc('bud_leave_household',{p_id:S.pid});
       if(error) throw error; await loadProfiles(); S.pid=S.profiles[0].id; acct=null;});};
   document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
     if(!confirm('Remove them from this household?')) return;
     go(async()=>{
-      await db.rpc('unshare_profile',{p_id:S.pid,p_user:b.dataset.rm});
-      await db.from('tab_shares').delete().eq('profile_id',S.pid).eq('user_id',b.dataset.rm);
-      await db.from('vault_keys').delete().eq('profile_id',S.pid).eq('user_id',b.dataset.rm);
+      await db.rpc('bud_unshare_profile',{p_id:S.pid,p_user:b.dataset.rm});
+      await db.from('bud_tab_shares').delete().eq('profile_id',S.pid).eq('user_id',b.dataset.rm);
+      await db.from('bud_vault_keys').delete().eq('profile_id',S.pid).eq('user_id',b.dataset.rm);
       await loadProfiles();});});
   document.querySelectorAll('[data-hand]').forEach(b=>b.onclick=()=>{
     if(!confirm('Hand "'+S.prof.name+'" over to them? You stay in it, but they take charge.')) return;
-    go(async()=>{const {error}=await db.rpc('hand_over_household',{p_id:S.pid,p_to:b.dataset.hand});
+    go(async()=>{const {error}=await db.rpc('bud_hand_over_household',{p_id:S.pid,p_to:b.dataset.hand});
       if(error) throw error; await loadProfiles();});});
 }
 
@@ -3904,7 +3904,7 @@ function renderDigest(){
   const d=S.digest, box=$('digest');
   if(!d){ box.innerHTML='<button class="mini" id="dgon">Turn on payday emails</button>';
     $('dgon').onclick=()=>go(async()=>{
-      const {error}=await db.from('digest_settings').insert({profile_id:S.pid,
+      const {error}=await db.from('bud_digest_settings').insert({profile_id:S.pid,
         recipient:user.email, biweekly_anchor:'2026-10-16', monthly_lead:2});
       if(error) throw error;});
     return; }
@@ -3924,7 +3924,7 @@ function renderDigest(){
   $('dg-save').onclick=()=>go(async()=>{
     const to=$('dg-to').value.trim();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) throw new Error('That does not look like an email address.');
-    const {error}=await db.from('digest_settings').update({
+    const {error}=await db.from('bud_digest_settings').update({
       recipient:to, biweekly_on:$('dg-bw').checked,
       monthly_on:$('dg-mo').checked, enabled:$('dg-on').checked,
       updated_at:new Date().toISOString()}).eq('profile_id',S.pid);
@@ -3980,7 +3980,7 @@ function render(){
     box.querySelectorAll('[data-h]').forEach(c=>c.onchange=()=>go(async()=>{
       const k=c.dataset.h; let h=(S.prof.hidden_tabs||[]).slice();
       h = c.checked ? h.filter(z=>z!==k) : (h.includes(k)?h:h.concat(k));
-      const {error}=await db.from('profiles').update({hidden_tabs:h}).eq('id',S.pid);
+      const {error}=await db.from('bud_profiles').update({hidden_tabs:h}).eq('id',S.pid);
       if(error)throw error; await loadProfiles(); }));
     $('cfgdone').onclick=()=>{cfg=false;render();};}
   renderMembers();
@@ -4082,7 +4082,7 @@ on('carenew',()=>{
     +'Everything in it is encrypted. Share it only with the people who would need it.');
   if(!n||!n.trim())return;
   closeMenu();
-  go(async()=>{const {data,error}=await db.rpc('create_care_file',{p_id:S.pid,p_name:n.trim()});
+  go(async()=>{const {data,error}=await db.rpc('bud_create_care_file',{p_id:S.pid,p_name:n.trim()});
     if(error) throw error; acct=data; S.care=[];
     toast('Care file made. Unlock the vault to start filling it in.');});});
 $('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side business, anything');
@@ -4090,7 +4090,7 @@ $('tabnew').onclick=()=>{const n=prompt('Name the new tab — a project, a side 
   const cols=['#5B6B7F','#8C5E3C','#3F7A8C','#7A3C5E','#4F7A3C','#6B4FA8'];
   closeMenu();
   go(async()=>{const code='t'+Date.now();
-    const {error}=await db.from('tabs').insert({profile_id:S.pid,code,name:n.trim(),
+    const {error}=await db.from('bud_tabs').insert({profile_id:S.pid,code,name:n.trim(),
       institution:'Project',color:cols[S.tabs.length%cols.length],kind:'project',sort:S.tabs.length});
     if(error)throw error; acct=code;});};
 $('prof').onchange=e=>{S.pid=e.target.value;drawer=null;closeMenu();
@@ -4099,21 +4099,21 @@ $('pnew').onclick=()=>{
   const n=prompt('Name the new household\n\ne.g. "Daniel & Maya" or "Mum\u2019s bills"\n\n'
     +'It starts empty \u2014 four tabs, no bills. Use Duplicate instead if you want a copy of this one.');
   if(!n||!n.trim())return;
-  go(async()=>{const {data,error}=await db.rpc('create_household',{p_name:n.trim()});
+  go(async()=>{const {data,error}=await db.rpc('bud_create_household',{p_name:n.trim()});
     if(error)throw error; await loadProfiles(); S.pid=data; acct=null;
     toast(n.trim()+' is ready \u2014 add its bills with + Add bill.');});};
 $('pren').onclick=()=>{const n=prompt('Rename this household',S.prof.name);if(!n||!n.trim())return;
-  go(async()=>{const {error}=await db.from('profiles').update({name:n.trim()}).eq('id',S.pid);
+  go(async()=>{const {error}=await db.from('bud_profiles').update({name:n.trim()}).eq('id',S.pid);
     if(error)throw error; await loadProfiles();});};
 $('pdup').onclick=()=>{const n=prompt('Name the copy',S.prof.name+' copy');if(!n||!n.trim())return;
-  go(async()=>{const {data,error}=await db.rpc('duplicate_profile',{p_id:S.pid,p_name:n.trim()});
+  go(async()=>{const {data,error}=await db.rpc('bud_duplicate_profile',{p_id:S.pid,p_name:n.trim()});
     if(error)throw error; await loadProfiles(); S.pid=data;});};
 $('pdel').onclick=()=>{
   if(S.profiles.length<2) return toast('Keep at least one household.',true);
   if(S.prof.owner_id!==user.id)
     return toast('You do not own that household \u2014 use Leave instead.',true);
   if(!confirm('Delete "'+S.prof.name+'" and everything recorded in it? Everyone in it loses it too.'))return;
-  go(async()=>{const {error}=await db.from('profiles').delete().eq('id',S.pid);
+  go(async()=>{const {error}=await db.from('bud_profiles').delete().eq('id',S.pid);
     if(error)throw error; await loadProfiles(); S.pid=S.profiles[0].id; acct=null;});};
 
 </script></body></html>
