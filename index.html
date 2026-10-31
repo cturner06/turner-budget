@@ -399,6 +399,27 @@ body.sheeton{overflow:hidden}
 #tcard .tlink{background:none;border:0;color:var(--mute);padding:8px 2px}
 #tcard .tinst{margin-top:10px}
 html[data-theme="light"] #tcard{background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
+/* people and apps */
+.ptog{display:flex;flex-direction:column;gap:2px}
+.tgl{display:flex;align-items:center;gap:12px;padding:9px 0;cursor:pointer;position:relative}
+.tgl .tname{flex:1;font-size:14.5px;color:var(--ink)}
+.tgl input{position:absolute;opacity:0;width:1px;height:1px}
+.tgl .track{width:44px;height:26px;border-radius:999px;background:rgba(255,255,255,.12);
+  border:1px solid var(--edge);position:relative;transition:background .15s}
+.tgl .knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+  background:#BDB7A8;transition:transform .15s,background .15s}
+.tgl input:checked~.track{background:var(--gold);border-color:var(--gold)}
+.tgl input:checked~.track .knob{transform:translateX(18px);background:#17140A}
+.tgl input:focus-visible~.track{outline:2px solid var(--gold);outline-offset:2px}
+.tgl input:disabled~.track{opacity:.6}
+html[data-theme="light"] .tgl .track{background:rgba(0,0,0,.1)}
+.pinv{display:flex;gap:7px}
+.pinv input{flex:1;min-width:0}
+.plist{margin-top:10px}
+.pperson{padding:9px 0;border-top:1px solid var(--rule2)}
+.pperson .pem{display:block;color:var(--ink);font-size:14px;word-break:break-all}
+.pperson .pst{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+.pperson.out .pem{color:var(--mute)}
 /* manual order */
 .grip{display:inline-flex;align-items:center;justify-content:center;width:20px;height:26px;margin-right:6px;
   color:var(--mute);font-size:17px;line-height:1;cursor:grab;touch-action:none;user-select:none;
@@ -936,6 +957,9 @@ window.addEventListener('unhandledrejection',function(e){
     <button class="mini" data-theme-set="dark">Dark</button>
     <button class="mini" data-theme-set="system">Match my device</button></div></div>
 
+  <button class="dhead" data-sec="people" id="peoplehd" hidden>People and apps<span class="dval" id="vpeople"></span></button>
+  <div class="dpanel" data-p="people"><div id="peoplebox"></div></div>
+
   <button class="dhead" data-sec="account">Your account<span class="dval" id="vacct"></span></button>
   <div class="dpanel" data-p="account">
    <div class="who" id="who" style="margin-bottom:11px"></div>
@@ -1005,7 +1029,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v66 \u00b7 manual bill order';
+const BUILD='v68 \u00b7 one toggle per app';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -4263,6 +4287,7 @@ function render(){
   wireTiles();
   liftSheet();
   wireGrips();
+  if(!ownerCheck.ran){ ownerCheck.ran=true; ownerCheck(); }
   maybeTour();
   const fn=(q?1:0)+(sf?1:0)+(grp!=='none'?1:0)+(srt!=='due'?1:0);
   $('fcount').textContent=fn?'\u00b7 '+fn:'';
@@ -4282,6 +4307,72 @@ function liftSheet(){
   w.hidden=false; document.body.classList.add('sheeton');
   sh.scrollTop=top;
 }
+/* ================= PEOPLE AND APPS (owner only) ================= */
+// One toggle per app. On = everyone the owner invited can open it; nobody else.
+// The database refuses every change unless the caller is the owner, so hiding
+// this panel from everyone else is a courtesy, not the lock.
+let isOwner=false, peopleApps=null;
+async function ownerCheck(){
+  try{ const {data}=await db.rpc('core_is_owner'); isOwner=data===true; }catch(_){ isOwner=false; }
+  $('peoplehd').hidden=!isOwner;
+}
+async function loadPeople(){
+  const box=$('peoplebox');
+  if(!isOwner){ box.innerHTML=''; return; }
+  box.innerHTML='<p class="hint" style="margin:0">Loading\u2026</p>';
+  try{
+    const ap=await db.from('core_apps').select('code,name,sort,open_to_invited').order('sort');
+    if(ap.error) throw ap.error;
+    const {data,error}=await db.rpc('core_list_users'); if(error) throw error;
+    paintPeople(ap.data||[], data||[]);
+  }catch(e){ box.innerHTML='<p class="hint" style="margin:0;color:var(--red)">Could not load: '+esc(e.message||String(e))+'</p>'; }
+}
+function paintPeople(apps,list){
+  const when=d=>d?new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+  const onN=apps.filter(a=>a.open_to_invited).length;
+  $('vpeople').textContent=onN+' of '+apps.length+' on';
+  $('peoplebox').innerHTML=`
+    <div class="ptog">${apps.map(a=>`<label class="tgl">
+        <span class="tname">${esc(a.name)}</span>
+        <input type="checkbox" data-app="${esc(a.code)}" data-an="${esc(a.name)}" ${a.open_to_invited?'checked':''}>
+        <span class="track" aria-hidden="true"><span class="knob"></span></span></label>`).join('')}</div>
+    <p class="hint" style="margin:8px 0 12px">On means everyone you have invited can open it.
+      Anyone who was not invited cannot. You always have every app.</p>
+    <div class="pinv"><input id="pp-em" type="email" inputmode="email" autocomplete="off"
+        placeholder="name@example.com" aria-label="Email to invite">
+      <button id="pp-go" class="mini">Invite</button></div>
+    <div class="plist">${list.map(u=>{
+      const st=u.is_owner?'Owner'
+        : !u.invited ? 'Not invited \u00b7 no access'
+        : !u.last_sign_in_at ? 'Invited \u00b7 has not signed in yet'
+        : 'Invited \u00b7 last signed in '+when(u.last_sign_in_at);
+      return `<div class="pperson${!u.is_owner&&!u.invited?' out':''}"><span class="pem">${esc(u.email||'(no email)')}</span>
+        <span class="pst">${st}</span></div>`;}).join('')}</div>`;
+  document.querySelectorAll('#peoplebox [data-app]').forEach(c=>c.onchange=async()=>{
+    const want=c.checked; c.disabled=true;
+    const {error}=await db.rpc('core_set_app_open',{p_app:c.dataset.app,p_open:want});
+    c.disabled=false;
+    if(error){ c.checked=!want; toast('Could not change that: '+error.message,true); return; }
+    toast(c.dataset.an+(want?' is on for everyone you invited.':' is off. Only you can open it.'));
+    const n=document.querySelectorAll('#peoplebox [data-app]:checked').length;
+    $('vpeople').textContent=n+' of '+apps.length+' on';
+  });
+  const go=async()=>{
+    const em=$('pp-em').value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ toast('That does not look like an email address.',true); return; }
+    $('pp-go').disabled=true;
+    const inv=await db.functions.invoke('core-invite',{body:{email:em}});
+    $('pp-go').disabled=false;
+    if(inv.error){ let m=inv.error.message;
+      try{ const j=await inv.error.context.json(); if(j&&j.error) m=j.error; }catch(_){}
+      toast(m,true); return; }
+    toast(inv.data&&inv.data.invited===false ? em+' already has an account.' : 'Invite sent to '+em+'.');
+    loadPeople();
+  };
+  $('pp-go').onclick=go;
+  $('pp-em').onkeydown=e=>{ if(e.key==='Enter') go(); };
+}
+
 /* ================= MANUAL ORDER ================= */
 // Sort by "My order", then drag the ⠿ handle. The order is saved on the bills,
 // so every device and everyone in the household sees the same order.
@@ -4477,7 +4568,8 @@ function sectionSummaries(){
 }
 document.querySelectorAll('.dhead').forEach(hd=>hd.onclick=()=>{
   openSec = openSec===hd.dataset.sec ? null : hd.dataset.sec;
-  paintSections();});
+  paintSections();
+  if(openSec==='people') loadPeople();});
 paintSections();
 
 /* ---- light, dark, or whatever the device says ---- */
