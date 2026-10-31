@@ -229,6 +229,17 @@ button.tilelink .l{min-height:auto;margin-bottom:6px}
 .tile .two .lateamt.none{color:var(--ash)}
 .tile .sm{font-size:11.5px;color:var(--ash);margin-top:5px}
 button.tilelink .prog{margin-top:9px;height:4px}
+/* tile: name and "x of y" on top, Late left and Due right underneath */
+button.tilelink .ttop{display:flex;align-items:baseline;gap:8px}
+button.tilelink .ttop .l{display:block;flex:1;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button.tilelink .ttop .l .d{display:inline-block;margin:0 7px 1px 0;vertical-align:middle}
+.tcnt{font-size:12px;color:var(--mute);white-space:nowrap}
+.tamt{display:flex;justify-content:space-between;align-items:baseline;gap:4px 10px;flex-wrap:wrap;margin-top:8px}
+.ta{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.tlb{font:500 10px/1 Archivo,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--ash)}
+.tv{font:500 20px/1.1 'IBM Plex Mono',monospace;letter-spacing:-.02em;color:var(--ink)}
+.ta.late .tv{color:var(--red)} .ta.late .tlb{color:var(--red);opacity:.75}
+.ta.zero .tv{color:var(--ash)} .ta.zero .tlb{color:var(--ash);opacity:1}
 button.tilelink .prog i{transition:width .25s}
 .tile .v{font:500 25px/1.15 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
   margin-top:7px;letter-spacing:-.02em;color:var(--ink)}
@@ -304,6 +315,65 @@ tr.grp.paidgrp:hover td{background:rgba(79,168,131,.14)}
 tr.grp.paidgrp .chev{color:var(--green)}
 tr.grp .gsum{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 .var{font-size:11.5px;color:var(--ash);font-family:'IBM Plex Mono',monospace}
+/* bill rows: one line each, half the old height */
+#tbl tr[data-row]>td{padding-top:3px;padding-bottom:3px;line-height:1.3}
+#tbl tr[data-row] td.name{width:100%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tbl tr[data-row] td.name .cat{display:inline;margin:0 0 0 9px}
+#tbl tr[data-row] td.name .cat,#tbl tr[data-row] td.hidesm{white-space:nowrap}
+#tbl tbody tr[data-row]>td{background-clip:padding-box}
+#tbl tr[data-row] .tag{padding:3px 7px}
+#tbl tr[data-row] td.cell input{height:28px}
+#tbl tr[data-row] td.cell .splitsum{line-height:28px}
+#tbl tr[data-row] td.r.num .var{display:inline;margin-left:5px}
+#tbl tr[data-row] .menu{padding:2px 8px}
+tr.late .whn{color:var(--red)} tr.due .whn{color:var(--gold)}
+
+/* the row menu: a pop-out sheet instead of a drawer that shoves the list down */
+#sheetwrap,#fwrap{position:fixed;inset:0;z-index:66;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#sheet,#fbox{width:100%;max-width:680px;max-height:86vh;overflow:auto;border-radius:14px;
+  background:linear-gradient(170deg,rgba(26,26,29,.98),rgba(10,10,11,.99));
+  border:1px solid var(--edge);box-shadow:0 30px 70px rgba(0,0,0,.65)}
+#sheet .dr{border:0;padding:0 18px 18px}
+body.sheeton{overflow:hidden}
+.shd{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;gap:10px;padding:15px 18px 12px;
+  margin:0 -18px 12px;background:rgba(18,18,20,.97);border-bottom:1px solid var(--rule2)}
+.shd .shn{font:600 17px/1.25 Archivo,sans-serif;color:var(--ink)}
+.shd .shm{font-size:12.5px;color:var(--mute);margin-top:3px}
+.shd .shx{margin-left:auto;font-size:20px;line-height:1;padding:5px 11px}
+.shsec{font:500 11.5px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);margin:4px 0 8px}
+.shpay{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.shpay input.in{width:132px;height:38px;text-align:right;font:500 16px 'IBM Plex Mono',monospace;
+  border:1px solid var(--edge);border-radius:8px;background:rgba(255,255,255,.05);padding:0 11px;color:var(--ink)}
+.shpay .splitsum{font:500 16px 'IBM Plex Mono',monospace;color:var(--ink);padding:0 4px}
+.shpay button{padding:9px 12px;font-size:13px}
+.shpay button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;border-color:transparent;font-weight:600}
+.shgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-bottom:6px}
+.shgrid button{text-align:left;padding:10px 12px;font-size:13.5px}
+.shgrid button.on{border-color:var(--gold);color:var(--gold);background:var(--gold-wash)}
+.shgrid button.danger{color:#F0978F;border-color:rgba(224,102,92,.3)}
+.shpick{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink2);cursor:pointer;margin:0 0 14px}
+#sheet .parts{margin-top:10px}
+#fbox{max-width:460px}
+#fbox .fbody{padding:0 18px 18px}
+#fbox .shd{margin:0 0 14px}
+#fbox .ff{margin-bottom:12px;min-width:0}
+#fbox .ff label{display:block;font-size:12px;color:var(--mute);margin-bottom:5px}
+#fbox .ff input,#fbox .ff select{width:100%;max-width:none;font-size:14px}
+#fbox .ff2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#fbox .ff:has(>select[hidden]){display:none}
+#fbox .fnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#fbox .fnrow select{flex:1 1 100%}
+#fbox .fnrow label.nrow{display:flex!important;flex:1 1 100%;gap:9px;align-items:center;font-size:14px;color:var(--ink2);margin:2px 0 0}
+#fbox .fnrow input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:#CFB53B}
+#fbox .fnrow label.nrow{margin:0}
+#fbox .facts{display:flex;gap:8px;align-items:center;margin-top:16px}
+#fbox .facts button{padding:9px 14px}
+#fbox button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;border-color:transparent;font-weight:600}
+#fcount{color:var(--gold);margin-left:6px;font-family:'IBM Plex Mono',monospace}
+#fbtn.on{border-color:var(--edge);color:var(--gold)}
+html[data-theme="light"] #fbox,html[data-theme="light"] #sheet{background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
+html[data-theme="light"] .shd{background:rgba(255,255,255,.97)}
 .var.up{color:var(--red)}.var.dn{color:var(--green)}
 
 .tag{display:inline-block;font:500 11.5px/1 Archivo,sans-serif;padding:5px 9px;border-radius:5px;
@@ -555,17 +625,21 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
  .hrow{gap:10px;padding:11px 0}
  .hstats,.who{display:none}
 
- /* the four nav cards swipe sideways instead of eating the screen */
- #navtiles .tiles{display:flex;overflow-x:auto;gap:8px;margin-bottom:12px;
-   scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:2px}
- #navtiles .tiles::-webkit-scrollbar{display:none}
- #navtiles .tile{flex:0 0 56%;scroll-snap-align:start;padding:10px 12px}
- #navtiles .tile .l{min-height:auto;margin-bottom:4px;font-size:11.5px}
- #navtiles .tile .two{gap:6px;margin-top:3px}
- #navtiles .tile .two .big{font-size:18px}
- #navtiles .tile .two .lateamt{font-size:11.5px}
- #navtiles .tile .sm{font-size:10.5px;margin-top:4px}
- #navtiles .tile .prog{margin-top:6px;height:3px}
+ /* the four nav cards: all four across, no swiping, half the height */
+ #navtiles .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:10px}
+ #navtiles .tile{padding:6px 7px;border-radius:9px;min-width:0}
+ #navtiles .tile .l{display:block;min-height:auto;margin:0;font-size:10.5px;line-height:1.25;
+   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #navtiles .tile .l .d{display:inline-block;width:6px;height:6px;margin:0 4px 1px 0;vertical-align:middle}
+ #navtiles .tile .two{gap:0 3px;margin-top:2px;line-height:1.2}
+ #navtiles .tile .two .big{font-size:13.5px}
+ #navtiles .tile .two .lateamt{font-size:10px}
+ #navtiles .tile .two .lateamt.none,#navtiles .tile .pdw,#navtiles .tile .sm{display:none}
+ #navtiles .tile .prog{margin-top:5px;height:2px}
+ #navtiles .tcnt{font-size:10.5px}
+ #navtiles .tamt{margin-top:3px}
+ #navtiles .tlb{font-size:9px}
+ #navtiles .tv{font-size:14px}
 
  /* the detail cards below stay two across */
  .tiles,.sgrid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
@@ -578,7 +652,7 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
 
  /* the control bar, two per line */
  .ptop{padding:10px 12px;gap:6px}
- .ptop h2{width:100%;font-size:14px;margin:0}
+ .ptop h2{flex:1 1 auto;min-width:0;font-size:14px;margin:0}
  .ptop h2 .hint{display:block;font-size:11.5px;margin-top:2px}
  .ptop select{flex:1 1 calc(50% - 4px);max-width:none;min-width:0}
  .ptop #q{flex:1 1 100%;width:auto}
@@ -623,6 +697,39 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
  #tbl .menu{font-size:21px;padding:5px 11px;border-color:var(--edge-soft)}
  .donechk,.nxchk{width:19px;height:19px}
  .selchk{width:18px;height:18px;opacity:1}
+
+ /* bill rows: one tight line — tick, name, amount, menu. Everything else is in the menu */
+ #tbl tbody tr[data-row]{grid-template-columns:22px minmax(0,1fr) auto 30px;column-gap:8px;row-gap:0;
+   padding:5px 4px 5px 9px;margin:0 0 5px;border-radius:9px}
+ #tbl tbody tr[data-row]>td{display:none}
+ #tbl tbody tr[data-row]>td,#tbl tbody tr[data-row]:hover>td{background:none}
+ #tbl tbody tr[data-row]>td.tick,#tbl tbody tr[data-row]>td.name,
+ #tbl tbody tr[data-row]>td.act,#tbl tbody tr[data-row]>td.r.num{display:block;grid-row:1}
+ #tbl tbody tr[data-row]>td.r.num~td.r.num{display:none}
+ #tbl tbody tr[data-row]>td.tick{grid-column:1}
+ #tbl tbody tr[data-row]>td.name{grid-column:2;max-width:none;width:auto;white-space:nowrap;overflow:hidden}
+ #tbl tbody tr[data-row]>td.r.num{grid-column:3;font-size:14px;color:var(--ink)}
+ #tbl tbody tr[data-row]>td.r.num div,#tbl tbody tr[data-row]>td.r.num .var{display:none}
+ #tbl tbody tr[data-row]>td.act{grid-column:4}
+ #tbl tbody tr[data-row] td.name .bn{display:block;font-size:14.5px;line-height:1.25;
+   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ #tbl tbody tr[data-row] td.name .cat{display:block;margin:1px 0 0;font-size:11px;line-height:1.25;
+   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ #tbl tbody tr[data-row] td.name .tag,#tbl tbody tr[data-row] td.name .golink{display:none}
+ #tbl tbody tr[data-row] .menu{font-size:19px;padding:3px 6px;border-color:transparent}
+ #tbl tbody tr[data-row] .donechk,#tbl tbody tr[data-row] .nxchk{width:18px;height:18px}
+
+ /* the menu sheet comes up from the bottom */
+ #sheetwrap,#fwrap{align-items:flex-end;padding:0}
+ #fbox .fbody{padding:0 14px 16px}
+ #fbox .shd{padding:13px 14px 11px}
+ #fbox .ff input,#fbox .ff select{font-size:16px}
+ #sheet,#fbox{max-width:none;max-height:88vh;border-radius:16px 16px 0 0;
+   padding-bottom:env(safe-area-inset-bottom,0px)}
+ #sheet .dr{padding:0 14px 16px}
+ .shd{margin:0 -14px 12px;padding:13px 14px 11px}
+ .shgrid{grid-template-columns:1fr 1fr}
+ .shpay input.in{flex:1 1 120px}
 
  /* group and paid bars span the whole card width */
  #tbl tr.grp{display:block;border:0;border-radius:0;margin:14px 0 8px;padding:0;
@@ -789,14 +896,7 @@ window.addEventListener('unhandledrejection',function(e){
  <div id="msg"></div><div id="navtiles"></div><div class="tiles" id="tiles"></div>
  <div class="panel"><div class="ptop"><h2 id="ptitle">Bills</h2><span class="spacer"></span>
    <button id="addb" class="mini noprint">+ Add bill</button>
-   <button id="prt" class="mini noprint">Print</button>
-   <input id="q" class="noprint" placeholder="Filter" style="width:150px;font-size:13px" aria-label="Filter">
-   <select id="gb" class="noprint" style="font-size:13px" aria-label="Group by"></select>
-   <select id="sb" class="noprint" style="font-size:13px" aria-label="Sort by"></select>
-   <select id="sf" class="noprint" style="font-size:13px" aria-label="Status filter">
-    <option value="">All</option><option value="late">Not paid</option><option value="due">Due now</option>
-    <option value="sched">Scheduled</option><option value="paid">Paid</option>
-    <option value="part">Part paid</option><option value="ahead">Paid ahead</option></select></div>
+   <button id="fbtn" class="mini noprint" aria-haspopup="dialog">Filter &amp; sort<span id="fcount"></span></button></div>
   <div style="overflow-x:auto"><table id="tbl"></table></div></div>
  <div id="sumview" hidden></div>
  <p class="hint" style="margin-top:12px" id="foothint"><b>Last</b> is locked — what cleared, for reference.
@@ -820,6 +920,25 @@ window.addEventListener('unhandledrejection',function(e){
    <button id="calc-use" class="mini">Use the selected total</button>
    <span class="spacer"></span><button id="calc-x" class="mini">Close</button></div>
 </div></div>
+<div id="fwrap" class="noprint" hidden><div id="fbox" role="dialog" aria-modal="true" aria-label="Filter and sort">
+ <div class="shd"><div><div class="shn">Filter and sort</div>
+   <div class="shm">Changes apply as you go</div></div>
+   <button id="fx" class="shx" aria-label="Close">&times;</button></div>
+ <div class="fbody">
+  <div id="fnext"></div>
+  <div class="ff"><label for="q">Search</label>
+   <input id="q" placeholder="Name, category or tab" aria-label="Filter"></div>
+  <div class="ff2">
+   <div class="ff"><label for="gb">Group</label><select id="gb" aria-label="Group by"></select></div>
+   <div class="ff"><label for="sb">Sort</label><select id="sb" aria-label="Sort by"></select></div></div>
+  <div class="ff"><label for="sf">Status</label><select id="sf" aria-label="Status filter">
+    <option value="">All</option><option value="late">Not paid</option><option value="due">Due now</option>
+    <option value="sched">Scheduled</option><option value="paid">Paid</option>
+    <option value="part">Part paid</option><option value="ahead">Paid ahead</option></select></div>
+  <div class="facts"><button id="freset">Reset all</button><button id="prt">Print</button>
+   <span class="spacer"></span><button id="fdone" class="pay">Done</button></div>
+ </div></div></div>
+<div id="sheetwrap" class="noprint" hidden><div id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -827,7 +946,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v59 \u00b7 mirrored cleanly';
+const BUILD='v62 \u00b7 2x2 tiles, late and due';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1421,7 +1540,7 @@ function billRow(x,m,opt){
   const sub=(()=>{
     const bits=[esc(x.b.category||'')];
     if(opt.tab) bits.push(`<span style="color:${opt.tab.color}">${esc(opt.tab.name)}</span>`);
-    if(opt.when) bits.push(opt.when);
+    if(opt.when) bits.push('<span class="whn">'+opt.when+'</span>');
     if(R){ bits.push(R.paidN+' of '+R.dueN+' paid'); if(R.owing>0) bits.push(money0(R.owing)+' to run'); }
     return bits.filter(Boolean).join(' \u00b7 ');
   })();
@@ -1457,7 +1576,7 @@ function drawerHTML(x,m){
   const b=x.b,p=per(m),sp=getSplits(b,p),a=S.arr[b.id],act=arrFor(b,m);
   const others=S.profiles.filter(z=>z.id!==S.pid);
   const share=others.map(z=>`<button data-a="share" data-to="${z.id}">Share to ${esc(z.name)}</button>`).join('');
-  const mv=moving===b.id?`<div class="parts"><h4>Move this bill</h4>
+  const mvAll=`<div class="parts"><h4>Move this bill</h4>
      <div class="form">
       <div><label>To which tab</label><select id="mv-t">${S.tabs.filter(z=>z.kind!=='care').map(z=>
         `<option value="${esc(z.code)}" ${z.code===b.tab_code?'selected':''}>${esc(z.name)}</option>`).join('')}</select></div>
@@ -1470,8 +1589,8 @@ function drawerHTML(x,m){
       <button data-a="movecancel">Cancel</button></div>
      <p class="hint" style="margin:9px 0 0">Changing tab keeps every payment with the bill.
        Moving to Annual keeps it counted against ${esc(acctOf(b.tab_code).name)} but shows it once a year
-       \u2014 month-by-month records stay on the old rows.</p></div>`:'';
-  const ef=editing===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
+       \u2014 month-by-month records stay on the old rows.</p></div>`;
+  const ef=editing===b.id||moving===b.id?`<div class="parts"><h4>Edit bill</h4><div class="form">
      <div><label>Name</label><input id="ed-n" value="${esc(b.name)}" style="width:200px"></div>
      <div><label>Category</label>${catSelect('ed-c',b.category)}</div>
      <div><label>Due day</label><input id="ed-d" type="number" min="1" max="31" value="${b.due_day||''}"
@@ -1479,7 +1598,7 @@ function drawerHTML(x,m){
      <div><label>Amount</label><input id="ed-a" type="number" step="0.01" value="${b.amount}" style="width:110px"></div>
      <button data-a="saveedit">Save changes</button><button data-a="canceledit">Cancel</button></div>
      <p class="hint" style="margin:7px 0 0">Applies to every month. Amounts already recorded stay as recorded.
-       To put it on another tab, use <b>Move</b>.</p></div>`:'';
+       To put it on another tab, use <b>Move this bill</b> below.</p></div>`:'';
   const parts=sp?`<div class="parts"><h4>Split — ${sp.length} parts</h4>
     ${sp.map((z,i)=>`<div class="splitline"><span class="pn">Part ${i+1}</span>
       <input type="number" step="0.01" data-sp="${z.id}" value="${z.amount}" aria-label="Part ${i+1} amount">
@@ -1496,7 +1615,7 @@ function drawerHTML(x,m){
      ${a?'<button data-a="delarr" class="danger">End it</button>':''}</div>
     ${act?`<p class="hint" style="margin:7px 0 0">Active — ${money(a.amount)} a month, ${act.left} left.</p>`:''}</div>`;
   const pl=plansOf(b);
-  const planBox=(pl&&pl.length)||b.category==='BNPL'||b.category==='LOC'||!b.due_day?`<div class="parts"><h4>Plans</h4>
+  const planBox=`<div class="parts"><h4>Plans</h4>
      ${(pl||[]).map(z=>{
         const made=(S.planPays[z.id]||[]).length;
         const want=z.total_count;
@@ -1540,7 +1659,7 @@ function drawerHTML(x,m){
        adds them up. This month the ${pl.length} plans come to
        ${money(pl.reduce((s2,z)=>s2+planCost(z,m),0))}. Anything every two weeks is counted
        by how many times it actually lands \u2014 usually twice, sometimes three.</p>`:''}
-    </div>`:'';
+    </div>`;
   const vend=vendorOf(b);
   const vshown=vendShow[vend&&vend.id];
   const credBox=`<div class="parts"><h4>Vendor and login</h4>${
@@ -1589,13 +1708,42 @@ function drawerHTML(x,m){
               <button data-a="credit">Change</button></div></div>`
         : `<p class="hint" style="margin:0 0 9px">No vendor attached.</p>
            <button data-a="credit">Attach a vendor</button>`}</div>`;
-  return `<div class="dr"><div class="acts">
-     <button data-a="edit">Edit bill</button><button data-a="split">Split into parts</button>
-     <button data-a="zero">Mark paid at $0</button><button data-a="full">Mark paid in full</button>
-     <button data-a="clear">Clear this month</button>
-     <button data-a="move">Move\u2026</button>${share}
-     <button data-a="remove" class="danger">Remove bill</button>
-     <button data-a="close" style="margin-left:auto">Close</button></div>${mv}${ef}${credBox}${planBox}${parts}${arrBox}</div>`;
+  // one sheet: record this month up top, everything else one tap away
+  const pk=pickKey(b,p), vend2=vendorOf(b);
+  const hasPl=!!((pl&&pl.length)||b.category==='BNPL'||b.category==='LOC'||!b.due_day);
+  const C=paidOf(b,p), bg=budgetOf(b,m);
+  const panelOn=k=>dpanel===k;
+  const btn=(a,label,on,cls,id)=>`<button data-a="${a}"${id?` data-id="${id}"`:''} class="${(on?'on ':'')+(cls||'')}">${label}</button>`;
+  return `<div class="dr">
+   <div class="shd"><div><div class="shn">${esc(b.name)}</div>
+     <div class="shm">${esc(b.category||'')} \u00b7 ${esc(acctOf(b.tab_code).name)} \u00b7 ${lbl(m)} \u00b7 budget ${money(bg)}${
+       act?' \u00b7 arrangement':''}</div></div>
+     <button data-a="close" class="shx" aria-label="Close">&times;</button></div>
+   <div class="shsec">Paid for ${lbl(m)}</div>
+   <div class="shpay">${(sp||(pl&&pl.length))
+       ?`<span class="splitsum">${money(C||0)}</span>`
+       :`<input class="in" data-b="${b.id}" data-p="${p}" type="text" inputmode="decimal"
+          value="${C!==null?money(C):''}" placeholder="${money(bg)}" aria-label="Amount paid">`}
+     <button data-a="full" class="pay">In full</button><button data-a="zero">$0</button>
+     <button data-a="clear">Clear</button>
+     ${vend2&&vend2.login_url?`<button data-pay="${b.id}">Pay at ${esc(vend2.name)} \u2197</button>`:''}</div>
+   <label class="shpick"><input type="checkbox" class="selchk" data-shpick="${pk}" ${picked.has(pk)?'checked':''}>
+     Select for paying in a batch</label>
+   <div class="shsec">Bill</div>
+   <div class="shgrid">
+     ${btn('edit','Edit or move\u2026',editing===b.id||moving===b.id)}
+     ${sp?'':btn('split','Split this month')}
+     ${hasPl?btn('panel','Plans'+(pl&&pl.length?' ('+pl.length+')':'')+'\u2026',panelOn('plans')||pasteFor===b.id,'','plans'):''}
+     ${btn('panel','Arrangement'+(a?' (on)':'')+'\u2026',panelOn('arr'),'','arr')}
+     ${btn('panel','Vendor and login\u2026',panelOn('vend')||credOpen===b.id,'','vend')}
+     ${others.length?btn('panel','Share\u2026',panelOn('share'),'','share'):''}
+     ${btn('remove','Remove bill',false,'danger')}
+   </div>
+   ${parts}${(editing===b.id||moving===b.id)?ef+mvAll:''}
+   ${panelOn('share')?`<div class="parts"><h4>Share a copy to</h4><div class="acts">${share}</div></div>`:''}
+   ${(panelOn('vend')||credOpen===b.id)?credBox:''}
+   ${(panelOn('plans')||pasteFor===b.id)?planBox:''}
+   ${panelOn('arr')?arrBox:''}</div>`;
 }
 function renderAccount(){
   $('sumview').hidden=true;$('tiles').hidden=false;document.querySelector('.panel').hidden=false;$('foothint').hidden=false;
@@ -1781,11 +1929,17 @@ function renderAnnual(){
         ${picked.has(pk)?'checked':''} aria-label="Select ${esc(a.name)}"></td>
       <td class="act noprint"><button class="menu" data-m="${a.id}"
         aria-label="Actions for ${esc(a.name)}">&#8943;</button></td></tr>`
-     +(open?`<tr class="drawerrow"><td colspan="10" class="drawer"><div class="dr"><div class="acts">
+     +(open?`<tr class="drawerrow"><td colspan="10" class="drawer"><div class="dr">
+        <div class="shd"><div><div class="shn">${esc(a.name)}</div>
+          <div class="shm">${esc(acctOf(a.tab_code).name)} \u00b7 ${MN[a.due_month-1]} ${a.due_day||15} \u00b7 ${money(a.amount)}</div></div>
+          <button data-a="close" class="shx" aria-label="Close">&times;</button></div>
+        <div class="shpay"><input class="in" data-b="${a.id}" data-p="${Y}" type="text" inputmode="decimal"
+          value="${rec?money(rec.amount):''}" placeholder="${money(a.amount)}" aria-label="Amount paid"></div>
+        <div class="acts">
         <button data-a="edit">Edit charge</button><button data-a="annfull">Mark paid in full</button>
         <button data-a="annzero">Mark paid at $0</button><button data-a="annclear">Clear</button>${share}
-        <button data-a="remove" class="danger">Remove</button>
-        <button data-a="close" style="margin-left:auto">Close</button></div>${ef}${
+        <button data-a="move">Move\u2026</button>
+        <button data-a="remove" class="danger">Remove</button></div>${ef}${
         moving===a.id?`<div class="parts"><h4>Move this charge</h4>
           <div class="form">
             <div><label>To which tab</label><select id="mv-t">${S.tabs.filter(z=>z.kind!=='care').map(z=>
@@ -1981,7 +2135,7 @@ function wire(){
     if(drawer===r.dataset.row && drawerKey===k){ drawer=null; drawerKey=null; drawerM=null; }
     else { drawer=r.dataset.row; drawerKey=k;
       drawerM = k ? monthOf((k.split(':')[2]||per(cur))) : null; }
-    editing=null; moving=null; render();}));
+    editing=null; moving=null; dpanel=null; credOpen=null; pasteFor=null; render();}));
   document.querySelectorAll('tr.grp').forEach(r=>r.onclick=()=>{
     const k=r.dataset.g; shut.has(k)?shut.delete(k):shut.add(k); render();});
   // Cents-first entry, the way a card terminal works: every digit you type
@@ -2009,7 +2163,9 @@ function wire(){
     if(drawer===mb.dataset.m && drawerKey===k){ drawer=null; drawerKey=null; drawerM=null; }
     else { drawer=mb.dataset.m; drawerKey=k;
       drawerM = k ? monthOf((k.split(':')[2]||per(cur))) : null; }
-    editing=null; moving=null; render();});
+    editing=null; moving=null; dpanel=null; credOpen=null; pasteFor=null; render();});
+  document.querySelectorAll('[data-shpick]').forEach(c=>c.onchange=()=>{
+    const k=c.dataset.shpick; c.checked?picked.add(k):picked.delete(k); render();});
   document.querySelectorAll('.dr [data-a]').forEach(b=>b.onclick=()=>
     act(b.dataset.a,drawer,b.dataset.to||b.dataset.id));
   document.querySelectorAll('[data-ps]').forEach(i=>i.onchange=()=>{
@@ -2045,7 +2201,7 @@ function wire(){
 }
 function act(a,id,to){
   if(a==='cancelnew'){adding=false;return render();}
-  if(a==='canceledit'){editing=null;return render();}
+  if(a==='canceledit'){editing=null;moving=null;return render();}
   if(a==='savenew') return go(async()=>{
     const n=$('nb-n').value.trim(),amt=+$('nb-a').value;
     if(!n||!amt) throw new Error('Give it a name and an amount.');
@@ -2079,8 +2235,9 @@ function act(a,id,to){
   const b=S.bills.find(z=>z.id===id); if(!b) return;
   const M=drawerM||cur;                                   // the month the row belongs to
   const p=b.is_annual?String(M.getFullYear()):per(M), bg=budgetOf(b,M);
-  if(a==='close'){drawer=null;drawerKey=null;drawerM=null;editing=null;moving=null;return render();}
-  if(a==='edit'){editing=editing===b.id?null:b.id;return render();}
+  if(a==='close'){drawer=null;drawerKey=null;drawerM=null;editing=null;moving=null;dpanel=null;credOpen=null;pasteFor=null;return render();}
+  if(a==='edit'){editing=editing===b.id?null:b.id;moving=null;dpanel=null;credOpen=null;pasteFor=null;return render();}
+  if(a==='panel'){dpanel=dpanel===to?null:to;editing=null;moving=null;credOpen=null;pasteFor=null;return render();}
   if(a==='saveedit') return go(async()=>{
     const n=$('ed-n').value.trim(); if(!n) throw new Error('A bill needs a name.');
     const {error}=await db.from('bud_bills').update({is_example:false,name:n,category:catValue('ed-c'),
@@ -2113,7 +2270,7 @@ function act(a,id,to){
     return go(async()=>{const {error}=await db.from('bud_bills').update({archived:true}).eq('id',b.id);
       if(error)throw error; drawer=null;});}
   if(a==='move'){ moving=moving===b.id?null:b.id; editing=null; return render(); }
-  if(a==='movecancel'){ moving=null; return render(); }
+  if(a==='movecancel'){ moving=null; editing=null; return render(); }
   if(a==='movetab') return go(async()=>{
     const code=$('mv-t').value;
     if(code===b.tab_code){ moving=null; return; }
@@ -2555,47 +2712,32 @@ let drawerKey=null;
 // The same four tiles sit on top of every view: what each tab owes before the
 // next payday, and the whole lot. Each one is a way in.
 function paydayTiles(){
-  const rows=comingUp().filter(x=>!x.paid);
   const vis=S.tabs.filter(a=>!hidden(a.code)&&a.kind!=='care');
   const want=['p','f','b'].map(c=>vis.find(a=>a.code===c)).filter(Boolean);
   const three=want.length?want:vis.slice(0,3);
-  // how much of this payday's run is cleared, which is what the window is about
-  const was=doneToo; doneToo=true;
-  const everything=comingUp();
-  doneToo=was;
-  const progress=codes=>{
-    const set=everything.filter(x=>x.tab&&codes.includes(x.tab.code));
-    const n=set.length, done=set.filter(x=>x.paid).length;
-    const budget=set.reduce((t,x)=>t+Math.max(0,x.amount),0);
-    const cleared=set.filter(x=>x.paid).reduce((t,x)=>t+Math.max(0,x.amount),0);
-    return {budget,cleared,n,done,left:n-done,
-            pct:n?Math.round(done/n*100):0};
-  };
-  const face=(key,name,colour,set,on,codes)=>{
-    const coming=set.filter(x=>!x.late), late=set.filter(x=>x.late);
-    const c=coming.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
-    const l=late.reduce((s2,x)=>s2+Math.max(0,x.amount),0);
-    const P=progress(codes);
-    return `<button class="tile tilelink${on?' on':''}" data-tab="${esc(key)}">
-      <div class="l"><span class="d" style="background:${colour}"></span>${esc(name)}</div>
-      <div class="two">
-        <span class="big" style="color:${c?'var(--ink)':'var(--mute)'}">${money0(c)}</span>
-        <span class="lateamt${l?'':' none'}">${l?money0(l)+' past due':'none past due'}</span></div>
-      <div class="prog" title="${money(P.cleared)} of ${money(P.budget)} cleared before payday">
-        <i style="width:${P.pct}%;background:${P.pct>=100?'var(--green)':'linear-gradient(90deg,'+colour+'88,'+colour+')'}"></i></div>
-      <div class="sm">${P.n ? (P.left
-        ? P.left+' of '+P.n+' still to pay'
-        : 'all '+P.n+' paid') : 'nothing due'}</div></button>`;
+  // The tiles always look 14 days ahead, whatever window the list is set to,
+  // so a tile reads the same every time you open the app.
+  const was=[horizon,doneToo]; horizon=14; doneToo=true;
+  const all=comingUp();
+  horizon=was[0]; doneToo=was[1];
+  const face=(key,name,colour,codes,on)=>{
+    const set=all.filter(x=>x.tab&&codes.includes(x.tab.code));
+    const open=set.filter(x=>!x.paid);
+    const sum=r=>r.reduce((t,x)=>t+Math.max(0,x.amount),0);
+    const late=sum(open.filter(x=>x.late)), due=sum(open.filter(x=>!x.late));
+    const n=set.length, done=set.filter(x=>x.paid).length, pct=n?Math.round(done/n*100):0;
+    return `<button class="tile tilelink${on?' on':''}" data-tab="${esc(key)}"
+        title="Next 14 days: ${done} of ${n} paid. Late ${money(late)}, due ${money(due)}.">
+      <div class="ttop"><span class="l"><span class="d" style="background:${colour}"></span>${esc(name)}</span>
+        <span class="tcnt num">${done} of ${n}</span></div>
+      <div class="tamt">
+        <span class="ta late${late?'':' zero'}"><span class="tlb">Late</span><span class="tv num">${money0(late)}</span></span>
+        <span class="ta due${due?'':' zero'}"><span class="tlb">Due</span><span class="tv num">${money0(due)}</span></span></div>
+      <div class="prog"><i style="width:${pct}%;background:${pct>=100?'var(--green)':'linear-gradient(90deg,'+colour+'88,'+colour+')'}"></i></div></button>`;
   };
   return `<div class="tiles">`
-    + three.map(a=>face(a.code,a.name,a.color,
-        rows.filter(x=>x.tab&&x.tab.code===a.code), acct===a.code, [a.code])).join('')
-    + (()=>{ const p=nextPayday();
-        const html=face('next','Everything','var(--gold)',rows,acct==='next',vis.map(a=>a.code));
-        return p ? html.replace('</button>',
-          `<div class="sm" style="color:var(--gold)">before ${esc(p.who)}, ${
-            p.when.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div></button>`)
-          : html; })()
+    + three.map(a=>face(a.code,a.name,a.color,[a.code],acct===a.code)).join('')
+    + face('next','Everything','var(--gold)',vis.map(a=>a.code),acct==='next')
     + `</div>`;
 }
 function wireTiles(){
@@ -2619,11 +2761,12 @@ function renderNext(){
   $('tiles').innerHTML='';
   $('tiles').hidden=true;
   $('ptitle').innerHTML='What is coming <span class="hint" style="font-weight:400">'
-    +esc(windowLabel())+(lateRows.length?' \u00b7 '+lateRows.length+' already past':'')+'</span> '
-    +`<select id="nx-h" class="noprint" style="margin-left:8px;font-size:13px">${
+    +esc(windowLabel())+(lateRows.length?' \u00b7 '+lateRows.length+' already past':'')+'</span>';
+  $('fnext').innerHTML=`<div class="ff"><label for="nx-h">Show</label><div class="fnrow">`
+    +`<select id="nx-h" aria-label="How far ahead">${
       HORIZONS.map(([n,t])=>`<option value="${n}" ${String(n)===String(horizon)?'selected':''}>${t}</option>`).join('')}</select>`
-    +`<label class="nrow noprint" style="display:inline-flex;padding:0;margin-left:12px">
-       <input type="checkbox" id="nx-done" ${doneToo?'checked':''}><span>show what is done</span></label>`;
+    +`<label class="nrow" style="display:inline-flex;padding:0">
+       <input type="checkbox" id="nx-done" ${doneToo?'checked':''}><span>show what is done</span></label></div></div>`;
 
   const groupOf=x=>{
     if(grp==='tab') return x.tab.name;
@@ -2659,7 +2802,7 @@ function renderNext(){
         <td class="c tick noprint"><input type="checkbox" class="nxchk" data-k="${esc(x.key)}"
           ${paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
         <td class="name"><span class="bn">${esc(x.name)}</span> <span class="tag split">plan</span>
-          <div class="cat">${esc(x.bill.category||'')} \u00b7 <span style="color:${x.tab.color}">${esc(x.tab.name)}</span> \u00b7 ${when}</div></td>
+          <div class="cat">${esc(x.bill.category||'')} \u00b7 <span style="color:${x.tab.color}">${esc(x.tab.name)}</span> \u00b7 <span class="whn">${when}</span></div></td>
         <td class="c hidesm">${x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</td>
         <td><span class="tag ${paid?'paid':x.late?'late':'due'}">${paid?'Paid':x.late?'Past due':'Due now'}</span></td>
         <td class="r num">${money(x.amount)}</td>
@@ -3381,7 +3524,7 @@ async function disablePush(){
     await sub.unsubscribe(); }
 }
 
-let credOpen=null, credShow={}, moving=null, drawerM=null, pasteFor=null, pasted=[], lastRead='', showRaw=false;
+let dpanel=null, credOpen=null, credShow={}, moving=null, drawerM=null, pasteFor=null, pasted=[], lastRead='', showRaw=false;
 
 /* ---- read a BNPL schedule out of pasted text or a screenshot ---- */
 function parseSchedule(text){
@@ -3932,6 +4075,7 @@ function renderDigest(){
 }
 
 function render(){
+  $('fnext').innerHTML='';
   const vis=TABS().filter(t=>!hidden(t.k));
   if(!vis.some(t=>t.k===acct)) acct=(vis[0]||{k:'sum'}).k;
   $('hsub').textContent=MN[cur.getMonth()]+' '+cur.getFullYear();
@@ -3997,8 +4141,31 @@ function render(){
   else renderAccount();
   $('navtiles').innerHTML = acct==='sum' ? '' : paydayTiles();
   wireTiles();
+  liftSheet();
+  const fn=(q?1:0)+(sf?1:0)+(grp!=='none'?1:0)+(srt!=='due'?1:0);
+  $('fcount').textContent=fn?'\u00b7 '+fn:'';
+  $('fbtn').classList.toggle('on',!!fn);
   saveView();
 }
+// The table still builds the drawer row; this moves its contents into the
+// pop-out sheet so the list never jumps. Handlers move with the nodes.
+function liftSheet(){
+  const w=$('sheetwrap'), sh=$('sheet'), r=document.querySelector('tr.drawerrow');
+  const top=sh.scrollTop;
+  sh.innerHTML='';
+  if(!r){ w.hidden=true; document.body.classList.remove('sheeton'); return; }
+  const td=r.querySelector('td');
+  while(td.firstChild) sh.appendChild(td.firstChild);
+  r.remove();
+  w.hidden=false; document.body.classList.add('sheeton');
+  sh.scrollTop=top;
+}
+function closeSheet(){
+  drawer=null; drawerKey=null; drawerM=null; editing=null; moving=null;
+  dpanel=null; credOpen=null; pasteFor=null; render();
+}
+$('sheetwrap').addEventListener('click',e=>{ if(e.target.id==='sheetwrap') closeSheet(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('sheetwrap').hidden) closeSheet(); });
 let openSec=null;
 function paintSections(){
   document.querySelectorAll('.dhead').forEach(hd=>{
@@ -4065,7 +4232,16 @@ $('pm').onchange=$('py').onchange=()=>{cur=new Date(+$('py').value,+$('pm').valu
 $('prev').onclick=()=>{cur=shift(cur,-1);render();};
 $('next').onclick=()=>{cur=shift(cur,1);render();};
 $('now').onclick=()=>{closeMenu();cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);render();};
-$('prt').onclick=()=>window.print();
+$('prt').onclick=()=>{ $('fwrap').hidden=true; document.body.classList.remove('sheeton');
+  setTimeout(()=>window.print(),50); };
+const fOpen=()=>{ $('fwrap').hidden=false; document.body.classList.add('sheeton'); };
+const fClose=()=>{ $('fwrap').hidden=true;
+  if($('sheetwrap').hidden) document.body.classList.remove('sheeton'); };
+$('fbtn').onclick=fOpen; $('fx').onclick=fClose; $('fdone').onclick=fClose;
+$('fwrap').addEventListener('click',e=>{ if(e.target.id==='fwrap') fClose(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('fwrap').hidden) fClose(); });
+$('freset').onclick=()=>{ q=''; sf=''; grp='none'; srt='due'; shut.clear();
+  $('q').value=''; render(); };
 $('q').oninput=e=>{q=e.target.value.toLowerCase();render();};
 $('sf').onchange=e=>{sf=e.target.value;render();};
 $('gb').onchange=e=>{grp=e.target.value;shut.clear();render();};
