@@ -306,6 +306,10 @@ tr.grp td{
   height:38px;background:rgba(207,181,59,.08);border-top:1px solid var(--edge);
   border-bottom:1px solid var(--rule2);cursor:pointer;color:var(--gold);font-weight:500}
 tr.grp:hover td{background:rgba(207,181,59,.13)}
+tr.mdiv td{padding:18px 12px 8px;border-bottom:2px solid var(--gold);background:none}
+tr.mdiv .mname{font:600 14px Archivo,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--gold)}
+tr.mdiv .mcount{margin-left:10px;font-size:12.5px;color:var(--mute)}
+tr.mdiv .msum{float:right;font:500 14px 'IBM Plex Mono',monospace;color:var(--ink2)}
 tr.grp .gname{display:flex;align-items:center;gap:9px}
 tr.grp .chev{display:inline-block;width:9px;color:var(--gold-deep);transition:transform .15s}
 tr.grp.shut .chev{transform:rotate(-90deg)}
@@ -322,7 +326,8 @@ tr.grp .gsum{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-
 #tbl tr[data-row] td.name .cat,#tbl tr[data-row] td.hidesm{white-space:nowrap}
 #tbl tbody tr[data-row]>td{background-clip:padding-box}
 #tbl tr[data-row] .tag{padding:3px 7px}
-#tbl tr[data-row] td.cell input{height:28px}
+#tbl tr[data-row] td.cell input{height:28px;min-width:104px}
+#tbl tr[data-row] td.cell .splitsum{white-space:nowrap}
 #tbl tr[data-row] td.cell .splitsum{line-height:28px}
 #tbl tr[data-row] td.r.num .var{display:inline;margin-left:5px}
 #tbl tr[data-row] .menu{padding:2px 8px}
@@ -737,6 +742,11 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
  #tbl tr.grp td{display:flex;justify-content:space-between;align-items:center;width:100%;
    padding:10px 12px;border-radius:9px;background:var(--gold-wash);border:1px solid var(--edge)}
  #tbl tr.grp.paidgrp td{background:var(--greenw);border-color:rgba(79,168,131,.35)}
+ #tbl tbody tr.mdiv{display:block;border:0;border-radius:0;margin:16px 0 8px;padding:0;
+   background:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+ #tbl tbody tr.mdiv td{display:flex;align-items:baseline;gap:8px;width:100%;padding:0 4px 6px;
+   border:0;border-bottom:2px solid var(--gold);background:none}
+ #tbl tbody tr.mdiv .msum{float:none;margin-left:auto}
  #tbl tr.drawerrow{display:block;border:0;padding:0;background:none;backdrop-filter:none;margin:0 0 9px}
  #tbl td.drawer{background:none;padding:0}
 
@@ -946,7 +956,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v62 \u00b7 2x2 tiles, late and due';
+const BUILD='v63 \u00b7 next month in every tab';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1093,6 +1103,12 @@ function groupRow(name,items,budget,cleared,cols){
     <td colspan="${cols}"><span class="gname"><span class="chev">\u25BE</span>${esc(name)}
       <span class="gcount">${items} ${items===1?'bill':'bills'}</span></span>
       <span class="gsum">${money(cleared)} of ${money(budget)}</span></td></tr>`;
+}
+// month divider: full month name, how many bills, what they add up to
+function monthDivider(d,n,total,cols){
+  return `<tr class="mdiv"><td colspan="${cols}"><span class="mname">${
+    d.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>
+    <span class="mcount">${n} ${n===1?'bill':'bills'}</span><span class="msum">${money(total)}</span></td></tr>`;
 }
 const LBLA={paid:'Paid',late:'Not paid',due:'Coming up',sched:'Scheduled'};
 
@@ -1807,7 +1823,18 @@ function renderAccount(){
     return groupRow(name,items.length,gb,gc,10)
       + (shut.has(name)?'':items.map(rowHTML).join(''));
   }).join('')
-  + paidSection(cleared2, x=>paidOf(x.b,p)||0, rowHTML, 10);
+  + paidSection(cleared2, x=>paidOf(x.b,p)||0, rowHTML, 10)
+  + (()=>{
+      // the whole of next month, so it can be planned before it starts
+      const pn=per(nxt);
+      const nrows=sortRows(billsFor(nxt,acct).filter(x=>{
+        if(q&&!(x.b.name+' '+x.b.category).toLowerCase().includes(q))return false;
+        if(sf&&status(x,nxt)!==sf)return false;return true;}),'acct');
+      if(!nrows.length) return '';
+      const tot=nrows.reduce((t,x)=>t+budgetOf(x.b,nxt),0);
+      return monthDivider(nxt,nrows.length,tot,10)
+        + nrows.map(x=>billRow(x,nxt,{key:'n:'+x.b.id+':'+pn})).join('');
+    })();
   $('tbl').innerHTML=`
    <colgroup><col class="c-sel"><col class="c-bill"><col class="c-due"><col class="c-status"><col class="c-money">
      <col class="c-money c-last"><col class="c-cell"><col class="c-cell"><col class="c-sel"><col class="c-act"></colgroup>
@@ -2829,7 +2856,17 @@ function renderNext(){
   const body=order.map(k=>{
     const items=(buckets.get(k)||[]).filter(x=>!x.paid);
     if(!items.length) return '';
-    if(k===null) return items.map(line).join('');
+    if(k===null){
+      if(srt!=='due') return items.map(line).join('');
+      const mk=d=>d.getFullYear()*12+d.getMonth();
+      let last=mk(TODAY);
+      return items.map(x=>{
+        if(x.late || mk(x.when)===last) return line(x);
+        last=mk(x.when);
+        const same=items.filter(y=>!y.late&&mk(y.when)===last);
+        return monthDivider(x.when,same.length,same.reduce((s,y)=>s+Math.max(0,y.amount),0),10)+line(x);
+      }).join('');
+    }
     const sum=items.reduce((s,x)=>s+Math.max(0,x.amount),0);
     const off=shut.has(k);
     return `<tr class="grp${off?' shut':''}" data-g="${esc(k)}">
