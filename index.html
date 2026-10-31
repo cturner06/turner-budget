@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Budget">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <link rel="icon" href="images/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -378,6 +379,26 @@ body.sheeton{overflow:hidden}
 #fbox .facts{display:flex;gap:8px;align-items:center;margin-top:16px}
 #fbox .facts button{padding:9px 14px}
 #fbox button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;border-color:transparent;font-weight:600}
+/* guided tour: dims the page, rings the thing to look at, explains it */
+#tour{position:fixed;inset:0;z-index:90}
+#tour.nospot{background:rgba(0,0,0,.66)}
+#tspot{position:fixed;border:2px solid var(--gold);border-radius:12px;pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.66),0 0 0 6px rgba(207,181,59,.25);transition:all .25s ease}
+#tour.nospot #tspot{display:none}
+#tcard{position:fixed;width:min(360px,calc(100vw - 24px));padding:16px 16px 13px;border-radius:14px;
+  background:linear-gradient(170deg,rgba(28,28,31,.99),rgba(12,12,13,.99));border:1px solid var(--gold);
+  box-shadow:0 24px 60px rgba(0,0,0,.6);transition:top .25s ease,left .25s ease}
+#tcard .tstep{font:500 11px 'IBM Plex Mono',monospace;color:var(--gold);letter-spacing:.06em;margin-bottom:6px}
+#tcard .ttitle{font:600 17px/1.3 Archivo,sans-serif;color:var(--ink);margin-bottom:6px}
+#tcard .ttext{font-size:14px;line-height:1.55;color:var(--ink2)}
+#tcard .ttext ol{margin:8px 0 0;padding-left:20px} #tcard .ttext li{margin:4px 0}
+#tcard .ttext b{color:var(--ink)}
+#tcard .tbtns{display:flex;align-items:center;gap:7px;margin-top:14px}
+#tcard .tbtns button{padding:8px 13px;font-size:13.5px}
+#tcard button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;border-color:transparent;font-weight:600}
+#tcard .tlink{background:none;border:0;color:var(--mute);padding:8px 2px}
+#tcard .tinst{margin-top:10px}
+html[data-theme="light"] #tcard{background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
 #fcount{color:var(--gold);margin-left:6px;font-family:'IBM Plex Mono',monospace}
 #fbtn.on{border-color:var(--edge);color:var(--gold)}
 html[data-theme="light"] #fbox,html[data-theme="light"] #sheet{background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
@@ -891,7 +912,10 @@ window.addEventListener('unhandledrejection',function(e){
   <button class="dhead" data-sec="help">How this works<span class="dval">guide</span></button>
   <div class="dpanel" data-p="help">
    <p class="hint" style="margin:0 0 10px">Short answers to the things people ask first.</p>
-   <button id="helpopen" class="mini">Open the guide</button></div>
+   <div class="row-flex">
+    <button id="helpopen" class="mini">Open the guide</button>
+    <button id="touropen" class="mini">Take the tour</button>
+    <button id="instopen" class="mini">Install on this device</button></div></div>
 
   <button class="dhead" data-sec="look">Light or dark<span class="dval" id="vlook"></span></button>
   <div class="dpanel" data-p="look">
@@ -934,6 +958,15 @@ window.addEventListener('unhandledrejection',function(e){
    <button id="calc-use" class="mini">Use the selected total</button>
    <span class="spacer"></span><button id="calc-x" class="mini">Close</button></div>
 </div></div>
+<div id="tour" class="noprint" hidden aria-live="polite">
+ <div id="tspot"></div>
+ <div id="tcard" role="dialog" aria-modal="true" aria-labelledby="ttitle">
+  <div class="tstep" id="tstep"></div>
+  <div class="ttitle" id="ttitle"></div>
+  <div class="ttext" id="ttext"></div>
+  <div class="tbtns"><button id="tskip" class="tlink">Skip tour</button><span class="spacer"></span>
+   <button id="tback">Back</button><button id="tnext" class="pay">Next</button></div>
+ </div></div>
 <div id="fwrap" class="noprint" hidden><div id="fbox" role="dialog" aria-modal="true" aria-label="Filter and sort">
  <div class="shd"><div><div class="shn">Filter and sort</div>
    <div class="shm">Changes apply as you go</div></div>
@@ -960,7 +993,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v64 \u00b7 due dates, share invites';
+const BUILD='v65 \u00b7 guided tour, install help';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1003,6 +1036,9 @@ const copyText=t=>{
 const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
 
 let user=null, S={profiles:[],pid:null,prof:null,tabs:[],bills:[],pay:{},splits:{},arr:{}};
+let installOffer=null;
+addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installOffer=e; });
+addEventListener('appinstalled',()=>{ installOffer=null; toast('Installed. Open Budget from your home screen.'); });
 let cur=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
 let acct=null,q='',sf='',drawer=null,adding=false,editing=null,cfg=false,busy=false;
 
@@ -4209,6 +4245,7 @@ function render(){
   $('navtiles').innerHTML = acct==='sum' ? '' : paydayTiles();
   wireTiles();
   liftSheet();
+  maybeTour();
   const fn=(q?1:0)+(sf?1:0)+(grp!=='none'?1:0)+(srt!=='due'?1:0);
   $('fcount').textContent=fn?'\u00b7 '+fn:'';
   $('fbtn').classList.toggle('on',!!fn);
@@ -4227,6 +4264,115 @@ function liftSheet(){
   w.hidden=false; document.body.classList.add('sheeton');
   sh.scrollTop=top;
 }
+/* ================= GUIDED TOUR ================= */
+const TOUR_KEY='tb-tour-v1';
+let tourOn=false, tourAt=0, tourSteps=[];
+function maybeTour(){
+  if(tourOn||maybeTour.asked) return;
+  let done=null; try{ done=localStorage.getItem(TOUR_KEY); }catch(_){}
+  if(done) return;
+  maybeTour.asked=true;
+  setTimeout(()=>{ if($('app').hidden) { maybeTour.asked=false; return; } startTour(); },900);
+}
+function installHelp(){
+  const ua=navigator.userAgent, iOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  const android=/Android/.test(ua), standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  const btn=installOffer?'<div class="tinst"><button id="tinstall" class="pay">Install now</button></div>':'';
+  if(standalone) return '<b>You are already using the installed app.</b> Nothing else to do here.';
+  if(iOS) return 'Put Budget on your home screen so it opens like an app:<ol>'
+    +'<li>Tap the <b>Share</b> button (the square with the arrow). In Safari it is at the bottom of the screen; in Chrome it is at the top right.</li>'
+    +'<li>Scroll down and tap <b>Add to Home Screen</b>.</li>'
+    +'<li>Tap <b>Add</b>. Budget now opens from its own icon.</li></ol>';
+  if(android) return (installOffer?'Tap <b>Install now</b> and confirm.':'In Chrome:<ol>'
+    +'<li>Tap the <b>⋮</b> menu at the top right.</li>'
+    +'<li>Tap <b>Add to Home screen</b> or <b>Install app</b>.</li>'
+    +'<li>Tap <b>Install</b>.</li></ol>')+btn;
+  if(/Safari/.test(ua)&&!/Chrome|Edg/.test(ua)) return 'On a Mac in Safari: open the <b>File</b> menu and choose <b>Add to Dock</b>.';
+  return (installOffer?'Click <b>Install now</b> and confirm.'
+    :'In Chrome or Edge, click the <b>install icon</b> at the right end of the address bar (a screen with a down arrow), then <b>Install</b>.')+btn;
+}
+function tourDefs(){
+  const row='#tbl tbody tr[data-row]';
+  return [
+    {title:'Welcome to Turner Budget',
+     text:'A quick tour, about a minute. Tap <b>Next</b> to move to the next step, or <b>Skip tour</b> anytime. The ring shows you where to look.'},
+    {sel:'#navtiles .tiles', title:'Your tabs at a glance',
+     text:'<b>LATE</b> (red) is past due and not marked paid. <b>DUE</b> is what lands in the next 14 days. The top right counts how many of those are paid. Tap a tile to open that tab.'},
+    {sel:'#navtiles [data-tab="next"]', title:'Everything',
+     text:'Every tab together, in date order. The best place to start each day.'},
+    {sel:'#fbtn', title:'Filter & sort',
+     text:'Choose how far ahead to look (7, 14, or 30 days), search for a bill, group, or sort. The button turns gold when a filter is on.'},
+    {sel:row, title:'One line per bill',
+     text:'The name, the day it is due, and the amount. A red line means it is late.'},
+    {sel:row+' td.tick', title:'Mark it paid',
+     text:'Paid it? Tap this box. The bill moves down to <b>Paid</b> and the tiles update.'},
+    {sel:row+' td.act .menu', title:'Everything else is in ⋯',
+     text:'Tap <b>⋯</b> to enter a different amount, split a payment, set up an arrangement, save the login, or edit or move the bill.'},
+    {sel:'#tbl tr.mdiv', title:'Next month',
+     text:'Next month\u2019s bills start under this line, so you can plan ahead.'},
+    {sel:'#burger', title:'The menu',
+     text:'Switch tabs and months, turn on reminders, change light or dark, and manage your account. Replay this tour from <b>How this works</b>.'},
+    {title:'Install it on your device', html:installHelp},
+    {title:'You are set',
+     text:'That\u2019s the tour. Open the menu \u2192 <b>How this works</b> \u2192 <b>Take the tour</b> to see it again.'},
+  ];
+}
+function visible(el){ if(!el) return false; const r=el.getBoundingClientRect(); return r.width>0&&r.height>0; }
+function startTour(only){
+  closeMenu(); if(!$('sheetwrap').hidden) closeSheet(); $('fwrap').hidden=true;
+  tourSteps=tourDefs().filter(st=>!st.sel||visible(document.querySelector(st.sel)));
+  if(only==='install') tourSteps=tourDefs().filter(st=>st.html===installHelp);
+  tourOn=true; tourAt=0; $('tour').hidden=false; document.body.classList.add('sheeton');
+  showStep();
+}
+function endTour(){
+  tourOn=false; $('tour').hidden=true;
+  if($('sheetwrap').hidden&&$('fwrap').hidden) document.body.classList.remove('sheeton');
+  try{ localStorage.setItem(TOUR_KEY,new Date().toISOString()); }catch(_){}
+}
+function placeTour(){
+  if(!tourOn) return;
+  const st=tourSteps[tourAt], card=$('tcard'), spot=$('tspot'), T=$('tour');
+  const el=st.sel?document.querySelector(st.sel):null;
+  const vw=innerWidth, vh=innerHeight, cw=card.offsetWidth, ch=card.offsetHeight, m=12;
+  if(!el){ T.classList.add('nospot');
+    card.style.left=Math.round((vw-cw)/2)+'px'; card.style.top=Math.round(Math.max(m,(vh-ch)/2))+'px'; return; }
+  T.classList.remove('nospot');
+  const r=el.getBoundingClientRect(), pad=6;
+  spot.style.left=(r.left-pad)+'px'; spot.style.top=(r.top-pad)+'px';
+  spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+  let top = r.bottom+pad+m+ch<=vh ? r.bottom+pad+m : r.top-pad-m-ch;
+  if(top<m) top=Math.max(m,vh-ch-m);
+  const left=Math.min(Math.max(m,r.left+r.width/2-cw/2),vw-cw-m);
+  card.style.left=Math.round(left)+'px'; card.style.top=Math.round(top)+'px';
+}
+function showStep(){
+  const st=tourSteps[tourAt], n=tourSteps.length;
+  $('tstep').textContent=n>1?'STEP '+(tourAt+1)+' OF '+n:'';
+  $('ttitle').textContent=st.title;
+  $('ttext').innerHTML=st.html?st.html():st.text;
+  $('tback').hidden=tourAt===0;
+  $('tnext').textContent=tourAt===n-1?'Done':'Next';
+  $('tskip').hidden=tourAt===n-1;
+  const ib=$('tinstall');
+  if(ib) ib.onclick=async()=>{ const o=installOffer; if(!o) return; installOffer=null;
+    o.prompt(); try{ await o.userChoice; }catch(_){} showStep(); };
+  const el=st.sel?document.querySelector(st.sel):null;
+  if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); setTimeout(placeTour,380); }
+  placeTour();
+  $('tnext').focus({preventScroll:true});
+}
+$('tnext').onclick=()=>{ if(tourAt<tourSteps.length-1){ tourAt++; showStep(); } else endTour(); };
+$('tback').onclick=()=>{ if(tourAt>0){ tourAt--; showStep(); } };
+$('tskip').onclick=endTour;
+addEventListener('resize',placeTour);
+addEventListener('scroll',()=>{ if(tourOn) placeTour(); },{passive:true});
+addEventListener('keydown',e=>{ if(!tourOn) return;
+  if(e.key==='Escape') endTour();
+  else if(e.key==='ArrowRight') $('tnext').click();
+  else if(e.key==='ArrowLeft') $('tback').click(); });
+on('touropen',()=>startTour());
+on('instopen',()=>startTour('install'));
 function closeSheet(){
   drawer=null; drawerKey=null; drawerM=null; editing=null; moving=null;
   dpanel=null; credOpen=null; pasteFor=null; render();
