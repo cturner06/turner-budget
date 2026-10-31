@@ -332,6 +332,9 @@ tr.grp .gsum{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-
 #tbl tr[data-row] td.r.num .var{display:inline;margin-left:5px}
 #tbl tr[data-row] .menu{padding:2px 8px}
 tr.late .whn{color:var(--red)} tr.due .whn{color:var(--gold)}
+.cat .dd{display:none}
+#tbl td.hidesm{white-space:nowrap}
+#tbl td.c.hidesm,#tbl th.c.hidesm{text-align:right;font-variant-numeric:tabular-nums}
 
 /* the row menu: a pop-out sheet instead of a drawer that shoves the list down */
 #sheetwrap,#fwrap{position:fixed;inset:0;z-index:66;display:flex;align-items:center;justify-content:center;
@@ -720,6 +723,7 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  #tbl tbody tr[data-row] td.name .cat{display:block;margin:1px 0 0;font-size:11px;line-height:1.25;
    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ #tbl tbody tr[data-row] td.name .cat .dd{display:inline;color:var(--ink);font-weight:500;margin-right:6px}
  #tbl tbody tr[data-row] td.name .tag,#tbl tbody tr[data-row] td.name .golink{display:none}
  #tbl tbody tr[data-row] .menu{font-size:19px;padding:3px 6px;border-color:transparent}
  #tbl tbody tr[data-row] .donechk,#tbl tbody tr[data-row] .nxchk{width:18px;height:18px}
@@ -956,7 +960,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v63 \u00b7 next month in every tab';
+const BUILD='v64 \u00b7 due dates, share invites';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1403,6 +1407,12 @@ function dueDate(b,m){
   return new Date(m.getFullYear(),m.getMonth(),day?Math.min(day,lastDay(m)):lastDay(m));
 }
 // what the Due column says: a fixed day, or that it moves
+// "Fri 10/02" — the day it lands in month m; "Varies" when it moves around
+const mmdd=d=>['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
+function dueShort(b,m,d){
+  const dl=dueLabel(b); if(!/^\d+$/.test(dl)) return dl;
+  d=d||dueDate(b,m); return mmdd(d);
+}
 function dueLabel(b){
   if(b.due_day) return String(b.due_day);
   const pl=S.plans[b.id]||[];
@@ -1554,7 +1564,8 @@ function billRow(x,m,opt){
     +(R?` <span class="tag split">${R.n} ${R.n===1?'plan':'plans'}</span>`
        +(R.dueN>R.n?` <span class="tag due">${R.dueN} due</span>`:''):'');
   const sub=(()=>{
-    const bits=[esc(x.b.category||'')];
+    const ds=dueShort(x.b,m,x.when);
+    const bits=[(ds?'<span class="dd">'+esc(ds)+'</span>':'')+esc(x.b.category||'')];
     if(opt.tab) bits.push(`<span style="color:${opt.tab.color}">${esc(opt.tab.name)}</span>`);
     if(opt.when) bits.push('<span class="whn">'+opt.when+'</span>');
     if(R){ bits.push(R.paidN+' of '+R.dueN+' paid'); if(R.owing>0) bits.push(money0(R.owing)+' to run'); }
@@ -1568,7 +1579,7 @@ function billRow(x,m,opt){
         ${done?'checked':''} aria-label="Mark ${esc(x.b.name)} paid"></td>
       <td class="name"><span class="bn">${esc(x.b.name)}</span>${payLink(x.b)}${tags}
         <div class="cat">${sub}</div></td>
-      <td class="c hidesm">${opt.when2||dueLabel(x.b)}</td>
+      <td class="c hidesm">${opt.when2||dueShort(x.b,m,x.when)}</td>
       <td data-l="Status"><span class="tag ${s}">${opt.statusText||LBL[s]}</span></td>
       <td class="r num" data-l="Budget">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
       <td class="r lock lastcol" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
@@ -1877,7 +1888,8 @@ function renderAccount(){
       <label class="nrow" style="padding:0"><input type="checkbox" id="sh-ed" checked>
         <span>Let them record payments</span></label>
       <button id="sh-go">Share</button></div>
-    <p class="hint" style="margin:9px 0 0">They need an account here first. This shares
+    <p class="hint" style="margin:9px 0 0">No account yet? You will be asked to send an invite.
+      They still need Budget switched on before they can open it. This shares
       ${esc(A.name)} only \u2014 nothing from your other tabs.</p></div>` : '';
   const exN=S.bills.filter(z=>z.is_example&&!z.archived).length;
   const exBanner = exN ? `<div class="note">
@@ -1895,7 +1907,24 @@ function renderAccount(){
   const sg=$('sh-go'); if(sg) sg.onclick=()=>go(async()=>{
     const em=$('sh-em').value.trim();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) throw new Error('That does not look like an email address.');
-    const {error}=await db.rpc('bud_share_tab',{p_id:S.pid,p_code:acct,p_email:em,p_edit:$('sh-ed').checked});
+    const share=()=>db.rpc('bud_share_tab',{p_id:S.pid,p_code:acct,p_email:em,p_edit:$('sh-ed').checked});
+    let {error}=await share();
+    if(error && /no account yet/i.test(error.message||'')){
+      // No login yet: the owner can send an invite. It only creates the account —
+      // Budget stays off for them until it is switched on.
+      const own=await db.rpc('core_is_owner');
+      if(own.data!==true) throw new Error('No account yet for '+em+'. Ask Chris to invite them.');
+      if(!confirm('There is no account for '+em+' yet.\n\nSend them an invite? '+A.name
+        +' will be shared and waiting, but they cannot open Budget until you switch it on for them.')) return;
+      const inv=await db.functions.invoke('core-invite',{body:{email:em}});
+      if(inv.error){ let m=inv.error.message;
+        try{ const j=await inv.error.context.json(); if(j&&j.error) m=j.error; }catch(_){}
+        throw new Error(m); }
+      ({error}=await share());
+      if(error) throw error;
+      toast('Invite sent to '+em+'. Switch Budget on for them when you are ready.');
+      return;
+    }
     if(error) throw error; toast(em+' can now open '+A.name);});
   document.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>go(async()=>{
     const {error}=await db.rpc('bud_unshare_tab',{p_id:S.pid,p_code:acct,p_user:b.dataset.sh});
@@ -2829,8 +2858,8 @@ function renderNext(){
         <td class="c tick noprint"><input type="checkbox" class="nxchk" data-k="${esc(x.key)}"
           ${paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
         <td class="name"><span class="bn">${esc(x.name)}</span> <span class="tag split">plan</span>
-          <div class="cat">${esc(x.bill.category||'')} \u00b7 <span style="color:${x.tab.color}">${esc(x.tab.name)}</span> \u00b7 <span class="whn">${when}</span></div></td>
-        <td class="c hidesm">${x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</td>
+          <div class="cat"><span class="dd">${mmdd(x.when)}</span>${esc(x.bill.category||'')} \u00b7 <span style="color:${x.tab.color}">${esc(x.tab.name)}</span> \u00b7 <span class="whn">${when}</span></div></td>
+        <td class="c hidesm">${mmdd(x.when)}</td>
         <td><span class="tag ${paid?'paid':x.late?'late':'due'}">${paid?'Paid':x.late?'Past due':'Due now'}</span></td>
         <td class="r num">${money(x.amount)}</td>
         <td class="r lock lastcol"><span class="ld">\u2014</span></td>
@@ -2849,7 +2878,8 @@ function renderNext(){
       ? when+' \u00b7 '+extra+' more month'+(extra>1?'s':'')+' behind'
       : when;
     return billRow({b:x.bill,when:x.when}, monthOf(x.period),
-      {tab:x.tab, when:whenTxt, when2:x.when.toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+      {tab:x.tab, when:whenTxt,
+       when2:mmdd(x.when),
        key:x.key, status:st,
        statusText:{paid:'Paid',late:'Past due',due:'Due now',sched:'Coming up'}[st]});
   };
