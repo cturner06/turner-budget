@@ -404,6 +404,16 @@ body.sheeton{overflow:hidden}
 #tcard .tlink{background:none;border:0;color:var(--mute);padding:8px 2px}
 #tcard .tinst{margin-top:10px}
 html[data-theme="light"] #tcard{background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
+/* arrangement schedule */
+.arlist{display:flex;flex-direction:column;gap:6px}
+.arow{display:grid;grid-template-columns:150px 110px 150px 1fr;gap:8px;align-items:end;
+  padding:8px 10px;border:1px solid var(--rule2);border-radius:9px;background:rgba(255,255,255,.02)}
+.arow label{display:block;font-size:11.5px;color:var(--mute);margin-bottom:3px}
+.arow input{width:100%}
+.arow.done{border-color:rgba(79,168,131,.35);background:var(--greenw)}
+.arow .arbtns{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.arow .arbtns button{padding:7px 11px}
+.arow button.pay{background:linear-gradient(180deg,#E0C654,var(--gold));color:#17140A;border-color:transparent;font-weight:600}
 /* people and apps */
 .ptog{display:flex;flex-direction:column;gap:2px}
 .tgl{display:flex;align-items:center;gap:12px;padding:9px 0;cursor:pointer;position:relative}
@@ -798,6 +808,8 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
  .shd{margin:0 -14px 12px;padding:13px 14px 11px}
  .shgrid{grid-template-columns:1fr 1fr}
  .shpay input.in{flex:1 1 120px}
+ .arow{grid-template-columns:1fr 1fr;row-gap:7px;padding:8px}
+ .arow .arbtns{justify-content:flex-end;align-self:end}
 
  /* group and paid bars span the whole card width */
  #tbl tr.grp{display:block;border:0;border-radius:0;margin:14px 0 8px;padding:0;
@@ -1034,7 +1046,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v69 \u00b7 month totals add up';
+const BUILD='v70 \u00b7 arrangement schedules';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1452,7 +1464,7 @@ async function loadProfiles(){
 async function loadProfile(){
   localStorage.setItem('tb-pid',S.pid);
   S.prof=S.profiles.find(p=>p.id===S.pid);
-  const [t,b,p,sp,ar,pl,pp,dg]=await Promise.all([
+  const [t,b,p,sp,ar,pl,pp,dg,ap]=await Promise.all([
     db.from('bud_tabs').select('*').eq('profile_id',S.pid).order('sort'),
     db.from('bud_bills').select('*').eq('profile_id',S.pid).eq('archived',false),
     db.from('bud_payments').select('*').eq('profile_id',S.pid),
@@ -1460,7 +1472,8 @@ async function loadProfile(){
     db.from('bud_arrangements').select('*').eq('profile_id',S.pid),
     db.from('bud_plans').select('*').eq('profile_id',S.pid).eq('done',false).order('created_at'),
     db.from('bud_plan_payments').select('*').eq('profile_id',S.pid),
-    db.from('bud_digest_settings').select('*').eq('profile_id',S.pid)]);
+    db.from('bud_digest_settings').select('*').eq('profile_id',S.pid),
+    db.from('bud_arr_payments').select('*').eq('profile_id',S.pid).order('due_date')]);
   await vendLoad();
   const ts=await db.from('bud_tab_shares').select('*').eq('profile_id',S.pid);
   S.shares=ts.data||[];
@@ -1479,6 +1492,7 @@ async function loadProfile(){
   S.pay={}; p.data.forEach(r=>S.pay[r.bill_id+'|'+r.period]=r);
   S.splits={}; sp.data.forEach(r=>(S.splits[r.bill_id+'|'+r.period]=S.splits[r.bill_id+'|'+r.period]||[]).push(r));
   S.arr={}; ar.data.forEach(r=>S.arr[r.bill_id]=r);
+  S.arrPays={}; ((ap&&ap.data)||[]).forEach(r=>(S.arrPays[r.bill_id]=S.arrPays[r.bill_id]||[]).push(r));
   S.plans={}; (pl.data||[]).forEach(r=>(S.plans[r.bill_id]=S.plans[r.bill_id]||[]).push(r));
   S.planPays={}; (pp.data||[]).forEach(r=>(S.planPays[r.plan_id]=S.planPays[r.plan_id]||[]).push(r));
   if(!acct) acct='next';
@@ -1492,6 +1506,8 @@ const TABS=()=>[{k:'next',n:'What is coming',c:'#C9A227'}]
   .concat(S.tabs.map(a=>({k:a.code,n:a.name,c:a.color})))
   .concat([{k:'ann',n:'Annual'},{k:'vend',n:'Vendors'},{k:'sum',n:'Summary'}]);
 function dueDate(b,m){
+  const ad=arrDue(b,per(m));
+  if(ad.length){ const r=ad.find(z=>!z.paid_on)||ad[0]; return new Date(r.due_date+'T00:00:00'); }
   let day=b.due_day;
   if(!day){ const pl=S.plans[b.id]||[];
     const days=pl.map(z=>z.due_day).filter(Boolean);
@@ -1515,7 +1531,30 @@ function dueLabel(b){
 const per=m=>mk(m);
 const getPay=(b,p)=>S.pay[b.id+'|'+p]||null;
 const getSplits=(b,p)=>S.splits[b.id+'|'+p]||null;
+/* ---- arrangement schedule: each payment has its own due date, amount, date paid ----
+   Inside the arrangement's months, a bill's budget is the payments due that month,
+   and it is paid when every one of them is. Outside it, the bill is back to normal. */
+const isoDay=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayISO=()=>isoDay(new Date());
+const arrRows=b=>(S.arrPays&&S.arrPays[b.id])||[];
+function arrInSpan(b,p){
+  const r=arrRows(b); if(!r.length||!/^\d{4}-\d{2}$/.test(p)) return false;
+  return p>=r[0].due_date.slice(0,7) && p<=r[r.length-1].due_date.slice(0,7);
+}
+const arrDue=(b,p)=>arrRows(b).filter(r=>r.due_date.slice(0,7)===p);
+const arrPaidAmt=r=>r.paid_amount!=null?+r.paid_amount:+r.amount;
+async function arrMark(b,p,on){
+  // the row's tick: every payment due that month paid today, or none of them
+  for(const r of arrDue(b,p)){
+    if(on&&!r.paid_on){ const {error}=await db.from('bud_arr_payments')
+      .update({paid_on:todayISO(),paid_amount:+r.amount}).eq('id',r.id); if(error) throw error; }
+    if(!on&&r.paid_on){ const {error}=await db.from('bud_arr_payments')
+      .update({paid_on:null,paid_amount:null}).eq('id',r.id); if(error) throw error; }
+  }
+}
 function arrFor(b,m){const a=S.arr[b.id];if(!a)return null;
+  if(arrRows(b).length){ if(!arrInSpan(b,per(m))) return null;
+    return {...a,left:arrRows(b).filter(z=>!z.paid_on).length}; }
   const s=a.start_month.split('-').map(Number),st=new Date(s[0],s[1]-1,1);
   const off=(m.getFullYear()-st.getFullYear())*12+(m.getMonth()-st.getMonth());
   return(off>=0&&off<a.months)?{...a,left:a.months-off}:null;}
@@ -1569,12 +1608,16 @@ function planWhen(p){
   if(u==='week')  return n===1?'every week':'every '+n+' weeks';
   return n===1?'every day':'every '+n+' days';
 }
-const budgetOf=(b,m)=>{const a=arrFor(b,m); if(a) return +a.amount;
+const budgetOf=(b,m)=>{
+  if(arrInSpan(b,per(m))) return arrDue(b,per(m)).reduce((t,r)=>t+ +r.amount,0);
+  const a=arrFor(b,m); if(a) return +a.amount;
   const pl=plansOf(b); if(pl&&pl.length) return pl.reduce((s2,p)=>s2+planCost(p,m),0);
   return +b.amount;};
 const planPaysIn=(plan,period)=>(S.planPays[plan.id]||[])
   .filter(x=>String(x.paid_on).slice(0,7)===period);
 function paidOf(b,p){
+  if(arrInSpan(b,p)){ const d=arrDue(b,p); if(!d.length) return 0;
+    const pd=d.filter(r=>r.paid_on); return pd.length?pd.reduce((t,r)=>t+arrPaidAmt(r),0):null; }
   const pl=plansOf(b);
   if(pl&&pl.length&&/^\d{4}-\d{2}$/.test(p)){
     const t=pl.reduce((s2,z)=>s2+planPaysIn(z,p).reduce((a,x)=>a+ +x.amount,0),0);
@@ -1584,6 +1627,7 @@ function paidOf(b,p){
   if(sp)return sp.some(x=>x.paid)?sp.filter(x=>x.paid).reduce((s,x)=>s+ +x.amount,0):null;
   const r=getPay(b,p);return r?+r.amount:null;}
 function allPaid(b,p){
+  if(arrInSpan(b,p)) return arrDue(b,p).every(r=>r.paid_on);
   const pl=plansOf(b);
   if(pl&&pl.length&&/^\d{4}-\d{2}$/.test(p)){
     const m=new Date(+p.slice(0,4),+p.slice(5,7)-1,1);
@@ -1595,7 +1639,8 @@ const annuals=()=>S.bills.filter(b=>b.is_annual).sort((a,b)=>(a.due_month-b.due_
 function billsFor(m,code){return monthly(code).map(b=>({b,when:dueDate(b,m)})).sort((x,y)=>x.when-y.when);}
 function status(x,m){const p=per(m),sp=getSplits(x.b,p);
   const pl=plansOf(x.b);
-  if(pl&&pl.length){
+  if(arrInSpan(x.b,p)){ if(allPaid(x.b,p)) return 'paid'; if(paidOf(x.b,p)) return 'part'; }
+  else if(pl&&pl.length){
     // a BNPL row is only paid when every plan due this month is
     if(allPaid(x.b,p)) return 'paid';
     if(paidOf(x.b,p)!==null) return 'part';
@@ -1676,13 +1721,15 @@ function billRow(x,m,opt){
       <td data-l="Status"><span class="tag ${s}">${opt.statusText||LBL[s]}</span></td>
       <td class="r num" data-l="Budget">${money(bg)}${act?`<div class="var">was ${money0(x.b.amount)}</div>`:''}</td>
       <td class="r lock lastcol" data-l="${lbl(prev)}">${L!==null?money(L):'<span class="ld">\u2014</span>'}</td>
-      <td class="cell" data-l="${lbl(m)}">${(sp||(plansOf(x.b)||[]).length)
+      <td class="cell" data-l="${lbl(m)}">${(sp||(plansOf(x.b)||[]).length||arrInSpan(x.b,p))
         ?`<div class="num splitsum">${money(C||0)}</div>`
         :`<input class="in" data-b="${x.b.id}" data-p="${p}" type="text" inputmode="decimal"
         value="${C!==null?money(C):''}" placeholder="${money(bg)}" aria-label="${esc(x.b.name)} this month">`}${v}</td>
-      <td class="cell next" data-l="${lbl(nxt)}"><input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
+      <td class="cell next" data-l="${lbl(nxt)}">${arrInSpan(x.b,per(nxt))
+        ?`<div class="num splitsum" style="color:var(--ash)">${N?money(N):'\u2014'}</div>`
+        :`<input class="in" data-b="${x.b.id}" data-p="${per(nxt)}"
         type="text" inputmode="decimal" value="${N!==null?money(N):''}" placeholder="\u2014"
-        aria-label="${esc(x.b.name)} next month"></td>
+        aria-label="${esc(x.b.name)} next month">`}</td>
       <td class="sel noprint"><input type="checkbox" class="selchk" data-pick="${pk}"
         ${picked.has(pk)?'checked':''} aria-label="Select ${esc(x.b.name)}"></td>
       <td class="act noprint"><button class="menu" data-m="${x.b.id}"
@@ -1726,14 +1773,41 @@ function drawerHTML(x,m){
     <div class="acts" style="margin-top:8px"><button data-a="unsplit">Remove split</button>
       <button data-a="addpart">Add a part</button>
       <span class="hint" style="align-self:center">Total ${money(sp.reduce((s,z)=>s+ +z.amount,0))} of ${money(budgetOf(b,m))}</span></div></div>`:'';
-  const arrBox=`<div class="parts"><h4>Payment arrangement</h4><div class="form">
-     <div><label>Per month</label><input type="number" step="0.01" id="ar-amt" value="${a?a.amount:budgetOf(b,m).toFixed(2)}"></div>
-     <div><label>Starting</label><input type="month" id="ar-start" value="${a?a.start_month:per(m)}"></div>
-     <div><label>For (months)</label><input type="number" min="1" max="120" id="ar-mo" value="${a?a.months:6}" style="width:80px"></div>
-     <div style="flex:1;min-width:150px"><label>Note</label><input id="ar-note" value="${esc(a?a.note:'')}" placeholder="Who you spoke to, terms" style="width:100%"></div>
-     <button data-a="savearr">${a?'Update':'Set'} arrangement</button>
-     ${a?'<button data-a="delarr" class="danger">End it</button>':''}</div>
-    ${act?`<p class="hint" style="margin:7px 0 0">Active — ${money(a.amount)} a month, ${act.left} left.</p>`:''}</div>`;
+  const arL=arrRows(b);
+  const arrBox=(a&&arL.length)
+   ? `<div class="parts"><h4>Payment arrangement</h4>
+      <div class="arlist">${arL.map(r=>`<div class="arow${r.paid_on?' done':''}">
+        <div><label>Due</label><input type="date" class="ar-dd" data-id="${r.id}" value="${r.due_date}"></div>
+        <div><label>Amount</label><input type="number" step="0.01" min="0" class="ar-am" data-id="${r.id}"
+          value="${(+r.amount).toFixed(2)}"></div>
+        <div><label>${r.paid_on?'Paid on':'Date paid'}</label><input type="date" class="ar-pd" data-id="${r.id}"
+          value="${r.paid_on||todayISO()}"></div>
+        <div class="arbtns">${r.paid_on
+          ?`<span class="tag paid">Paid</span><button data-a="arrunpay" data-id="${r.id}">Undo</button>`
+          :`<button data-a="arrpay" data-id="${r.id}" class="pay">Paid</button>`}
+          <button data-a="arrdel" data-id="${r.id}" class="danger" title="Remove this payment" aria-label="Remove this payment">&times;</button></div>
+        </div>`).join('')}</div>
+      <div class="form" style="margin-top:10px"><div style="flex:1;min-width:160px"><label>Note</label>
+        <input id="ar-note" value="${esc(a.note||'')}" placeholder="Who you spoke to, terms" style="width:100%"></div></div>
+      <div class="row-flex" style="gap:7px;margin-top:9px;flex-wrap:wrap">
+        <button data-a="arradd">+ Add a payment</button>
+        <button data-a="arrsave">Save changes</button>
+        <button data-a="delarr" class="danger">End arrangement</button></div>
+      <p class="hint" style="margin:8px 0 0">${arL.filter(r=>r.paid_on).length} of ${arL.length} paid \u00b7
+        ${money(arL.filter(r=>!r.paid_on).reduce((t,r)=>t+ +r.amount,0))} left.
+        Each payment counts in the month it is due. Change a date or amount, then Save changes.</p></div>`
+   : `<div class="parts"><h4>Payment arrangement</h4><div class="form">
+      <div><label>Each payment</label><input type="number" step="0.01" min="0" id="ar-amt"
+        value="${budgetOf(b,m).toFixed(2)}" style="width:110px"></div>
+      <div><label>First payment</label><input type="date" id="ar-first" value="${isoDay(dueDate(b,m))}"></div>
+      <div><label>How often</label><select id="ar-every">
+        <option value="m1">Every month</option><option value="w2">Every 2 weeks</option>
+        <option value="w1">Every week</option><option value="once">One time</option></select></div>
+      <div><label>How many</label><input type="number" min="1" max="60" id="ar-n" value="6" style="width:80px"></div>
+      <div style="flex:1;min-width:160px"><label>Note</label><input id="ar-note" value="${esc(a?a.note||'':'')}"
+        placeholder="Who you spoke to, terms" style="width:100%"></div>
+      <button data-a="savearr">Set up</button></div>
+      <p class="hint" style="margin:7px 0 0">This fills in the schedule. You can change any single payment after.</p></div>`;
   const pl=plansOf(b);
   const planBox=`<div class="parts"><h4>Plans</h4>
      ${(pl||[]).map(z=>{
@@ -1840,11 +1914,11 @@ function drawerHTML(x,m){
        act?' \u00b7 arrangement':''}</div></div>
      <button data-a="close" class="shx" aria-label="Close">&times;</button></div>
    <div class="shsec">Paid for ${lbl(m)}</div>
-   <div class="shpay">${(sp||(pl&&pl.length))
+   <div class="shpay">${(sp||(pl&&pl.length)||arrInSpan(b,p))
        ?`<span class="splitsum">${money(C||0)}</span>`
        :`<input class="in" data-b="${b.id}" data-p="${p}" type="text" inputmode="decimal"
           value="${C!==null?money(C):''}" placeholder="${money(bg)}" aria-label="Amount paid">`}
-     <button data-a="full" class="pay">In full</button><button data-a="zero">$0</button>
+     <button data-a="full" class="pay">In full</button>${arrInSpan(b,p)?'':'<button data-a="zero">$0</button>'}
      <button data-a="clear">Clear</button>
      ${vend2&&vend2.login_url?`<button data-pay="${b.id}">Pay at ${esc(vend2.name)} \u2197</button>`:''}</div>
    <label class="shpick"><input type="checkbox" class="selchk" data-shpick="${pk}" ${picked.has(pk)?'checked':''}>
@@ -1852,7 +1926,7 @@ function drawerHTML(x,m){
    <div class="shsec">Bill</div>
    <div class="shgrid">
      ${btn('edit','Edit or move\u2026',editing===b.id||moving===b.id)}
-     ${sp?'':btn('split','Split this month')}
+     ${(sp||arrInSpan(b,p))?'':btn('split','Split this month')}
      ${hasPl?btn('panel','Plans'+(pl&&pl.length?' ('+pl.length+')':'')+'\u2026',panelOn('plans')||pasteFor===b.id,'','plans'):''}
      ${btn('panel','Arrangement'+(a?' (on)':'')+'\u2026',panelOn('arr'),'','arr')}
      ${btn('panel','Vendor and login\u2026',panelOn('vend')||credOpen===b.id,'','vend')}
@@ -2246,6 +2320,7 @@ function wire(){
       const b=S.bills.find(z=>z.id===id); if(!b) return;
       const m=monthOf(p), on=c.checked;
       go(async()=>{
+        if(arrInSpan(b,p)) return arrMark(b,p,on);
         const pl=plansOf(b);
         if(pl&&pl.length){
           // a BNPL row is the sum of its plans, so the tick has to move those
@@ -2410,6 +2485,7 @@ function act(a,id,to){
     const {error}=await db.from('bud_splits').insert({profile_id:S.pid,bill_id:b.id,period:p,
       seq:(sp.length?Math.max(...sp.map(z=>z.seq)):0)+1,amount:0,paid:false});if(error)throw error;});
   if(a==='unsplit') return go(()=>clearSplits(b,p));
+  if(arrInSpan(b,p)&&(a==='full'||a==='clear'||a==='zero')) return go(()=>arrMark(b,p,a==='full'));
   if(a==='zero')  return go(async()=>{await clearSplits(b,p);await setPay(b,p,0);});
   if(a==='full')  return go(async()=>{await clearSplits(b,p);await setPay(b,p,bg);});
   if(a==='clear') return go(async()=>{await clearSplits(b,p);await setPay(b,p,null);});
@@ -2517,12 +2593,59 @@ function act(a,id,to){
   if(a==='plandel') return go(async()=>{
     const {error}=await db.from('bud_plans').delete().eq('id',to); if(error) throw error;});
   if(a==='savearr') return go(async()=>{
-    const row={profile_id:S.pid,bill_id:b.id,amount:+$('ar-amt').value||0,
-      start_month:$('ar-start').value||per(cur),months:Math.max(1,+$('ar-mo').value||1),
-      note:$('ar-note').value.trim()};
-    const {error}=await db.from('bud_arrangements').upsert(row,{onConflict:'bill_id'});if(error)throw error;});
-  if(a==='delarr') return go(async()=>{
-    const {error}=await db.from('bud_arrangements').delete().eq('bill_id',b.id);if(error)throw error;});
+    const amt=+$('ar-amt').value, first=$('ar-first').value, ev=$('ar-every').value;
+    if(!(amt>0)) throw new Error('Enter the amount of each payment.');
+    if(!first) throw new Error('Pick the date of the first payment.');
+    const n=ev==='once'?1:Math.min(60,Math.max(1,+$('ar-n').value||1));
+    const d0=new Date(first+'T00:00:00'), dates=[];
+    for(let i=0;i<n;i++){
+      if(ev==='w1'||ev==='w2') dates.push(new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+(ev==='w1'?7:14)*i));
+      else { const mo=new Date(d0.getFullYear(),d0.getMonth()+i,1);
+        dates.push(new Date(mo.getFullYear(),mo.getMonth(),Math.min(d0.getDate(),lastDay(mo)))); }
+    }
+    const months=new Set(dates.map(d=>isoDay(d).slice(0,7))).size;
+    const {data:hdr,error}=await db.from('bud_arrangements').upsert({profile_id:S.pid,bill_id:b.id,amount:amt,
+      start_month:first.slice(0,7),months,note:$('ar-note').value.trim()},{onConflict:'bill_id'}).select().single();
+    if(error) throw error;
+    const old=await db.from('bud_arr_payments').delete().eq('arrangement_id',hdr.id); if(old.error) throw old.error;
+    const ins=await db.from('bud_arr_payments').insert(dates.map(d=>({profile_id:S.pid,bill_id:b.id,
+      arrangement_id:hdr.id,due_date:isoDay(d),amount:amt})));
+    if(ins.error) throw ins.error;
+    toast('Arrangement set: '+n+' payment'+(n===1?'':'s')+' of '+money(amt)+'.');});
+  if(a==='arrpay'||a==='arrunpay') return go(async()=>{
+    const r=arrRows(b).find(z=>z.id===to); if(!r) return;
+    const pd=document.querySelector('.ar-pd[data-id="'+to+'"]');
+    const row=a==='arrpay'?{paid_on:(pd&&pd.value)||todayISO(),paid_amount:+r.amount}:{paid_on:null,paid_amount:null};
+    const {error}=await db.from('bud_arr_payments').update(row).eq('id',to); if(error) throw error;});
+  if(a==='arrsave') return go(async()=>{
+    for(const r of arrRows(b)){
+      const dd=document.querySelector('.ar-dd[data-id="'+r.id+'"]'), am=document.querySelector('.ar-am[data-id="'+r.id+'"]'),
+            pd=document.querySelector('.ar-pd[data-id="'+r.id+'"]');
+      const up={};
+      if(dd&&dd.value&&dd.value!==r.due_date) up.due_date=dd.value;
+      if(am&&am.value!==''&&Math.abs(+am.value-+r.amount)>=0.005){ up.amount=+(+am.value).toFixed(2);
+        if(r.paid_on) up.paid_amount=up.amount; }
+      if(r.paid_on&&pd&&pd.value&&pd.value!==r.paid_on) up.paid_on=pd.value;
+      if(Object.keys(up).length){ const {error}=await db.from('bud_arr_payments').update(up).eq('id',r.id); if(error) throw error; }
+    }
+    const a2=S.arr[b.id];
+    if(a2){ const {error}=await db.from('bud_arrangements').update({note:$('ar-note').value.trim()}).eq('id',a2.id);
+      if(error) throw error; }
+    toast('Arrangement saved.');});
+  if(a==='arradd') return go(async()=>{
+    const a2=S.arr[b.id], L=arrRows(b), last=L[L.length-1]; if(!a2||!last) return;
+    const d=new Date(last.due_date+'T00:00:00'), mo=new Date(d.getFullYear(),d.getMonth()+1,1);
+    const nd=new Date(mo.getFullYear(),mo.getMonth(),Math.min(d.getDate(),lastDay(mo)));
+    const {error}=await db.from('bud_arr_payments').insert({profile_id:S.pid,bill_id:b.id,arrangement_id:a2.id,
+      due_date:isoDay(nd),amount:+last.amount}); if(error) throw error;});
+  if(a==='arrdel') return go(async()=>{
+    const L=arrRows(b);
+    if(L.length===1){ if(!confirm('That is the last payment. End the whole arrangement?')) return;
+      const {error}=await db.from('bud_arrangements').delete().eq('bill_id',b.id); if(error) throw error; return; }
+    const {error}=await db.from('bud_arr_payments').delete().eq('id',to); if(error) throw error;});
+  if(a==='delarr'){ if(!confirm('End the arrangement on "'+b.name+'"? Its schedule and paid dates are removed and the bill goes back to its regular amount.')) return;
+    return go(async()=>{
+    const {error}=await db.from('bud_arrangements').delete().eq('bill_id',b.id);if(error)throw error;}); }
 }
 
 /* ======================= PICKING SEVERAL AT ONCE ======================= */
@@ -2604,6 +2727,7 @@ function bulk(a){
         continue;
       }
       if(a==='bulkdel'){ await db.from('bud_bills').update({archived:true}).eq('id',x.b.id); continue; }
+      if(arrInSpan(x.b,x.p)&&(a==='bulkpay'||a==='bulkclear')){ await arrMark(x.b,x.p,a==='bulkpay'); continue; }
       const bpl=plansOf(x.b);
       if(bpl&&bpl.length&&(a==='bulkpay'||a==='bulkclear')){
         const bm=/^\d{4}-\d{2}$/.test(x.p)?monthOf(x.p):cur;
@@ -2765,6 +2889,18 @@ function comingUp(){
   vis.forEach(A=>{
     months.forEach(m=>{
       monthly(A.code).forEach(b=>{
+        if(arrInSpan(b,per(m))){
+          // an arrangement is paid payment by payment, so list each one on its own date
+          arrDue(b,per(m)).forEach(r=>{
+            const when=new Date(r.due_date+'T00:00:00'), paid=!!r.paid_on, late=!paid&&when<today;
+            if(when>end) return;
+            if(when<today&&paid) return;
+            if(paid&&!doneToo) return;
+            out.push({key:'arrp:'+r.id+':'+per(m), kind:'arrp', bill:b, arr:r, tab:A, when,
+              amount:+r.amount, period:per(m), paid, late, name:b.name});
+          });
+          return;
+        }
         const pl=plansOf(b);
         if(pl&&pl.length){
           // a BNPL row is paid plan by plan, so list the plans
@@ -2810,6 +2946,7 @@ function comingUp(){
     [shift(base,-1),base].forEach(m=>{
       monthly(A.code).forEach(b=>{
         if((plansOf(b)||[]).length) return;
+        if(arrInSpan(b,per(m))) return;
         const when=dueDate(b,m); if(when>=today) return;
         const p=per(m), v=paidOf(b,p); if(v!==null&&allPaid(b,p)) return;
         if(out.some(x=>x.key==='bill:'+b.id+':'+p)) return;
@@ -2829,7 +2966,7 @@ function comingUp(){
   // looks as though it undid itself.
   const best=new Map();
   kept.forEach(x=>{
-    if(x.kind==='plan'){ best.set(x.key,x); return; }
+    if(x.kind==='plan'||x.kind==='arrp'){ best.set(x.key,x); return; }
     const k=(x.paid?'done:':'owing:')+x.bill.id;
     const prev=best.get(k);
     if(!prev){ best.set(k,x); x.behind=1; }
@@ -2945,6 +3082,26 @@ function renderNext(){
     const days=Math.round((x.when-TODAY)/864e5);
     const when = days<0 ? Math.abs(days)+(Math.abs(days)===1?' day late':' days late')
       : days===0 ? 'due today' : days===1 ? 'due tomorrow' : 'in '+days+' days';
+    if(x.kind==='arrp'){
+      const paid=!!x.arr.paid_on, cls=paid?'paid':x.late?'late':(x.when-TODAY)/864e5<=2?'due':'sched';
+      const pdTxt=paid?'paid '+mmdd(new Date(x.arr.paid_on+'T00:00:00')):when;
+      return `<tr class="${cls}" data-row="${x.bill.id}" data-rowkey="${esc(x.key)}">
+        <td class="c tick noprint"><input type="checkbox" class="nxchk" data-k="${esc(x.key)}"
+          ${paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
+        <td class="name"><span class="bn">${esc(x.name)}</span> <span class="tag arr">arrangement</span>
+          <div class="cat"><span class="dd">${mmdd(x.when)}</span>${esc(x.bill.category||'')} \u00b7 <span style="color:${x.tab.color}">${esc(x.tab.name)}</span> \u00b7 <span class="whn">${pdTxt}</span></div></td>
+        <td class="c hidesm">${mmdd(x.when)}</td>
+        <td><span class="tag ${cls}">${paid?'Paid':x.late?'Past due':LBL[cls]}</span></td>
+        <td class="r num">${money(x.amount)}</td>
+        <td class="r lock lastcol"><span class="ld">\u2014</span></td>
+        <td class="cell"><div class="num splitsum">${money(paid?arrPaidAmt(x.arr):0)}</div></td>
+        <td class="cell next"><div class="num splitsum" style="color:var(--ash)">\u2014</div></td>
+        <td class="sel noprint"></td>
+        <td class="act noprint"><button class="menu" data-m="${x.bill.id}" data-rowkey="${esc(x.key)}"
+          aria-label="Actions for ${esc(x.name)}">&#8943;</button></td></tr>`
+        +(drawer===x.bill.id&&drawerKey===x.key
+          ? `<tr class="drawerrow"><td colspan="10" class="drawer">${drawerHTML({b:x.bill,when:x.when},monthOf(x.period))}</td></tr>`:'');
+    }
     if(x.kind==='plan'){
       const paid=planPaysIn(x.plan,x.period).length>=planHits(x.plan,monthOf(x.period));
       return `<tr class="${paid?'paid':x.late?'late':'due'}" data-row="${x.bill.id}" data-rowkey="${esc(x.key)}">
@@ -3053,7 +3210,13 @@ function tick(key,on){
       }
       return;
     }
+    if(x.kind==='arrp'){
+      const {error}=await db.from('bud_arr_payments')
+        .update(on?{paid_on:todayISO(),paid_amount:+x.arr.amount}:{paid_on:null,paid_amount:null}).eq('id',x.arr.id);
+      if(error) throw error; return;
+    }
     const b=x.bill, p=x.period;
+    if(arrInSpan(b,p)) return arrMark(b,p,on);
     await clearSplits(b,p);
     await setPay(b,p, on ? (x.kind==='annual'? +b.amount : budgetOf(b,cur)) : null);
   });
