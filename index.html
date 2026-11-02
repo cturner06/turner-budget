@@ -405,6 +405,8 @@ body.sheeton{overflow:hidden}
 #tcard .tinst{margin-top:10px}
 html[data-theme="light"] #tcard{background:linear-gradient(170deg,#FFFFFF,#F7F5F0)}
 /* arrangement schedule */
+.arrnote{color:var(--gold)}
+tr.paid .arrnote{color:var(--gold);opacity:.9}
 .arlist{display:flex;flex-direction:column;gap:6px}
 .arow{display:grid;grid-template-columns:150px 110px 150px 1fr;gap:8px;align-items:end;
   padding:8px 10px;border:1px solid var(--rule2);border-radius:9px;background:rgba(255,255,255,.02)}
@@ -792,6 +794,7 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  #tbl tbody tr[data-row] td.name .cat{display:block;margin:1px 0 0;font-size:11px;line-height:1.25;
    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ #tbl tbody tr[data-row] .arrn{display:none}
  #tbl tbody tr[data-row] td.name .cat .dd{display:inline;color:var(--ink);font-weight:500;margin-right:6px}
  #tbl tbody tr[data-row] td.name .tag,#tbl tbody tr[data-row] td.name .golink{display:none}
  #tbl tbody tr[data-row] .menu{font-size:19px;padding:3px 6px;border-color:transparent}
@@ -1046,7 +1049,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v70 \u00b7 arrangement schedules';
+const BUILD='v71 \u00b7 arrangement progress on the bill';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1543,6 +1546,12 @@ function arrInSpan(b,p){
 }
 const arrDue=(b,p)=>arrRows(b).filter(r=>r.due_date.slice(0,7)===p);
 const arrPaidAmt=r=>r.paid_amount!=null?+r.paid_amount:+r.amount;
+// "Arrangement 2/6 paid · $1,344 left" — shown on the bill even once the month is paid
+function arrNote(b){
+  const r=arrRows(b); if(!r.length) return '';
+  const paidN=r.filter(z=>z.paid_on).length, left=r.filter(z=>!z.paid_on).reduce((t,z)=>t+ +z.amount,0);
+  return `<span class="arrnote">Arrangement <span class="arrn">${paidN}/${r.length} paid \u00b7 </span>${left>0?money0(left)+' left':'done'}</span>`;
+}
 async function arrMark(b,p,on){
   // the row's tick: every payment due that month paid today, or none of them
   for(const r of arrDue(b,p)){
@@ -1693,7 +1702,8 @@ function billRow(x,m,opt){
   const v=(C!==null&&!sp&&Math.abs(C-bg)>=0.01)
     ?`<span class="var ${C>bg?'up':'dn'}">${C>bg?'+':'\u2212'}${money0(Math.abs(C-bg))}</span>`:'';
   const R=planRollup(x.b,m);
-  const tags=(act?' <span class="tag arr">arrangement</span>':'')
+  const aN=arrInSpan(x.b,p)?arrNote(x.b):'';
+  const tags=(act&&!aN?' <span class="tag arr">arrangement</span>':'')
     +(sp?` <span class="tag split">${sp.filter(z=>z.paid).length}/${sp.length} parts</span>`:'')
     +(C===0&&!sp?' <span class="tag zero">$0</span>':'')
     +(x.b.is_example?' <span class="tag sched">example</span>':'')
@@ -1702,7 +1712,7 @@ function billRow(x,m,opt){
        +(R.dueN>R.n?` <span class="tag due">${R.dueN} due</span>`:''):'');
   const sub=(()=>{
     const ds=dueShort(x.b,m,x.when);
-    const bits=[(ds?'<span class="dd">'+esc(ds)+'</span>':'')+esc(x.b.category||'')];
+    const bits=[(ds?'<span class="dd">'+esc(ds)+'</span>':'')+(aN||esc(x.b.category||''))];
     if(opt.tab) bits.push(`<span style="color:${opt.tab.color}">${esc(opt.tab.name)}</span>`);
     if(opt.when) bits.push('<span class="whn">'+opt.when+'</span>');
     if(R){ bits.push(R.paidN+' of '+R.dueN+' paid'); if(R.owing>0) bits.push(money0(R.owing)+' to run'); }
@@ -3084,11 +3094,14 @@ function renderNext(){
       : days===0 ? 'due today' : days===1 ? 'due tomorrow' : 'in '+days+' days';
     if(x.kind==='arrp'){
       const paid=!!x.arr.paid_on, cls=paid?'paid':x.late?'late':(x.when-TODAY)/864e5<=2?'due':'sched';
-      const pdTxt=paid?'paid '+mmdd(new Date(x.arr.paid_on+'T00:00:00')):when;
+      const L=arrRows(x.bill), i=L.findIndex(z=>z.id===x.arr.id)+1;
+      const left=L.filter(z=>!z.paid_on).reduce((t,z)=>t+ +z.amount,0);
+      const pdTxt=(paid?'paid '+mmdd(new Date(x.arr.paid_on+'T00:00:00')):when)
+        +` \u00b7 <span class="arrnote">${i}/${L.length} \u00b7 ${left>0?money0(left)+' left':'done'}</span>`;
       return `<tr class="${cls}" data-row="${x.bill.id}" data-rowkey="${esc(x.key)}">
         <td class="c tick noprint"><input type="checkbox" class="nxchk" data-k="${esc(x.key)}"
           ${paid?'checked':''} aria-label="Mark ${esc(x.name)} paid"></td>
-        <td class="name"><span class="bn">${esc(x.name)}</span> <span class="tag arr">arrangement</span>
+        <td class="name"><span class="bn">${esc(x.name)}</span>
           <div class="cat"><span class="dd">${mmdd(x.when)}</span>${esc(x.bill.category||'')} \u00b7 <span style="color:${x.tab.color}">${esc(x.tab.name)}</span> \u00b7 <span class="whn">${pdTxt}</span></div></td>
         <td class="c hidesm">${mmdd(x.when)}</td>
         <td><span class="tag ${cls}">${paid?'Paid':x.late?'Past due':LBL[cls]}</span></td>
