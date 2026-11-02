@@ -299,6 +299,11 @@ td.cell.next input::placeholder{color:var(--ash)}
 tr.paid .bn{color:var(--green)}
 tr.late td{background:rgba(224,102,92,.09)}
 tr.late:hover td{background:rgba(224,102,92,.14)}
+tr.mtot td{height:42px;border:0;border-top:1px solid var(--edge);border-bottom:1px solid var(--edge);
+  background:rgba(207,181,59,.09);color:var(--gold);font-weight:600;
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+tr.mtot td.lbl{font-family:Archivo,sans-serif;color:var(--ink)}
+html[data-theme="light"] tr.mtot td{background:rgba(185,154,46,.16);color:#6E5812}
 tfoot td{height:46px;border:0;border-top:1px solid var(--edge);
   background:rgba(207,181,59,.09);color:var(--gold);font-weight:600;
   font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
@@ -720,7 +725,7 @@ html[data-theme="light"] tbody tr:hover td{background:rgba(27,36,48,.03)}
 
  /* every row becomes a card: name on top, the rest underneath */
  #tbl,#tbl tbody,#tbl tr,#tbl td{display:block;width:100%}
- #tbl thead,#tbl tfoot,#tbl colgroup{display:none}
+ #tbl thead,#tbl tfoot,#tbl colgroup,#tbl tr.mtot{display:none}
  #tbl td.hidesm,#tbl td.lock,#tbl td.cell.next{display:none}
 
  #tbl tbody tr{
@@ -1029,7 +1034,7 @@ window.addEventListener('unhandledrejection',function(e){
 const SB_URL='https://uqkycimmzuooavqpkzho.supabase.co';
 const SB_KEY='sb_publishable_qhoLJb5qPeJuD41IHe5RPQ_vJ41Vblz';
 const VAPID='BOP8m5f6aJiEeWlwMvSXptNrSrbUIIXTg4xolJKexdZUHinS8Zv7Ye-SJRTSTBaMY2e9kvB7fzi3SCqrn09KE4k';
-const BUILD='v68 \u00b7 one toggle per app';
+const BUILD='v69 \u00b7 month totals add up';
 // Clear out any service worker left over from earlier builds. Runs once,
 // guarded, and nothing registers one again — two of these fighting each
 // other on every load is what made the page blink.
@@ -1183,6 +1188,19 @@ function groupRow(name,items,budget,cleared,cols){
       <span class="gsum">${money(cleared)} of ${money(budget)}</span></td></tr>`;
 }
 // month divider: full month name, how many bills, what they add up to
+// totals row for one month's bills, matching the columns above it:
+// Budget, paid the month before, paid this month, paid early for the month after
+function monthTotalRow(list,m){
+  const pp=per(shift(m,-1)), p=per(m), pn=per(shift(m,1));
+  const sum=f=>list.reduce((t,x)=>t+(f(x)||0),0);
+  const B=sum(x=>budgetOf(x.b,m)), L=sum(x=>paidOf(x.b,pp)), C=sum(x=>paidOf(x.b,p)), N=sum(x=>paidOf(x.b,pn));
+  const name=m.toLocaleDateString('en-US',{month:'long'});
+  return `<tr class="mtot"><td class="noprint"></td><td class="lbl" colspan="3">${name} total \u2014 ${
+      list.length} ${list.length===1?'bill':'bills'}</td>
+    <td class="r">${money(B)}</td><td class="r" style="opacity:.6">${money(L)}</td>
+    <td class="r">${money(C)}</td><td class="r" style="opacity:.75">${money(N)}</td>
+    <td class="noprint"></td><td class="noprint"></td></tr>`;
+}
 function monthDivider(d,n,total,cols){
   return `<tr class="mdiv"><td colspan="${cols}"><span class="mname">${
     d.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>
@@ -1866,7 +1884,6 @@ function renderAccount(){
   const rows=all.filter(x=>{
     if(q&&!(x.b.name+' '+x.b.category).toLowerCase().includes(q))return false;
     if(sf&&status(x,cur)!==sf)return false;return true;});
-  let tl=0,tc=0,tn=0,tb=0;
   const rowHTML=x=>billRow(x,cur,{});
   const vendPicker=(id,label)=>`<div style="flex:1 1 190px"><label>${label}</label>
       <select id="${id}" style="width:100%">
@@ -1910,6 +1927,7 @@ function renderAccount(){
       + (shut.has(name)?'':items.map(rowHTML).join(''));
   }).join('')
   + paidSection(cleared2, x=>paidOf(x.b,p)||0, rowHTML, 10)
+  + (rows.length?monthTotalRow(rows,cur):'')
   + (()=>{
       // the whole of next month, so it can be planned before it starts
       const pn=per(nxt);
@@ -1919,7 +1937,8 @@ function renderAccount(){
       if(!nrows.length) return '';
       const tot=nrows.reduce((t,x)=>t+budgetOf(x.b,nxt),0);
       return monthDivider(nxt,nrows.length,tot,10)
-        + nrows.map(x=>billRow(x,nxt,{key:'n:'+x.b.id+':'+pn})).join('');
+        + nrows.map(x=>billRow(x,nxt,{key:'n:'+x.b.id+':'+pn})).join('')
+        + monthTotalRow(nrows,nxt);
     })();
   $('tbl').innerHTML=`
    <colgroup><col class="c-sel"><col class="c-bill"><col class="c-due"><col class="c-status"><col class="c-money">
@@ -1934,10 +1953,7 @@ function renderAccount(){
    <tbody>${addRow}${body||`<tr><td colspan="10" class="hint" style="padding:20px">${
      all.length?'Nothing matches that filter.'
      :'No bills on '+esc(A.name)+' yet. Add the first one with <b>+ Add bill</b> above.'}</td></tr>`}</tbody>
-   <tfoot><tr><td class="noprint"></td><td class="lbl" colspan="3">Total \u2014 ${rows.length} of ${all.length}</td>
-    <td class="r">${money(tb)}</td><td class="r" style="opacity:.6">${money(tl)}</td>
-    <td class="r">${money(tc)}</td><td class="r" style="opacity:.75">${money(tn)}</td>
-    <td class="noprint"></td><td class="noprint"></td></tr></tfoot>`;
+`;
   wire();
   const sh=$('tabshare'); if(sh) sh.onclick=()=>{shareOpen=!shareOpen;render();};
   const tr=$('tabren'); if(tr) tr.onclick=()=>{const n=prompt('Rename this tab',A.name);if(!n)return;
